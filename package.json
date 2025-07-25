@@ -1,0 +1,15 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Animac backend server",
+  "main": "server.py",
+  "scripts": {
+    "start": "uvicorn server:app --host=0.0.0.0 --port=8000"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^6.18.0"
+  }
+}
