@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ...existing code... */
+@import url('https://fonts.cdnfonts.com/css/acknowledgement');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.font-ackno {
+  font-family: 'Ackno', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+}
+.font-japanese {
+  font-family: 'japanese', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+}
+/* ...existing code... */
+
+/* Custom scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #141414;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Netflix-style hover effects */
+@layer components {
+  .hover-glow-east:hover {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+    transition: all 0.3s ease;
+  }
+  
+  .hover-glow-west:hover {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    transition: all 0.3s ease;
+  }
+  
+  .netflix-card {
+    @apply transform transition-all duration-300 ease-in-out;
+  }
+  
+  .netflix-card:hover {
+    @apply scale-105 z-10;
+  }
+  
+  .gradient-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(0, 0, 0, 0.8) 100%
+    );
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Typography improvements */
+.text-glow-east {
+  text-shadow: 0 0 5px #ef4444, 0 0 6px #ef4444;
+}
+
+.text-glow-west {
+  text-shadow: 0 0 5px #3b82f680 , 0 0 6px #3b82f680;
+}

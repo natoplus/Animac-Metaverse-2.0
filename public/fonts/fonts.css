@@ -1,0 +1,13 @@
+@font-face {
+  font-family: 'Ackno';
+  src: url('/fonts/Acknowledgement.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'japanese';
+  src: url('/fonts/Japanese-3017.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
