@@ -1,6 +1,7 @@
+// App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 // Components
 import Header from './components/Header';
@@ -21,7 +22,7 @@ function App() {
     <Router>
       <div className="min-h-screen bg-netflix-black text-white">
         <Header />
-        
+
         <AnimatePresence mode="wait">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -31,7 +32,7 @@ function App() {
             <Route path="/article/:id" element={<ArticlePage />} />
           </Routes>
         </AnimatePresence>
-        
+
         <Footer />
       </div>
     </Router>
