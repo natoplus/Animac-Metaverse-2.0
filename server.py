@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from supabase import create_client
+from supabase import create_client, Client
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
@@ -10,6 +10,18 @@ import uuid
 
 # Load environment variables
 load_dotenv()
+
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise RuntimeError("Missing Supabase credentials in .env file")
+
+print("Supabase Credentials:")
+print("URL:", SUPABASE_URL)
+print("KEY:", SUPABASE_KEY[:5] + "..." + SUPABASE_KEY[-5:])
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app = FastAPI(title="ANIMAC API", description="API for ANIMAC streaming culture platform")
 
@@ -22,28 +34,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from supabase import create_client, Client
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-url = os.getenv("https://mfgsihiodcjxnomidslg.supabase.co")
-key = os.getenv("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mZ3NpaGlvZGNqeG5vbWlkc2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTY4NTAsImV4cCI6MjA2OTA5Mjg1MH0.H3kvmVkfv8fv5uM9ol6bdtdKvuRRabJQUPzLoBovppA")
-
-supabase: Client = create_client(url, key)
-
-# Insert data
-data = {"title": "My First Post", "body": "Hello Supabase!"}
-res = supabase.table("articles").insert(data).execute()
-print(res)
-
-# Fetch data
-res = supabase.table("articles").select("*").execute()
-print(res.data)
-
-
-# Pydantic models
+# Models
 class ArticleBase(BaseModel):
     title: str
     content: str
@@ -52,13 +43,13 @@ class ArticleBase(BaseModel):
     tags: List[str] = []
     featured_image: Optional[str] = None
     author: str = "ANIMAC Team"
-    read_time: int = 5  # minutes
+    read_time: int = 5
     is_featured: bool = False
 
 class Article(ArticleBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = Field(default_factory=datetime.now)
-    updated_at: datetime = Field(default_factory=datetime.now)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 class ArticleResponse(Article):
     pass
@@ -68,11 +59,7 @@ class CategoryStats(BaseModel):
     count: int
     latest_article: Optional[dict] = None
 
-# Database operations
-async def get_articles_collection():
-    return database.articles
-
-# API endpoints
+# Routes
 @app.get("/")
 async def root():
     return {"message": "Welcome to ANIMAC API - Streaming Culture, Streaming Stories"}
@@ -83,189 +70,118 @@ async def health_check():
 
 @app.post("/api/articles", response_model=ArticleResponse)
 async def create_article(article: ArticleBase):
-    """Create a new article"""
-    articles_collection = await get_articles_collection()
-    
-    article_dict = Article(**article.dict()).dict()
-    
-    result = await articles_collection.insert_one(article_dict)
-    if result.inserted_id:
-        created_article = await articles_collection.find_one({"id": article_dict["id"]})
-        created_article.pop("_id", None)
-        return ArticleResponse(**created_article)
-    
+    article_model = Article(**article.dict())
+    data = article_model.dict()
+    data["created_at"] = article_model.created_at.isoformat()
+    data["updated_at"] = article_model.updated_at.isoformat()
+
+    res = supabase.table("articles").insert(data).execute()
+    if res.data:
+        return ArticleResponse(**res.data[0])
     raise HTTPException(status_code=400, detail="Failed to create article")
 
 @app.get("/api/articles", response_model=List[ArticleResponse])
-async def get_articles(
-    category: Optional[str] = None,
-    featured: Optional[bool] = None,
-    limit: int = 20,
-    skip: int = 0
-):
-    """Get articles with optional filtering"""
-    articles_collection = await get_articles_collection()
-    
-    query = {}
+async def get_articles(category: Optional[str] = None, featured: Optional[bool] = None, limit: int = 20, skip: int = 0):
+    query = supabase.table("articles").select("*")
     if category:
-        query["category"] = category.lower()
+        query = query.eq("category", category.lower())
     if featured is not None:
-        query["is_featured"] = featured
-    
-    cursor = articles_collection.find(query, {"_id": 0}).skip(skip).limit(limit).sort("created_at", -1)
-    articles = await cursor.to_list(length=limit)
-    
-    return [ArticleResponse(**article) for article in articles]
+        query = query.eq("is_featured", featured)
+    query = query.range(skip, skip + limit - 1).order("created_at", desc=True)
+    res = query.execute()
+    return [ArticleResponse(**item) for item in res.data]
 
 @app.get("/api/articles/{article_id}", response_model=ArticleResponse)
 async def get_article(article_id: str):
-    """Get a specific article by ID"""
-    articles_collection = await get_articles_collection()
-    
-    article = await articles_collection.find_one({"id": article_id}, {"_id": 0})
-    if not article:
+    res = supabase.table("articles").select("*").eq("id", article_id).execute()
+    if not res.data:
         raise HTTPException(status_code=404, detail="Article not found")
-    
-    return ArticleResponse(**article)
+    return ArticleResponse(**res.data[0])
 
 @app.get("/api/categories/stats", response_model=List[CategoryStats])
 async def get_category_stats():
-    """Get statistics for each category"""
-    articles_collection = await get_articles_collection()
-    
-    # Aggregate statistics
-    pipeline = [
-        {"$group": {
-            "_id": "$category",
-            "count": {"$sum": 1},
-            "latest_article": {"$first": "$$ROOT"}
-        }},
-        {"$project": {
-            "_id": 0,
-            "category": "$_id",
-            "count": 1,
-            "latest_article": {
-                "id": "$latest_article.id",
-                "title": "$latest_article.title",
-                "excerpt": "$latest_article.excerpt",
-                "created_at": "$latest_article.created_at"
+    all_articles = supabase.table("articles").select("*").execute().data
+    stats = {}
+    for article in all_articles:
+        cat = article["category"]
+        if cat not in stats:
+            stats[cat] = {"count": 0, "latest": None}
+        stats[cat]["count"] += 1
+        if not stats[cat]["latest"] or article["created_at"] > stats[cat]["latest"]["created_at"]:
+            stats[cat]["latest"] = article
+
+    return [
+        CategoryStats(
+            category=cat,
+            count=data["count"],
+            latest_article={
+                "id": data["latest"]["id"],
+                "title": data["latest"]["title"],
+                "excerpt": data["latest"]["excerpt"],
+                "created_at": data["latest"]["created_at"]
             }
-        }}
+        )
+        for cat, data in stats.items()
     ]
-    
-    results = await articles_collection.aggregate(pipeline).to_list(length=None)
-    return [CategoryStats(**result) for result in results]
 
 @app.get("/api/featured-content")
 async def get_featured_content():
-    """Get featured content for homepage hero sections"""
-    articles_collection = await get_articles_collection()
-    
-    # Get featured articles from both categories
-    east_featured = await articles_collection.find_one(
-        {"category": "east", "is_featured": True}, {"_id": 0}
-    )
-    west_featured = await articles_collection.find_one(
-        {"category": "west", "is_featured": True}, {"_id": 0}
-    )
-    
-    # Get recent articles for content rows
-    recent_east = await articles_collection.find(
-        {"category": "east"}, {"_id": 0}
-    ).sort("created_at", -1).limit(6).to_list(length=6)
-    
-    recent_west = await articles_collection.find(
-        {"category": "west"}, {"_id": 0}
-    ).sort("created_at", -1).limit(6).to_list(length=6)
-    
+    hero = { "east": None, "west": None }
+    recent = {}
+
+    for cat in ["east", "west"]:
+        hero_res = supabase.table("articles").select("*").eq("category", cat).eq("is_featured", True).limit(1).execute()
+        hero[cat] = hero_res.data[0] if hero_res.data else None
+
+        recent_res = supabase.table("articles").select("*").eq("category", cat).order("created_at", desc=True).limit(6).execute()
+        recent[cat] = recent_res.data
+
     return {
-        "hero": {
-            "east": east_featured,
-            "west": west_featured
-        },
-        "recent_content": {
-            "east": recent_east,
-            "west": recent_west
-        }
+        "hero": hero,
+        "recent_content": recent
     }
 
-# Initialize with sample data
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database with sample articles"""
-    articles_collection = await get_articles_collection()
-    
-    # Check if we already have articles
-    count = await articles_collection.count_documents({})
-    if count > 0:
-        return
-    
-    # Sample articles for EAST (Anime)
-    east_articles = [
-        {
-            "title": "Attack on Titan Final Season: The Ultimate Battle Begins",
-            "content": "The long-awaited conclusion to Hajime Isayama's masterpiece has arrived...",
-            "excerpt": "Eren Yeager's journey reaches its climactic end as humanity faces its greatest threat yet.",
-            "category": "east",
-            "tags": ["attack-on-titan", "anime", "final-season", "shounen"],
-            "author": "ANIMAC East Team",
-            "read_time": 8,
-            "is_featured": True
-        },
-        {
-            "title": "Studio MAPPA's Animation Revolution",
-            "content": "How MAPPA has become the powerhouse of modern anime production...",
-            "excerpt": "From Jujutsu Kaisen to Chainsaw Man, MAPPA continues to push animation boundaries.",
-            "category": "east",
-            "tags": ["mappa", "studio", "animation", "jujutsu-kaisen"],
-            "read_time": 6
-        },
-        {
-            "title": "Demon Slayer: The Cultural Phenomenon",
-            "content": "Exploring how Demon Slayer broke records and hearts worldwide...",
-            "excerpt": "Tanjiro's journey has captivated millions, but what makes it so special?",
-            "category": "east",
-            "tags": ["demon-slayer", "kimetsu", "shounen", "culture"],
-            "read_time": 5
-        }
+    sample_articles = [
+        Article(
+            title="A New Dawn in Anime",
+            content="Long form content about the evolution of anime...",
+            excerpt="Exploring the rise of sci-fi in anime.",
+            category="east",
+            tags=["anime", "scifi", "mecha"],
+            featured_image=None,
+            author="ANIMAC Team",
+            is_featured=True
+        ),
+        Article(
+            title="Hollywood's Animated Revolution",
+            content="Insightful western cartoon trends...",
+            excerpt="Western studios are catching up.",
+            category="west",
+            tags=["cartoons", "animation", "industry"],
+            featured_image=None,
+            author="ANIMAC Team",
+            is_featured=True
+        )
     ]
-    
-    # Sample articles for WEST (Movies/Cartoons)
-    west_articles = [
-        {
-            "title": "Spider-Verse Animation: Redefining Superhero Movies",
-            "content": "How Into the Spider-Verse changed animation forever...",
-            "excerpt": "The groundbreaking animation style that influenced a generation of filmmakers.",
-            "category": "west",
-            "tags": ["spider-verse", "animation", "marvel", "superhero"],
-            "author": "ANIMAC West Team",
-            "read_time": 7,
-            "is_featured": True
-        },
-        {
-            "title": "Avatar: The Last Airbender's Lasting Legacy",
-            "content": "Why Avatar remains the gold standard for western animation...",
-            "excerpt": "15 years later, Aang's journey continues to inspire new generations.",
-            "category": "west",
-            "tags": ["avatar", "nickelodeon", "western-animation", "legacy"],
-            "read_time": 9
-        },
-        {
-            "title": "The Pixar Formula: Emotion Meets Innovation",
-            "content": "Deconstructing what makes Pixar movies so emotionally powerful...",
-            "excerpt": "From Toy Story to Soul, Pixar has mastered the art of storytelling.",
-            "category": "west",
-            "tags": ["pixar", "animation", "disney", "storytelling"],
-            "read_time": 6
-        }
-    ]
-    
-    # Insert sample articles
-    for article_data in east_articles + west_articles:
-        article = Article(**article_data)
-        await articles_collection.insert_one(article.dict())
-    
-    print("Sample articles initialized!")
+
+    for a in sample_articles:
+      data = a.dict()
+      data["body"] = data.pop("content")  # Map 'content' → 'body'
+      data["created_at"] = a.created_at.isoformat()
+      data["updated_at"] = a.updated_at.isoformat()
+
+
+    try:
+            # prevent duplication
+            existing = supabase.table("articles").select("id").eq("title", a.title).execute()
+            if not existing.data:
+                supabase.table("articles").insert(data).execute()
+    except Exception as e:
+            print("Error inserting sample article:", e)
+
+    print("✅ Sample articles loaded.")
 
 if __name__ == "__main__":
     import uvicorn
