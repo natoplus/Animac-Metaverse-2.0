@@ -48,16 +48,27 @@ class ArticleBase(BaseModel):
 
 class Article(ArticleBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    slug: str = Field(default_factory=lambda: "")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-class ArticleResponse(Article):
-    pass
+class ArticleResponse(BaseModel):
+    id: str
+    title: str
+    slug: str
+    category: str
+    content: Optional[str]
+    excerpt: Optional[str]
+    created_at: Optional[str] = None
 
 class CategoryStats(BaseModel):
     category: str
     count: int
     latest_article: Optional[dict] = None
+
+# Utilities
+def slugify(text: str) -> str:
+    return text.lower().replace(" ", "-").replace(".", "").replace(",", "")
 
 # Routes
 @app.get("/")
@@ -71,6 +82,7 @@ async def health_check():
 @app.post("/api/articles", response_model=ArticleResponse)
 async def create_article(article: ArticleBase):
     article_model = Article(**article.dict())
+    article_model.slug = slugify(article_model.title)
     data = article_model.dict()
     data["created_at"] = article_model.created_at.isoformat()
     data["updated_at"] = article_model.updated_at.isoformat()
@@ -144,7 +156,7 @@ async def get_featured_content():
 @app.on_event("startup")
 async def startup_event():
     sample_articles = [
-        Article(
+        ArticleBase(
             title="A New Dawn in Anime",
             content="Long form content about the evolution of anime...",
             excerpt="Exploring the rise of sci-fi in anime.",
@@ -154,7 +166,7 @@ async def startup_event():
             author="ANIMAC Team",
             is_featured=True
         ),
-        Article(
+        ArticleBase(
             title="Hollywood's Animated Revolution",
             content="Insightful western cartoon trends...",
             excerpt="Western studios are catching up.",
@@ -167,18 +179,18 @@ async def startup_event():
     ]
 
     for a in sample_articles:
-      data = a.dict()
-      data["body"] = data.pop("content")  # Map 'content' → 'body'
-      data["created_at"] = a.created_at.isoformat()
-      data["updated_at"] = a.updated_at.isoformat()
+        article_model = Article(**a.dict())
+        article_model.slug = slugify(article_model.title)
 
+        data = article_model.dict()
+        data["created_at"] = article_model.created_at.isoformat()
+        data["updated_at"] = article_model.updated_at.isoformat()
 
-    try:
-            # prevent duplication
-            existing = supabase.table("articles").select("id").eq("title", a.title).execute()
+        try:
+            existing = supabase.table("articles").select("id").eq("title", article_model.title).execute()
             if not existing.data:
                 supabase.table("articles").insert(data).execute()
-    except Exception as e:
+        except Exception as e:
             print("Error inserting sample article:", e)
 
     print("✅ Sample articles loaded.")
