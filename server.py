@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
+from supabase import create_client
 from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
@@ -22,19 +22,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# MongoDB connection
-MONGO_URL = os.environ.get("MONGO_URL", "mongodb+srv://natoplusco:XgZryCvOkiT9Rs7P@animacmongodb.oxhmvaw.mongodb.net/?retryWrites=true&w=majority&appName=animacmongodb")
-client = AsyncIOMotorClient(MONGO_URL)
-database = client["natoplusco"]
-from pymongo import MongoClient
+from supabase import create_client, Client
+import os
+from dotenv import load_dotenv
 
-uri = "mongodb://natoplusco:XgZryCvOkiT9Rs7P@animacmongodb-shard-00-00.oxhmvaw.mongodb.net:27017,animacmongodb-shard-00-01.oxhmvaw.mongodb.net:27017,animacmongodb-shard-00-02.oxhmvaw.mongodb.net:27017/?ssl=true&replicaSet=atlas-oxhmvaw-shard-0&authSource=admin&retryWrites=true&w=majority"
+load_dotenv()
 
-client = MongoClient(uri)
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
 
-# ✅ Replace this with your actual DB name (from MongoDB Atlas)
-db = client["animac"]
-articles_collection = database["articles"]
+supabase: Client = create_client(url, key)
+
+# Insert data
+data = {"title": "My First Post", "body": "Hello Supabase!"}
+res = supabase.table("articles").insert(data).execute()
+print(res)
+
+# Fetch data
+res = supabase.table("articles").select("*").execute()
+print(res.data)
+
 
 # Pydantic models
 class ArticleBase(BaseModel):
