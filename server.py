@@ -28,8 +28,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-url = os.getenv("SUPABASE_URL")
-key = os.getenv("SUPABASE_KEY")
+url = os.getenv("https://mfgsihiodcjxnomidslg.supabase.co")
+key = os.getenv("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mZ3NpaGlvZGNqeG5vbWlkc2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MTY4NTAsImV4cCI6MjA2OTA5Mjg1MH0.H3kvmVkfv8fv5uM9ol6bdtdKvuRRabJQUPzLoBovppA")
 
 supabase: Client = create_client(url, key)
 
