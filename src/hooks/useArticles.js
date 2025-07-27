@@ -12,13 +12,16 @@ export const useArticles = (category = null, featured = null) => {
         setLoading(true);
         const params = {};
         if (category) params.category = category;
-        if (featured !== null) params.featured = featured;
+        if (featured !== null) params.is_featured = featured;
 
+        console.log("Fetching articles with params:", params);
         const response = await apiEndpoints.getArticles(params);
-        console.log("Fetched articles:", response);
-        setArticles(response.data);
+        console.log("Fetched articles data:", response?.data);
+
+        setArticles(response?.data ?? []);
         setError(null);
       } catch (err) {
+        console.error("Error fetching articles:", err);
         setError(err.message);
         setArticles([]);
       } finally {
@@ -42,9 +45,11 @@ export const useFeaturedContent = () => {
       try {
         setLoading(true);
         const response = await apiEndpoints.getFeaturedContent();
-        setFeaturedContent(response.data);
+        console.log("Fetched featured content:", response?.data);
+        setFeaturedContent(response?.data);
         setError(null);
       } catch (err) {
+        console.error("Error fetching featured content:", err);
         setError(err.message);
         setFeaturedContent(null);
       } finally {

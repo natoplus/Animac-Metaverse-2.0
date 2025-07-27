@@ -2,10 +2,10 @@
 
 import axios from 'axios';
 
-// Base URL from .env or default localhost
+// Base URL from .env or fallback
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com/';
 
-// Create axios instance
+// Create Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -13,7 +13,7 @@ const api = axios.create({
   },
 });
 
-// Axios response interceptor for logging (optional)
+// Interceptors for logging responses (only in development)
 api.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
@@ -58,12 +58,15 @@ export const healthCheck = async () => {
   return res.data;
 };
 
-// Optional utility exports
-export default {
-  fetchArticles,
-  fetchArticleById,
+// Unified export for compatibility
+export const apiEndpoints = {
+  getArticles: fetchArticles,
+  getArticle: fetchArticleById,
+  getArticleById: fetchArticleById,
   createArticle,
-  fetchCategoryStats,
-  fetchFeaturedContent,
+  getFeaturedContent: fetchFeaturedContent,
+  getCategoryStats: fetchCategoryStats,
   healthCheck,
 };
+
+export default apiEndpoints;

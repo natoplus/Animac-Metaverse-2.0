@@ -1,5 +1,3 @@
-// utils/api.ts
-
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 if (!API_BASE) {
   throw new Error("Environment variable NEXT_PUBLIC_API_URL is not defined.");
@@ -19,10 +17,6 @@ export type Article = {
   region?: string;
   created_at?: string;
 };
-
-
-
-
 
 export type FeaturedContent = {
   east: Article;
@@ -87,6 +81,7 @@ export async function healthCheck(): Promise<{ status: string }> {
   return fetchFromAPI<{ status: string }>(`/api/health`);
 }
 
+// ---------- Unified API Endpoints ----------
 export const apiEndpoints = {
   getArticles: async (params: Record<string, any>) => {
     const { category, region, tag, page = 1, limit = 10, featured } = params;
@@ -103,7 +98,8 @@ export const apiEndpoints = {
     return await fetchFromAPI<Article[]>(`/api/articles?${query}`);
   },
 
-  getFeaturedContent: fetchFeaturedContent,
+  getArticle: fetchArticleById,              // ✅ Added this line
   getArticleById: fetchArticleById,
+  getFeaturedContent: fetchFeaturedContent,
   createArticle: createArticle,
 };
