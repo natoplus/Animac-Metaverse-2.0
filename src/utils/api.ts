@@ -10,7 +10,7 @@ if (!API_BASE) {
 export type Article = {
   id: string;
   title: string;
-  body: string;
+  content?: string;
   author?: string;
   category?: string;
   tags?: string[];
