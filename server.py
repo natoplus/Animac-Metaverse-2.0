@@ -37,7 +37,7 @@ app.add_middleware(
 # Models
 class ArticleBase(BaseModel):
     title: str
-    content: str
+    body: str
     excerpt: str
     category: str  # 'east' or 'west'
     tags: List[str] = []
@@ -158,7 +158,7 @@ async def startup_event():
     sample_articles = [
         ArticleBase(
             title="A New Dawn in Anime",
-            content="Long form content about the evolution of anime...",
+            body="Long form content about the evolution of anime...",
             excerpt="Exploring the rise of sci-fi in anime.",
             category="east",
             tags=["anime", "scifi", "mecha"],
@@ -168,7 +168,7 @@ async def startup_event():
         ),
         ArticleBase(
             title="Hollywood's Animated Revolution",
-            content="Insightful western cartoon trends...",
+            body="Insightful western cartoon trends...",
             excerpt="Western studios are catching up.",
             category="west",
             tags=["cartoons", "animation", "industry"],
