@@ -103,3 +103,11 @@ export const apiEndpoints = {
   getFeaturedContent: fetchFeaturedContent,
   createArticle: createArticle,
 };
+export const api = {
+  fetchArticles,
+  fetchArticleById,
+  fetchFeaturedContent,
+  createArticle,
+  healthCheck,
+  endpoints: apiEndpoints,
+};
