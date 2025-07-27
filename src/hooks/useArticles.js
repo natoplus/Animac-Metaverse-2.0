@@ -15,6 +15,7 @@ export const useArticles = (category = null, featured = null) => {
         if (featured !== null) params.featured = featured;
 
         const response = await apiEndpoints.getArticles(params);
+        console.log("Fetched articles:", response);
         setArticles(response.data);
         setError(null);
       } catch (err) {
