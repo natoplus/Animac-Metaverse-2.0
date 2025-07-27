@@ -21,6 +21,11 @@ export type Article = {
   created_at?: string;
 };
 
+export async function fetchArticles(): Promise<Article[]> {
+  return fetchFromAPI<Article[]>(`/api/articles`);
+}
+
+
 export type FeaturedContent = {
   east: Article;
   west: Article;
