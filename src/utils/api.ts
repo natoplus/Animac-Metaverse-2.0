@@ -10,7 +10,7 @@ if (!API_BASE) {
 export type Article = {
   id: string;
   title: string;
-  content?: string;
+  body: string;
   author?: string;
   category?: string;
   tags?: string[];
@@ -44,21 +44,22 @@ async function fetchFromAPI<T>(endpoint: string, options?: RequestInit): Promise
 // ---------- Fetch Articles ----------
 export async function fetchArticles(
   category?: string,
-  featured?: boolean,
-  skip: number = 0,
+  region?: string,
+  tag?: string,
+  page: number = 1,
   limit: number = 10
 ): Promise<Article[]> {
   const params = new URLSearchParams();
 
   if (category) params.append("category", category);
-  if (featured !== undefined) params.append("featured", String(featured));
-  params.append("skip", skip.toString());
+  if (region) params.append("region", region);
+  if (tag) params.append("tag", tag);
+  params.append("page", page.toString());
   params.append("limit", limit.toString());
 
   const query = params.toString();
   return fetchFromAPI<Article[]>(`/api/articles?${query}`);
 }
-
 
 // ---------- Fetch Single Article ----------
 export async function fetchArticleById(id: string): Promise<Article> {
