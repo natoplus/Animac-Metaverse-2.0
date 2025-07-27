@@ -1,5 +1,5 @@
 {
-<<<<<<< HEAD
+ HEAD
   "name": "animac-frontend",
   "version": "0.1.0",
   "private": true,
@@ -45,8 +45,7 @@
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.24"
   }
-}
-=======
+
   "name": "backend",
   "version": "1.0.0",
   "description": "Animac backend server",
@@ -61,4 +60,4 @@
     "mongodb": "^6.18.0"
   }
 }
->>>>>>> e98b9e114401d99bafe2cdf421b8dfb2ee345d77
+e98b9e114401d99bafe2cdf421b8dfb2ee345d77
