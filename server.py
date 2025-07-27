@@ -187,7 +187,8 @@ async def startup_event():
         data["updated_at"] = article_model.updated_at.isoformat()
 
         try:
-            existing = supabase.table("articles").select("id").eq("title", article_model.title).execute()
+            existing = supabase.table("articles").select("id").eq("title", article_model.title).eq("slug", article_model.slug).execute()
+
             if not existing.data:
                 supabase.table("articles").insert(data).execute()
         except Exception as e:
