@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from pydantic import BaseModel, Field
@@ -10,7 +10,6 @@ import uuid
 
 # Load environment variables
 load_dotenv()
-
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
@@ -23,7 +22,7 @@ print("KEY:", SUPABASE_KEY[:5] + "..." + SUPABASE_KEY[-5:])
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ✅ Update all articles: set is_published = True
+# ✅ Update unpublished articles
 try:
     response = supabase.table("articles").update({"is_published": True}).neq("is_published", True).execute()
     print(f"✅ Updated {len(response.data)} articles to is_published = True")
@@ -32,7 +31,7 @@ except Exception as e:
 
 app = FastAPI(title="ANIMAC API", description="API for ANIMAC streaming culture platform")
 
-# CORS middleware
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -41,10 +40,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Models
-from pydantic import BaseModel
-from typing import Optional, List
-
+# ---------- Models ----------
 class ArticleBase(BaseModel):
     title: str
     content: str
@@ -55,7 +51,6 @@ class ArticleBase(BaseModel):
     author: Optional[str] = "ANIMAC Team"
     is_featured: Optional[bool] = True
     is_published: Optional[bool] = True
-
 
 class Article(ArticleBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -77,11 +72,11 @@ class CategoryStats(BaseModel):
     count: int
     latest_article: Optional[dict] = None
 
-# Utilities
+# ---------- Helpers ----------
 def slugify(text: str) -> str:
     return text.lower().replace(" ", "-").replace(".", "").replace(",", "")
 
-# Routes
+# ---------- Routes ----------
 @app.get("/")
 async def root():
     return {"message": "Welcome to ANIMAC API - Streaming Culture, Streaming Stories"}
@@ -105,19 +100,30 @@ async def create_article(article: ArticleBase):
     raise HTTPException(status_code=400, detail="Failed to create article")
 
 @app.get("/api/articles", response_model=List[ArticleResponse])
-async def get_articles(category: Optional[str] = None, featured: Optional[bool] = None, limit: int = 20, skip: int = 0):
-    query = supabase.table("articles").select("*").eq("is_published", True)
-    if category:
-        query = query.eq("category", category.lower())
-    if is_published:
-        query = query.filter(Article.is_published == True)
-    if category:
-        query = query.filter(Article.category == category)
-    if featured is not None:
-        query = query.eq("is_featured", featured)
-    query = query.range(skip, skip + limit - 1).order("created_at", desc=True)
-    res = query.execute()
-    return [ArticleResponse(**item) for item in res.data]
+async def get_articles(
+    category: Optional[str] = None,
+    featured: Optional[bool] = None,
+    is_published: Optional[bool] = True,
+    limit: int = 20,
+    skip: int = 0
+):
+    try:
+        query = supabase.table("articles").select("*")
+
+        if is_published is not None:
+            query = query.eq("is_published", is_published)
+        if category:
+            query = query.eq("category", category.lower())
+        if featured is not None:
+            query = query.eq("is_featured", featured)
+
+        query = query.range(skip, skip + limit - 1).order("created_at", desc=True)
+        res = query.execute()
+
+        return [ArticleResponse(**item) for item in res.data]
+    except Exception as e:
+        print("❌ Error fetching articles:", e)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.get("/api/articles/{article_id}", response_model=ArticleResponse)
 async def get_article(article_id: str):
@@ -172,30 +178,29 @@ async def get_featured_content():
 @app.on_event("startup")
 async def startup_event():
     sample_articles = [
-    ArticleBase(
-        title="A New Dawn in Anime",
-        content="Long form content about the evolution of anime...",
-        excerpt="Exploring the rise of sci-fi in anime.",
-        category="east",
-        tags=["anime", "scifi", "mecha"],
-        featured_image=None,
-        author="ANIMAC Team",
-        is_featured=True,
-        is_published=True
-    ),
-    ArticleBase(
-        title="Hollywood's Animated Revolution",
-        content="Insightful western cartoon trends...",
-        excerpt="Western studios are catching up.",
-        category="west",
-        tags=["cartoons", "animation", "industry"],
-        featured_image=None,
-        author="ANIMAC Team",
-        is_featured=True,
-        is_published=True
-    ),
-]
-
+        ArticleBase(
+            title="A New Dawn in Anime",
+            content="Long form content about the evolution of anime...",
+            excerpt="Exploring the rise of sci-fi in anime.",
+            category="east",
+            tags=["anime", "scifi", "mecha"],
+            featured_image=None,
+            author="ANIMAC Team",
+            is_featured=True,
+            is_published=True
+        ),
+        ArticleBase(
+            title="Hollywood's Animated Revolution",
+            content="Insightful western cartoon trends...",
+            excerpt="Western studios are catching up.",
+            category="west",
+            tags=["cartoons", "animation", "industry"],
+            featured_image=None,
+            author="ANIMAC Team",
+            is_featured=True,
+            is_published=True
+        ),
+    ]
 
     for a in sample_articles:
         article_model = Article(**a.dict())
@@ -203,7 +208,7 @@ async def startup_event():
 
         existing_slug = supabase.table("articles").select("id").eq("slug", article_model.slug).execute()
         if existing_slug.data:
-            article_model.slug += "-" + str(uuid.uuid4())[:4]  # Make slug unique
+            article_model.slug += "-" + str(uuid.uuid4())[:4]
 
         data = article_model.dict()
         data["created_at"] = article_model.created_at.isoformat()
@@ -211,7 +216,6 @@ async def startup_event():
 
         try:
             existing = supabase.table("articles").select("id").eq("title", article_model.title).eq("slug", article_model.slug).execute()
-
             if not existing.data:
                 supabase.table("articles").insert(data).execute()
         except Exception as e:
