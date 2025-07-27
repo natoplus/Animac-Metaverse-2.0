@@ -44,22 +44,21 @@ async function fetchFromAPI<T>(endpoint: string, options?: RequestInit): Promise
 // ---------- Fetch Articles ----------
 export async function fetchArticles(
   category?: string,
-  region?: string,
-  tag?: string,
-  page: number = 1,
+  featured?: boolean,
+  skip: number = 0,
   limit: number = 10
 ): Promise<Article[]> {
   const params = new URLSearchParams();
 
   if (category) params.append("category", category);
-  if (region) params.append("region", region);
-  if (tag) params.append("tag", tag);
-  params.append("page", page.toString());
+  if (featured !== undefined) params.append("featured", String(featured));
+  params.append("skip", skip.toString());
   params.append("limit", limit.toString());
 
   const query = params.toString();
   return fetchFromAPI<Article[]>(`/api/articles?${query}`);
 }
+
 
 // ---------- Fetch Single Article ----------
 export async function fetchArticleById(id: string): Promise<Article> {
