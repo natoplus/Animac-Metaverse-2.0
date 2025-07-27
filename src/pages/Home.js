@@ -4,6 +4,11 @@ import HeroSection from '../components/HeroSection';
 import ContentRow from '../components/ContentRow';
 import { useFeaturedContent, useArticles } from '../hooks/useArticles';
 
+console.log('eastArticles', eastArticles);
+console.log('westArticles', westArticles);
+console.log('allArticles', allArticles);
+
+
 const Home = () => {
   const { featuredContent, loading: featuredLoading } = useFeaturedContent();
   const { articles: eastArticles, loading: eastLoading } = useArticles('east');
