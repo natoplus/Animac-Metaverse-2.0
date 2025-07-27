@@ -1,7 +1,6 @@
 // utils/api.ts
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-
 if (!API_BASE) {
   throw new Error("Environment variable NEXT_PUBLIC_API_URL is not defined.");
 }
@@ -10,7 +9,7 @@ if (!API_BASE) {
 export type Article = {
   id: string;
   title: string;
-  content: string;
+  content?: string | null;
   author?: string;
   category?: string;
   tags?: string[];
@@ -21,9 +20,8 @@ export type Article = {
   created_at?: string;
 };
 
-export async function fetchArticles(): Promise<Article[]> {
-  return fetchFromAPI<Article[]>(`/api/articles`);
-}
+
+
 
 
 export type FeaturedContent = {
@@ -88,3 +86,24 @@ export async function createArticle(article: Partial<Article>): Promise<Article>
 export async function healthCheck(): Promise<{ status: string }> {
   return fetchFromAPI<{ status: string }>(`/api/health`);
 }
+
+export const apiEndpoints = {
+  getArticles: async (params: Record<string, any>) => {
+    const { category, region, tag, page = 1, limit = 10, featured } = params;
+    const searchParams = new URLSearchParams();
+
+    if (category) searchParams.append('category', category);
+    if (region) searchParams.append('region', region);
+    if (tag) searchParams.append('tag', tag);
+    if (featured !== undefined) searchParams.append('featured', String(featured));
+    searchParams.append('page', page.toString());
+    searchParams.append('limit', limit.toString());
+
+    const query = searchParams.toString();
+    return await fetchFromAPI<Article[]>(`/api/articles?${query}`);
+  },
+
+  getFeaturedContent: fetchFeaturedContent,
+  getArticleById: fetchArticleById,
+  createArticle: createArticle,
+};
