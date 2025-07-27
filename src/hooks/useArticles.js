@@ -41,6 +41,17 @@ export const useFeaturedContent = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    useEffect(() => {
+  fetch('http://localhost:8001/api/articles')
+    .then(res => res.json())
+    .then(data => {
+      console.log("📦 Articles received:", data);
+    })
+    .catch(err => {
+      console.error("❌ Error fetching articles:", err);
+    });
+}, []);
+
     const fetchFeaturedContent = async () => {
       try {
         setLoading(true);
