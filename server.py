@@ -37,7 +37,7 @@ app.add_middleware(
 # Models
 class ArticleBase(BaseModel):
     title: str
-    body: str
+    content: str
     excerpt: str
     category: str  # 'east' or 'west'
     tags: List[str] = []
@@ -57,8 +57,8 @@ class ArticleResponse(BaseModel):
     title: str
     slug: str
     category: str
-    content: Optional[str]
-    excerpt: Optional[str]
+    content: Optional[str] = None
+    excerpt: Optional[str] = None
     created_at: Optional[str] = None
 
 class CategoryStats(BaseModel):
@@ -158,7 +158,7 @@ async def startup_event():
     sample_articles = [
         ArticleBase(
             title="A New Dawn in Anime",
-            body="Long form content about the evolution of anime...",
+            content="Long form content about the evolution of anime...",
             excerpt="Exploring the rise of sci-fi in anime.",
             category="east",
             tags=["anime", "scifi", "mecha"],
@@ -168,7 +168,7 @@ async def startup_event():
         ),
         ArticleBase(
             title="Hollywood's Animated Revolution",
-            body="Insightful western cartoon trends...",
+            content="Insightful western cartoon trends...",
             excerpt="Western studios are catching up.",
             category="west",
             tags=["cartoons", "animation", "industry"],
@@ -183,6 +183,7 @@ async def startup_event():
         article_model.slug = slugify(article_model.title)
 
         data = article_model.dict()
+        data["body"] = data.pop("content") 
         data["created_at"] = article_model.created_at.isoformat()
         data["updated_at"] = article_model.updated_at.isoformat()
 
