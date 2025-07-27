@@ -23,6 +23,13 @@ print("KEY:", SUPABASE_KEY[:5] + "..." + SUPABASE_KEY[-5:])
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# ✅ Update all articles: set is_published = True
+try:
+    response = supabase.table("articles").update({"is_published": True}).neq("is_published", True).execute()
+    print(f"✅ Updated {len(response.data)} articles to is_published = True")
+except Exception as e:
+    print("❌ Error updating articles:", e)
+
 app = FastAPI(title="ANIMAC API", description="API for ANIMAC streaming culture platform")
 
 # CORS middleware
@@ -35,16 +42,20 @@ app.add_middleware(
 )
 
 # Models
+from pydantic import BaseModel
+from typing import Optional, List
+
 class ArticleBase(BaseModel):
     title: str
     content: str
-    excerpt: str
-    category: str  # 'east' or 'west'
-    tags: List[str] = []
+    excerpt: Optional[str] = None
+    category: Optional[str] = None
+    tags: Optional[List[str]] = []
     featured_image: Optional[str] = None
-    author: str = "ANIMAC Team"
-    read_time: int = 5
-    is_featured: bool = False
+    author: Optional[str] = "ANIMAC Team"
+    is_featured: Optional[bool] = True
+    is_published: Optional[bool] = True
+
 
 class Article(ArticleBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -95,9 +106,13 @@ async def create_article(article: ArticleBase):
 
 @app.get("/api/articles", response_model=List[ArticleResponse])
 async def get_articles(category: Optional[str] = None, featured: Optional[bool] = None, limit: int = 20, skip: int = 0):
-    query = supabase.table("articles").select("*")
+    query = supabase.table("articles").select("*").eq("is_published", True)
     if category:
         query = query.eq("category", category.lower())
+    if is_published:
+        query = query.filter(Article.is_published == True)
+    if category:
+        query = query.filter(Article.category == category)
     if featured is not None:
         query = query.eq("is_featured", featured)
     query = query.range(skip, skip + limit - 1).order("created_at", desc=True)
@@ -157,27 +172,30 @@ async def get_featured_content():
 @app.on_event("startup")
 async def startup_event():
     sample_articles = [
-        ArticleBase(
-            title="A New Dawn in Anime",
-            content="Long form content about the evolution of anime...",
-            excerpt="Exploring the rise of sci-fi in anime.",
-            category="east",
-            tags=["anime", "scifi", "mecha"],
-            featured_image=None,
-            author="ANIMAC Team",
-            is_featured=True
-        ),
-        ArticleBase(
-            title="Hollywood's Animated Revolution",
-            content="Insightful western cartoon trends...",
-            excerpt="Western studios are catching up.",
-            category="west",
-            tags=["cartoons", "animation", "industry"],
-            featured_image=None,
-            author="ANIMAC Team",
-            is_featured=True
-        )
-    ]
+    ArticleBase(
+        title="A New Dawn in Anime",
+        content="Long form content about the evolution of anime...",
+        excerpt="Exploring the rise of sci-fi in anime.",
+        category="east",
+        tags=["anime", "scifi", "mecha"],
+        featured_image=None,
+        author="ANIMAC Team",
+        is_featured=True,
+        is_published=True
+    ),
+    ArticleBase(
+        title="Hollywood's Animated Revolution",
+        content="Insightful western cartoon trends...",
+        excerpt="Western studios are catching up.",
+        category="west",
+        tags=["cartoons", "animation", "industry"],
+        featured_image=None,
+        author="ANIMAC Team",
+        is_featured=True,
+        is_published=True
+    ),
+]
+
 
     for a in sample_articles:
         article_model = Article(**a.dict())
