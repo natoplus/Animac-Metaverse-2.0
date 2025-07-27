@@ -83,6 +83,7 @@ async def health_check():
 async def create_article(article: ArticleBase):
     article_model = Article(**article.dict())
     article_model.slug = slugify(article_model.title)
+    article_model.category = article_model.category.lower()
     data = article_model.dict()
     data["created_at"] = article_model.created_at.isoformat()
     data["updated_at"] = article_model.updated_at.isoformat()
@@ -182,8 +183,11 @@ async def startup_event():
         article_model = Article(**a.dict())
         article_model.slug = slugify(article_model.title)
 
+        existing_slug = supabase.table("articles").select("id").eq("slug", article_model.slug).execute()
+        if existing_slug.data:
+            article_model.slug += "-" + str(uuid.uuid4())[:4]  # Make slug unique
+
         data = article_model.dict()
-        data["body"] = data.pop("content") 
         data["created_at"] = article_model.created_at.isoformat()
         data["updated_at"] = article_model.updated_at.isoformat()
 
