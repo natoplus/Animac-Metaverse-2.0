@@ -1,5 +1,5 @@
 // App.js
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
@@ -13,11 +13,23 @@ import BuzzfeedHub from './pages/BuzzfeedHub';
 import EastPortal from './pages/EastPortal';
 import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
+import AdminDashboard from './pages/admin/AdminDashboard'; // ✅ import this
+
+// Supabase
+import { supabase } from './utils/supabaseClient';
 
 // Styles
 import './App.css';
 
 function App() {
+  useEffect(() => {
+    async function test() {
+      const result = await supabase.auth.getUser();
+      console.log("Supabase Auth Test:", result);
+    }
+    test();
+  }, []);
+
   return (
     <Router>
       <div className="min-h-screen bg-netflix-black text-white">
@@ -30,6 +42,7 @@ function App() {
             <Route path="/buzzfeed/east" element={<EastPortal />} />
             <Route path="/buzzfeed/west" element={<WestPortal />} />
             <Route path="/article/:id" element={<ArticlePage />} />
+            <Route path="/admin" element={<AdminDashboard />} /> {/* ✅ */}
           </Routes>
         </AnimatePresence>
 

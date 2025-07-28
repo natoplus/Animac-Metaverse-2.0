@@ -76,6 +76,28 @@ export async function createArticle(article: Partial<Article>): Promise<Article>
   });
 }
 
+// ---------- Update Article (Optional) ----------
+const handleUpdate = async () => {
+  const updatedArticle = {
+    title: newTitle,
+    content: newContent,
+    category: "east",
+    is_featured: false,
+    is_published: true
+  };
+
+  try {
+    const response = await axios.put(
+      `https://animac-metaverse.onrender.com/api/articles/${articleId}`,
+      updatedArticle
+    );
+    console.log("✅ Article updated:", response.data);
+  } catch (error) {
+    console.error("❌ Failed to update article:", error);
+  }
+};
+
+
 // ---------- Health Check ----------
 export async function healthCheck(): Promise<{ status: string }> {
   return fetchFromAPI<{ status: string }>(`/api/health`);
@@ -102,4 +124,12 @@ export const apiEndpoints = {
   getArticleById: fetchArticleById,
   getFeaturedContent: fetchFeaturedContent,
   createArticle: createArticle,
+};
+export const api = {
+  fetchArticles,
+  fetchArticleById,
+  fetchFeaturedContent,
+  createArticle,
+  healthCheck,
+  endpoints: apiEndpoints,
 };

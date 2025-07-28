@@ -1,3 +1,4 @@
+// src/hooks/useArticles.js
 import { useState, useEffect } from 'react';
 import { apiEndpoints } from '../utils/api';
 
@@ -12,16 +13,16 @@ export const useArticles = (category = null, featured = null) => {
         setLoading(true);
         const params = {};
         if (category) params.category = category;
-        if (featured !== null) params.is_featured = featured;
+        if (featured !== null) params.featured = featured;
 
-        console.log("Fetching articles with params:", params);
+        console.log("📡 Fetching articles with params:", params);
         const response = await apiEndpoints.getArticles(params);
-        console.log("Fetched articles data:", response?.data);
+        console.log("📦 Articles received:", response);
 
-        setArticles(response?.data ?? []);
+        setArticles(response || []);
         setError(null);
       } catch (err) {
-        console.error("Error fetching articles:", err);
+        console.error("❌ Error fetching articles:", err);
         setError(err.message);
         setArticles([]);
       } finally {
@@ -41,15 +42,16 @@ export const useFeaturedContent = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchFeaturedContent = async () => {
+    const fetchFeatured = async () => {
       try {
         setLoading(true);
         const response = await apiEndpoints.getFeaturedContent();
-        console.log("Fetched featured content:", response?.data);
-        setFeaturedContent(response?.data);
+        console.log("🌟 Featured content received:", response);
+
+        setFeaturedContent(response || {});
         setError(null);
       } catch (err) {
-        console.error("Error fetching featured content:", err);
+        console.error("❌ Error fetching featured content:", err);
         setError(err.message);
         setFeaturedContent(null);
       } finally {
@@ -57,7 +59,7 @@ export const useFeaturedContent = () => {
       }
     };
 
-    fetchFeaturedContent();
+    fetchFeatured();
   }, []);
 
   return { featuredContent, loading, error };

@@ -1,4 +1,22 @@
 /** @type {import('tailwindcss').Config} */
+
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      colors: {
+        east: '#ff3366',  // Neon red
+        west: '#3399ff',  // Neon blue
+      },
+      boxShadow: {
+        'glow-east': '0 0 10px #ff3366, 0 0 20px #ff3366',
+        'glow-west': '0 0 10px #3399ff, 0 0 20px #3399ff',
+      },
+    },
+  },
+}
+
+
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
