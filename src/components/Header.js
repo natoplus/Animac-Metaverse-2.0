@@ -2,20 +2,23 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Menu, X, Search } from 'lucide-react';
-import { useAdmin } from '../hooks/useAdmin'; // Adjust path if needed
+import { useAdmin } from '../hooks/useAdmin'; // ✅ Ensure path is correct
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { isAdmin } = useAdmin();
-  const navItems = [
-  { path: '/', label: 'HOME', active: location.pathname === '/' },
-  { path: '/buzzfeed', label: 'BUZZFEED', active: location.pathname.includes('/buzzfeed') },
-  { path: '/buzzfeed/east', label: 'EAST', active: location.pathname === '/buzzfeed/east' },
-  { path: '/buzzfeed/west', label: 'WEST', active: location.pathname === '/buzzfeed/west' },
-  (isAdmin ? [{ path: '/admin', label: 'ADMIN', active: location.pathname === '/admin' }] : []), // 🆕 Add this line
-];
+  const { isAdmin = false, loading = false } = useAdmin(); // ✅ Prevents crashes if undefined
 
+  const baseNavItems = [
+    { path: '/', label: 'HOME' },
+    { path: '/buzzfeed', label: 'BUZZFEED' },
+    { path: '/buzzfeed/east', label: 'EAST' },
+    { path: '/buzzfeed/west', label: 'WEST' },
+  ];
+
+  const navItems = isAdmin
+    ? [...baseNavItems, { path: '/admin', label: 'ADMIN' }]
+    : baseNavItems;
 
   return (
     <motion.header
@@ -28,9 +31,10 @@ const Header = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <img src="/assets/svg-animac-logo.svg" // or "/assets/animac-logo.png" if you put it in assets
-                alt="ANIMAC"
-                className="h-10 w-auto"
+            <img
+              src="/assets/svg-animac-logo.svg"
+              alt="ANIMAC"
+              className="h-10 w-auto"
             />
             <motion.div
               animate={{ opacity: [0.5, 1, 0.5] }}
@@ -43,25 +47,26 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`relative px-4 py-2 font-inter font-medium transition-all duration-300 ${
-                  item.active
-                    ? 'text-white'
-                    : 'text-gray-300 hover:text-white'
-                }`}
-              >
-                {item.label}
-                {item.active && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-east-500 to-west-500"
-                  />
-                )}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`relative px-4 py-2 font-inter font-medium transition-all duration-300 ${
+                    isActive ? 'text-white' : 'text-gray-300 hover:text-white'
+                  }`}
+                >
+                  {item.label}
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-east-500 to-west-500"
+                    />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Search and Mobile Menu */}
@@ -74,7 +79,6 @@ const Header = () => {
               <Search size={20} />
             </motion.button>
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2 text-gray-300 hover:text-white transition-colors"
@@ -95,20 +99,23 @@ const Header = () => {
           className="md:hidden overflow-hidden"
         >
           <nav className="flex flex-col space-y-4 pt-4 border-t border-gray-800 mt-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsMenuOpen(false)}
-                className={`px-4 py-2 font-inter font-medium transition-all duration-300 ${
-                  item.active
-                    ? 'text-white bg-gray-800 rounded'
-                    : 'text-gray-300 hover:text-white hover:bg-gray-800 rounded'
-                }`}
-              >
-                {item.label}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={`px-4 py-2 font-inter font-medium transition-all duration-300 ${
+                    isActive
+                      ? 'text-white bg-gray-800 rounded'
+                      : 'text-gray-300 hover:text-white hover:bg-gray-800 rounded'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         </motion.div>
       </div>

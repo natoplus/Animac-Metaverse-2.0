@@ -1,11 +1,9 @@
-// src/utils/api.js
-
 import axios from 'axios';
 
-// Base URL from .env or fallback to deployed backend
+// Base URL
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
-// Create Axios instance
+// Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -13,11 +11,18 @@ const api = axios.create({
   },
 });
 
-// Interceptor: Logs responses in dev mode
+// Optional: Attach Auth token if needed in future
+// api.interceptors.request.use(async (config) => {
+//   const token = await getAuthTokenSomehow();
+//   if (token) config.headers.Authorization = `Bearer ${token}`;
+//   return config;
+// });
+
+// Logging interceptor (dev only)
 api.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[API] ${response.config.method.toUpperCase()} ${response.config.url}`, response.data);
+      console.log(`[✅ API] ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
     }
     return response;
   },
@@ -27,13 +32,12 @@ api.interceptors.response.use(
   }
 );
 
-// ---------- API FUNCTIONS ----------
+// ---------- CRUD FUNCTIONS ----------
 
+// ✅ Fetch all articles
 export const fetchArticles = async (params = {}) => {
   try {
-    console.log('🌐 Fetching articles with params:', params);
     const res = await api.get('/api/articles', { params });
-    console.log('✅ Fetched articles:', res.data);
     return res.data || [];
   } catch (err) {
     console.error('❌ Error fetching articles:', err.message);
@@ -41,10 +45,10 @@ export const fetchArticles = async (params = {}) => {
   }
 };
 
+// ✅ Fetch article by ID
 export const fetchArticleById = async (id) => {
   try {
     const res = await api.get(`/api/articles/${id}`);
-    console.log('✅ Fetched article:', res.data);
     return res.data || null;
   } catch (err) {
     console.error(`❌ Error fetching article [${id}]:`, err.message);
@@ -52,10 +56,10 @@ export const fetchArticleById = async (id) => {
   }
 };
 
+// ✅ Create a new article
 export const createArticle = async (data) => {
   try {
     const res = await api.post('/api/articles', data);
-    console.log('✅ Created article:', res.data);
     return res.data;
   } catch (err) {
     console.error('❌ Error creating article:', err.message);
@@ -63,10 +67,32 @@ export const createArticle = async (data) => {
   }
 };
 
+// ✅ Update article by ID
+export const updateArticle = async (id, data) => {
+  try {
+    const res = await api.patch(`/api/articles/${id}`, data);
+    return res.data;
+  } catch (err) {
+    console.error(`❌ Error updating article [${id}]:`, err.message);
+    return null;
+  }
+};
+
+// ✅ Delete article by ID
+export const deleteArticle = async (id) => {
+  try {
+    const res = await api.delete(`/api/articles/${id}`);
+    return res.data;
+  } catch (err) {
+    console.error(`❌ Error deleting article [${id}]:`, err.message);
+    return null;
+  }
+};
+
+// ✅ Fetch category stats
 export const fetchCategoryStats = async () => {
   try {
     const res = await api.get('/api/categories/stats');
-    console.log('✅ Category stats:', res.data);
     return res.data || [];
   } catch (err) {
     console.error('❌ Error fetching category stats:', err.message);
@@ -74,10 +100,10 @@ export const fetchCategoryStats = async () => {
   }
 };
 
+// ✅ Fetch featured content
 export const fetchFeaturedContent = async () => {
   try {
     const res = await api.get('/api/featured-content');
-    console.log('✅ Fetched featured content:', res.data);
     return res.data || null;
   } catch (err) {
     console.error('❌ Error fetching featured content:', err.message);
@@ -85,10 +111,10 @@ export const fetchFeaturedContent = async () => {
   }
 };
 
+// ✅ Health check
 export const healthCheck = async () => {
   try {
     const res = await api.get('/api/health');
-    console.log('✅ Health check:', res.data);
     return res.data;
   } catch (err) {
     console.error('❌ Health check failed:', err.message);
@@ -96,27 +122,16 @@ export const healthCheck = async () => {
   }
 };
 
-// ---------- EXPORTS ----------
-
+// Optional named export object (e.g., for quick import elsewhere)
 export const apiEndpoints = {
   getArticles: fetchArticles,
-  getArticle: fetchArticleById,
   getArticleById: fetchArticleById,
   createArticle,
+  updateArticle,
+  deleteArticle,
   getFeaturedContent: fetchFeaturedContent,
   getCategoryStats: fetchCategoryStats,
   healthCheck,
 };
-
-export const updateArticle = async (id, data) => {
-  const res = await api.patch(`/api/articles/${id}`, data);
-  return res.data;
-};
-
-export const deleteArticle = async (id) => {
-  const res = await api.delete(`/api/articles/${id}`);
-  return res.data;
-};
-
 
 export default apiEndpoints;
