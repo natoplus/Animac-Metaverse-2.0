@@ -8,11 +8,13 @@ const Header = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', label: 'HOME', active: location.pathname === '/' },
-    { path: '/buzzfeed', label: 'BUZZFEED', active: location.pathname.includes('/buzzfeed') },
-    { path: '/buzzfeed/east', label: 'EAST', active: location.pathname === '/buzzfeed/east' },
-    { path: '/buzzfeed/west', label: 'WEST', active: location.pathname === '/buzzfeed/west' },
-  ];
+  { path: '/', label: 'HOME', active: location.pathname === '/' },
+  { path: '/buzzfeed', label: 'BUZZFEED', active: location.pathname.includes('/buzzfeed') },
+  { path: '/buzzfeed/east', label: 'EAST', active: location.pathname === '/buzzfeed/east' },
+  { path: '/buzzfeed/west', label: 'WEST', active: location.pathname === '/buzzfeed/west' },
+  (isAdmin ? [{ path: '/admin', label: 'ADMIN', active: location.pathname === '/admin' }] : []), // 🆕 Add this line
+];
+
 
   return (
     <motion.header
