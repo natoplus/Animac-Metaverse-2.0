@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Menu, X, Search } from 'lucide-react';
-import { useAdmin } from '../hooks/useAdmin'; // Adjust path if needed
+import { useAdmin } from '@/hooks/useAdmin'; // Adjust path if needed
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
