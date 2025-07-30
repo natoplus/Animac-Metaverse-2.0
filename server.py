@@ -7,6 +7,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 import uuid
+import logging
 
 # ---------- Load Env ----------
 load_dotenv()
@@ -18,6 +19,9 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+# ---------- Logging ----------
+logging.basicConfig(level=logging.INFO)
+
 # ---------- FastAPI App ----------
 app = FastAPI(title="ANIMAC API")
 
@@ -26,10 +30,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://animac-metaverse.vercel.app",
-        "http://localhost:3000"
+        "http://localhost:3000",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -51,19 +55,35 @@ class Article(ArticleBase):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-class ArticleResponse(BaseModel):
+class ArticleResponse(ArticleBase):
     id: str
-    title: str
     slug: str
-    category: str
-    content: Optional[str] = None
-    excerpt: Optional[str] = None
-    created_at: Optional[str] = None
+    created_at: Optional[str]
+    updated_at: Optional[str]
 
 class CategoryStats(BaseModel):
     category: str
     count: int
     latest_article: Optional[dict] = None
+
+class CommentBase(BaseModel):
+    article_id: str
+    content: str
+    author: Optional[str] = "Anonymous"
+    parent_id: Optional[str] = None
+
+class Comment(CommentBase):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    likes: int = 0
+
+class CommentResponse(CommentBase):
+    id: str
+    created_at: str
+    likes: int
+    replies: Optional[List["CommentResponse"]] = []
+
+CommentResponse.update_forward_refs()
 
 # ---------- Utils ----------
 def slugify(text: str) -> str:
@@ -82,15 +102,19 @@ async def health_check():
 async def create_article(article: ArticleBase):
     article_model = Article(**article.dict())
     article_model.slug = slugify(article_model.title)
-    article_model.category = article_model.category.lower() if article_model.category else None
+    if article_model.category:
+        article_model.category = article_model.category.lower()
+
     data = article_model.dict()
     data["created_at"] = article_model.created_at.isoformat()
     data["updated_at"] = article_model.updated_at.isoformat()
 
-    res = supabase.table("articles").insert(data).execute()
-    if res.data:
+    try:
+        res = supabase.table("articles").insert(data).execute()
         return ArticleResponse(**res.data[0])
-    raise HTTPException(status_code=400, detail="Failed to create article")
+    except Exception as e:
+        logging.error("❌ Error creating article:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to create article")
 
 @app.get("/api/articles", response_model=List[ArticleResponse])
 async def get_articles(category: Optional[str] = None, featured: Optional[bool] = None, is_published: Optional[bool] = True, limit: int = 20, skip: int = 0):
@@ -103,11 +127,10 @@ async def get_articles(category: Optional[str] = None, featured: Optional[bool] 
         if featured is not None:
             query = query.eq("is_featured", featured)
 
-        query = query.range(skip, skip + limit - 1).order("created_at", desc=True)
-        res = query.execute()
+        res = query.range(skip, skip + limit - 1).order("created_at", desc=True).execute()
         return [ArticleResponse(**item) for item in res.data]
     except Exception as e:
-        print("❌ Error fetching articles:", e)
+        logging.error("❌ Error fetching articles:", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.get("/api/articles/by-id/{article_id}", response_model=ArticleResponse)
@@ -156,10 +179,14 @@ async def update_article_partial(article_id: str, updated_data: ArticleBase):
 
 @app.delete("/api/articles/{article_id}")
 async def delete_article(article_id: str):
-    res = supabase.table("articles").delete().eq("id", article_id).execute()
-    if res.data:
-        return {"message": "Article deleted"}
-    raise HTTPException(status_code=404, detail="Article not found or delete failed")
+    try:
+        res = supabase.table("articles").delete().eq("id", article_id).execute()
+        if res.data:
+            return {"message": "Article deleted successfully"}
+        raise HTTPException(status_code=404, detail="Article not found or delete failed")
+    except Exception as e:
+        logging.error("❌ Error deleting article:", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.get("/api/categories/stats", response_model=List[CategoryStats])
 async def get_category_stats():
@@ -203,6 +230,64 @@ async def get_featured_content():
         "hero": hero,
         "recent_content": recent
     }
+
+@app.post("/api/comments", response_model=CommentResponse)
+async def create_comment(comment: CommentBase):
+    comment_model = Comment(**comment.dict())
+    data = comment_model.dict()
+    data["created_at"] = comment_model.created_at.isoformat()
+
+    try:
+        res = supabase.table("comments").insert(data).execute()
+        return CommentResponse(**res.data[0], replies=[])
+    except Exception:
+        logging.error("❌ Error creating comment", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to create comment")
+
+
+@app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
+async def get_comments_for_article(article_id: str):
+    try:
+        res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", asc=True).execute()
+        flat_comments = res.data
+        comment_map: Dict[str, CommentResponse] = {}
+        root_comments: List[CommentResponse] = []
+
+        # First pass: Map comments by ID
+        for c in flat_comments:
+            comment = CommentResponse(**c, replies=[])
+            comment_map[comment.id] = comment
+
+        # Second pass: Build threaded structure
+        for c in flat_comments:
+            cid = c["id"]
+            parent_id = c.get("parent_id")
+            if parent_id and parent_id in comment_map:
+                comment_map[parent_id].replies.append(comment_map[cid])
+            else:
+                root_comments.append(comment_map[cid])
+
+        return root_comments
+    except Exception:
+        logging.error("❌ Error fetching comments", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to fetch comments")
+
+
+@app.post("/api/comments/{comment_id}/like")
+async def like_comment(comment_id: str):
+    try:
+        comment = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+        if not comment.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
+        
+        current_likes = comment.data[0].get("likes", 0)
+        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+        return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
+    except Exception:
+        logging.error("❌ Error liking comment", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to like comment")
+
+
 
 # ---------- Run Locally ----------
 if __name__ == "__main__":
