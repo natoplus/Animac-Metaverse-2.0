@@ -45,13 +45,24 @@ export const fetchArticles = async (params = {}) => {
   }
 };
 
-// ✅ Fetch article by ID
-export const fetchArticleById = async (id) => {
+// ✅ Fetch article by ID (via `/by-id/:id`)
+export const getArticle = async (id) => {
   try {
-    const res = await api.get(`/api/articles/${id}`);
+    const res = await api.get(`/api/articles/by-id/${id}`);
     return res.data || null;
   } catch (err) {
     console.error(`❌ Error fetching article [${id}]:`, err.message);
+    return null;
+  }
+};
+
+// ✅ Fetch article by slug (optional)
+export const getArticleBySlug = async (slug) => {
+  try {
+    const res = await api.get(`/api/articles/${slug}`);
+    return res.data || null;
+  } catch (err) {
+    console.error(`❌ Error fetching article [slug: ${slug}]:`, err.message);
     return null;
   }
 };
@@ -122,10 +133,11 @@ export const healthCheck = async () => {
   }
 };
 
-// Optional named export object (e.g., for quick import elsewhere)
+// ✅ Export endpoints
 export const apiEndpoints = {
   getArticles: fetchArticles,
-  getArticleById: fetchArticleById,
+  getArticle, // uses `/by-id/:id`
+  getArticleBySlug,
   createArticle,
   updateArticle,
   deleteArticle,
