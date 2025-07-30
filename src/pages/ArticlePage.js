@@ -1,3 +1,4 @@
+// ArticlePage.js
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
@@ -12,6 +13,18 @@ import {
   Loader,
 } from 'lucide-react';
 import { apiEndpoints } from '../utils/api';
+
+const CommentSection = ({ articleId }) => {
+  return (
+    <div className="container mx-auto px-4 py-12 max-w-4xl">
+      <h3 className="text-white text-xl font-bold font-montserrat mb-4">Comments</h3>
+      <div className="bg-gray-900 text-gray-300 p-6 rounded-lg border border-gray-700">
+        <p className="font-inter text-sm">Comment system coming soon. Stay tuned!</p>
+        {/* Future: Replace this with comment form, list, and Supabase/Disqus integration */}
+      </div>
+    </div>
+  );
+};
 
 const ArticlePage = () => {
   const { id } = useParams();
@@ -184,17 +197,8 @@ const ArticlePage = () => {
           )}
         </div>
 
-        {/* Related Articles (Placeholder) */}
-        <div className="container mx-auto px-4 py-12 max-w-4xl">
-          <h3 className="text-white text-xl font-bold font-montserrat mb-4">Related Articles</h3>
-          <p className="text-gray-400 font-inter">Coming soon...</p>
-        </div>
-
-        {/* Comments Section (Placeholder) */}
-        <div className="container mx-auto px-4 py-12 max-w-4xl">
-          <h3 className="text-white text-xl font-bold font-montserrat mb-4">Comments</h3>
-          <p className="text-gray-400 font-inter">Comment system will be integrated here soon.</p>
-        </div>
+        {/* Comments Section */}
+        <CommentSection articleId={article.id} />
       </div>
 
       {/* Share Modal */}

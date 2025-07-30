@@ -23,6 +23,14 @@ export type Article = {
   created_at?: string;
 };
 
+export type Comment = {
+  id: string;
+  article_id: string;
+  name: string;
+  message: string;
+  created_at: string;
+};
+
 export type FeaturedContent = {
   east: Article;
   west: Article;
@@ -50,9 +58,7 @@ async function fetchFromAPI<T>(endpoint: string, options?: RequestInit): Promise
   return res.json();
 }
 
-// ---------- CRUD Operations ----------
-
-// ✅ Fetch articles
+// ---------- CRUD: Articles ----------
 export async function fetchArticles(
   category?: string,
   region?: string,
@@ -70,12 +76,10 @@ export async function fetchArticles(
   return fetchFromAPI<Article[]>(`/api/articles?${params.toString()}`);
 }
 
-// ✅ Fetch article by ID
 export async function fetchArticleById(id: string): Promise<Article> {
   return fetchFromAPI<Article>(`/api/articles/by-id/${id}`);
 }
 
-// ✅ Create
 export async function createArticle(article: Partial<Article>): Promise<Article> {
   return fetchFromAPI<Article>("/api/articles", {
     method: "POST",
@@ -83,7 +87,6 @@ export async function createArticle(article: Partial<Article>): Promise<Article>
   });
 }
 
-// ✅ Update
 export async function updateArticle(id: string, article: Partial<Article>): Promise<Article> {
   return fetchFromAPI<Article>(`/api/articles/${id}`, {
     method: "PATCH",
@@ -91,37 +94,55 @@ export async function updateArticle(id: string, article: Partial<Article>): Prom
   });
 }
 
-// ✅ Delete
 export async function deleteArticle(id: string): Promise<{ success: boolean }> {
   return fetchFromAPI<{ success: boolean }>(`/api/articles/${id}`, {
     method: "DELETE",
   });
 }
 
-// ✅ Featured
 export async function fetchFeaturedContent(): Promise<FeaturedContent> {
   return fetchFromAPI<FeaturedContent>("/api/featured-content");
 }
 
-// ✅ Health
 export async function healthCheck(): Promise<{ status: string }> {
   return fetchFromAPI<{ status: string }>("/api/health");
 }
 
+// ---------- CRUD: Comments ----------
+export async function fetchComments(articleId: string): Promise<Comment[]> {
+  return fetchFromAPI<Comment[]>(`/api/comments?article_id=${articleId}`);
+}
+
+export async function postComment(data: {
+  article_id: string;
+  name: string;
+  message: string;
+}): Promise<Comment> {
+  return fetchFromAPI<Comment>("/api/comments", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
 // ---------- Unified API Endpoints ----------
 export const apiEndpoints = {
+  // Articles
   getArticles: fetchArticles,
-  getArticle: fetchArticleById,         // ✅ Fix for ArticlePage usage
+  getArticle: fetchArticleById,
   getArticleById: fetchArticleById,
   getFeaturedContent: fetchFeaturedContent,
   createArticle,
   updateArticle,
   deleteArticle,
   healthCheck,
+
+  // Comments
+  getComments: fetchComments,
+  postComment: postComment,
 };
 
 // Optional consolidated export
 export const api = {
   ...apiEndpoints,
-  endpoints: apiEndpoints, // alias
+  endpoints: apiEndpoints,
 };
