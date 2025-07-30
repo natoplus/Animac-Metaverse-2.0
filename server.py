@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from pydantic import BaseModel, Field
@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 import uuid
 
-# Load environment variables
+# ---------- Load Env ----------
 load_dotenv()
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -16,25 +16,18 @@ SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 if not SUPABASE_URL or not SUPABASE_KEY:
     raise RuntimeError("Missing Supabase credentials in .env file")
 
-print("Supabase Credentials:")
-print("URL:", SUPABASE_URL)
-print("KEY:", SUPABASE_KEY[:5] + "..." + SUPABASE_KEY[-5:])
-
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# ✅ Update unpublished articles
-try:
-    response = supabase.table("articles").update({"is_published": True}).neq("is_published", True).execute()
-    print(f"✅ Updated {len(response.data)} articles to is_published = True")
-except Exception as e:
-    print("❌ Error updating articles:", e)
+# ---------- FastAPI App ----------
+app = FastAPI(title="ANIMAC API")
 
-app = FastAPI(title="ANIMAC API", description="API for ANIMAC streaming culture platform")
-
-# CORS setup
+# ---------- CORS ----------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://animac-metaverse.vercel.app",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,7 +47,7 @@ class ArticleBase(BaseModel):
 
 class Article(ArticleBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    slug: str = Field(default_factory=lambda: "")
+    slug: str = Field(default_factory=str)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -72,14 +65,14 @@ class CategoryStats(BaseModel):
     count: int
     latest_article: Optional[dict] = None
 
-# ---------- Helpers ----------
+# ---------- Utils ----------
 def slugify(text: str) -> str:
     return text.lower().replace(" ", "-").replace(".", "").replace(",", "")
 
 # ---------- Routes ----------
 @app.get("/")
 async def root():
-    return {"message": "Welcome to ANIMAC API - Streaming Culture, Streaming Stories"}
+    return {"message": "Welcome to ANIMAC API"}
 
 @app.get("/api/health")
 async def health_check():
@@ -89,7 +82,7 @@ async def health_check():
 async def create_article(article: ArticleBase):
     article_model = Article(**article.dict())
     article_model.slug = slugify(article_model.title)
-    article_model.category = article_model.category.lower()
+    article_model.category = article_model.category.lower() if article_model.category else None
     data = article_model.dict()
     data["created_at"] = article_model.created_at.isoformat()
     data["updated_at"] = article_model.updated_at.isoformat()
@@ -100,16 +93,9 @@ async def create_article(article: ArticleBase):
     raise HTTPException(status_code=400, detail="Failed to create article")
 
 @app.get("/api/articles", response_model=List[ArticleResponse])
-async def get_articles(
-    category: Optional[str] = None,
-    featured: Optional[bool] = None,
-    is_published: Optional[bool] = True,
-    limit: int = 20,
-    skip: int = 0
-):
+async def get_articles(category: Optional[str] = None, featured: Optional[bool] = None, is_published: Optional[bool] = True, limit: int = 20, skip: int = 0):
     try:
         query = supabase.table("articles").select("*")
-
         if is_published is not None:
             query = query.eq("is_published", is_published)
         if category:
@@ -119,18 +105,61 @@ async def get_articles(
 
         query = query.range(skip, skip + limit - 1).order("created_at", desc=True)
         res = query.execute()
-
         return [ArticleResponse(**item) for item in res.data]
     except Exception as e:
         print("❌ Error fetching articles:", e)
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-@app.get("/api/articles/{article_id}", response_model=ArticleResponse)
-async def get_article(article_id: str):
+@app.get("/api/articles/by-id/{article_id}", response_model=ArticleResponse)
+async def get_article_by_id(article_id: str):
     res = supabase.table("articles").select("*").eq("id", article_id).execute()
     if not res.data:
         raise HTTPException(status_code=404, detail="Article not found")
     return ArticleResponse(**res.data[0])
+
+@app.get("/api/articles/{slug}", response_model=ArticleResponse)
+async def get_article_by_slug(slug: str):
+    res = supabase.table("articles").select("*").eq("slug", slug).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return ArticleResponse(**res.data[0])
+
+@app.put("/api/articles/{article_id}", response_model=ArticleResponse)
+async def update_article_full(article_id: str, updated_data: ArticleBase):
+    update_dict = updated_data.dict()
+    update_dict["updated_at"] = datetime.utcnow().isoformat()
+
+    if "title" in update_dict:
+        update_dict["slug"] = slugify(update_dict["title"])
+    if "category" in update_dict:
+        update_dict["category"] = update_dict["category"].lower()
+
+    res = supabase.table("articles").update(update_dict).eq("id", article_id).execute()
+    if res.data:
+        return ArticleResponse(**res.data[0])
+    raise HTTPException(status_code=404, detail="Article not found")
+
+@app.patch("/api/articles/{article_id}", response_model=ArticleResponse)
+async def update_article_partial(article_id: str, updated_data: ArticleBase):
+    partial = updated_data.dict(exclude_unset=True)
+    partial["updated_at"] = datetime.utcnow().isoformat()
+
+    if "title" in partial:
+        partial["slug"] = slugify(partial["title"])
+    if "category" in partial:
+        partial["category"] = partial["category"].lower()
+
+    res = supabase.table("articles").update(partial).eq("id", article_id).execute()
+    if res.data:
+        return ArticleResponse(**res.data[0])
+    raise HTTPException(status_code=404, detail="Article not found")
+
+@app.delete("/api/articles/{article_id}")
+async def delete_article(article_id: str):
+    res = supabase.table("articles").delete().eq("id", article_id).execute()
+    if res.data:
+        return {"message": "Article deleted"}
+    raise HTTPException(status_code=404, detail="Article not found or delete failed")
 
 @app.get("/api/categories/stats", response_model=List[CategoryStats])
 async def get_category_stats():
@@ -175,54 +204,7 @@ async def get_featured_content():
         "recent_content": recent
     }
 
-@app.on_event("startup")
-async def startup_event():
-    sample_articles = [
-        ArticleBase(
-            title="A New Dawn in Anime",
-            content="Long form content about the evolution of anime...",
-            excerpt="Exploring the rise of sci-fi in anime.",
-            category="east",
-            tags=["anime", "scifi", "mecha"],
-            featured_image=None,
-            author="ANIMAC Team",
-            is_featured=True,
-            is_published=True
-        ),
-        ArticleBase(
-            title="Hollywood's Animated Revolution",
-            content="Insightful western cartoon trends...",
-            excerpt="Western studios are catching up.",
-            category="west",
-            tags=["cartoons", "animation", "industry"],
-            featured_image=None,
-            author="ANIMAC Team",
-            is_featured=True,
-            is_published=True
-        ),
-    ]
-
-    for a in sample_articles:
-        article_model = Article(**a.dict())
-        article_model.slug = slugify(article_model.title)
-
-        existing_slug = supabase.table("articles").select("id").eq("slug", article_model.slug).execute()
-        if existing_slug.data:
-            article_model.slug += "-" + str(uuid.uuid4())[:4]
-
-        data = article_model.dict()
-        data["created_at"] = article_model.created_at.isoformat()
-        data["updated_at"] = article_model.updated_at.isoformat()
-
-        try:
-            existing = supabase.table("articles").select("id").eq("title", article_model.title).eq("slug", article_model.slug).execute()
-            if not existing.data:
-                supabase.table("articles").insert(data).execute()
-        except Exception as e:
-            print("Error inserting sample article:", e)
-
-    print("✅ Sample articles loaded.")
-
+# ---------- Run Locally ----------
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
