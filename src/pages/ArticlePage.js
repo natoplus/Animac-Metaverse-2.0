@@ -9,6 +9,7 @@ import {
   Share2,
   Bookmark,
   Heart,
+  Loader,
 } from 'lucide-react';
 import { apiEndpoints } from '../utils/api';
 
@@ -19,18 +20,14 @@ const ArticlePage = () => {
   const [error, setError] = useState(null);
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
     const fetchArticle = async () => {
       setLoading(true);
       try {
-        const res = await apiEndpoints.get(`/articles/${id}`);
-        const data = res.data?.article || res.data || res;
-        console.log("✅ Article fetched:", res.data);
-        console.log('🛠 apiEndpoints:', apiEndpoints);
-        console.log('🛠 getArticle:', apiEndpoints.getArticle);
-
-        setArticle(res.data);
+        const res = await apiEndpoints.getArticle(id);
+        setArticle(res);
         setError(null);
       } catch (err) {
         console.error("❌ Failed to fetch article", err);
@@ -76,7 +73,9 @@ const ArticlePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen pt-20 bg-netflix-black flex justify-center items-center">
-        <p className="text-gray-400 font-inter">Loading article...</p>
+        <div className="text-gray-400 font-inter flex items-center gap-2">
+          <Loader className="animate-spin" size={20} /> Loading article...
+        </div>
       </div>
     );
   }
@@ -148,7 +147,7 @@ const ArticlePage = () => {
               Save
             </button>
 
-            <button className="px-4 py-2 rounded-lg flex items-center gap-2 border border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white transition">
+            <button onClick={() => setShowShareModal(true)} className="px-4 py-2 rounded-lg flex items-center gap-2 border border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white transition">
               <Share2 size={18} />
               Share
             </button>
@@ -184,7 +183,38 @@ const ArticlePage = () => {
             </div>
           )}
         </div>
+
+        {/* Related Articles (Placeholder) */}
+        <div className="container mx-auto px-4 py-12 max-w-4xl">
+          <h3 className="text-white text-xl font-bold font-montserrat mb-4">Related Articles</h3>
+          <p className="text-gray-400 font-inter">Coming soon...</p>
+        </div>
+
+        {/* Comments Section (Placeholder) */}
+        <div className="container mx-auto px-4 py-12 max-w-4xl">
+          <h3 className="text-white text-xl font-bold font-montserrat mb-4">Comments</h3>
+          <p className="text-gray-400 font-inter">Comment system will be integrated here soon.</p>
+        </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex justify-center items-center">
+          <div className="bg-netflix-dark p-6 rounded-lg max-w-sm text-center">
+            <h3 className="text-white text-lg font-bold mb-4">Share this article</h3>
+            <p className="text-gray-300 mb-4 text-sm">Copy the link and share it with friends:</p>
+            <input
+              readOnly
+              className="w-full p-2 rounded bg-gray-800 text-gray-300 text-sm mb-4"
+              value={window.location.href}
+              onClick={(e) => e.target.select()}
+            />
+            <button onClick={() => setShowShareModal(false)} className="text-sm text-gray-400 hover:text-white underline">
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };
