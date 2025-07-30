@@ -13,7 +13,7 @@ import BuzzfeedHub from './pages/BuzzfeedHub';
 import EastPortal from './pages/EastPortal';
 import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
-import AdminDashboard from './pages/admin/AdminDashboard'; // ✅ import this
+import AdminDashboard from './pages/admin/AdminDashboard'; // ✅ Admin Panel
 
 // Supabase
 import { supabase } from './utils/supabaseClient';
@@ -23,11 +23,11 @@ import './App.css';
 
 function App() {
   useEffect(() => {
-    async function test() {
+    async function testSupabaseAuth() {
       const result = await supabase.auth.getUser();
-      console.log("Supabase Auth Test:", result);
+      console.log('✅ Supabase Auth Test:', result);
     }
-    test();
+    testSupabaseAuth();
   }, []);
 
   return (
@@ -42,7 +42,7 @@ function App() {
             <Route path="/buzzfeed/east" element={<EastPortal />} />
             <Route path="/buzzfeed/west" element={<WestPortal />} />
             <Route path="/article/:id" element={<ArticlePage />} />
-            <Route path="/admin" element={<AdminDashboard />} /> {/* ✅ */}
+            <Route path="/admin" element={<AdminDashboard />} /> {/* ✅ Admin route */}
           </Routes>
         </AnimatePresence>
 

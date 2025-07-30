@@ -1,4 +1,9 @@
+// src/utils/api.ts
+
+// ---------- Config ----------
 const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const DEBUG_MODE = process.env.NODE_ENV === "development";
+
 if (!API_BASE) {
   throw new Error("Environment variable NEXT_PUBLIC_API_URL is not defined.");
 }
@@ -25,10 +30,19 @@ export type FeaturedContent = {
 
 // ---------- Helper: Unified Fetch ----------
 async function fetchFromAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    headers: { 'Content-Type': 'application/json' },
+  const fullUrl = `${API_BASE}${endpoint}`;
+  const res = await fetch(fullUrl, {
+    headers: {
+      'Content-Type': 'application/json',
+      // Optional token if needed:
+      // 'Authorization': `Bearer ${token}`
+    },
     ...options,
   });
+
+  if (DEBUG_MODE) {
+    console.log(`[API] ${options?.method || 'GET'} ${fullUrl}`, options?.body || '');
+  }
 
   if (!res.ok) {
     const errorText = await res.text();
@@ -38,7 +52,9 @@ async function fetchFromAPI<T>(endpoint: string, options?: RequestInit): Promise
   return res.json();
 }
 
-// ---------- Fetch Articles ----------
+// ---------- CRUD Operations ----------
+
+// Fetch multiple articles with filters
 export async function fetchArticles(
   category?: string,
   region?: string,
@@ -51,24 +67,19 @@ export async function fetchArticles(
   if (category) params.append("category", category);
   if (region) params.append("region", region);
   if (tag) params.append("tag", tag);
-  params.append("page", page.toString());
-  params.append("limit", limit.toString());
+  params.append("page", String(page));
+  params.append("limit", String(limit));
 
   const query = params.toString();
   return fetchFromAPI<Article[]>(`/api/articles?${query}`);
 }
 
-// ---------- Fetch Single Article ----------
+// Fetch single article by ID
 export async function fetchArticleById(id: string): Promise<Article> {
   return fetchFromAPI<Article>(`/api/articles/${id}`);
 }
 
-// ---------- Fetch Featured Content ----------
-export async function fetchFeaturedContent(): Promise<FeaturedContent> {
-  return fetchFromAPI<FeaturedContent>(`/api/featured-content`);
-}
-
-// ---------- Create Article (Optional) ----------
+// Create new article
 export async function createArticle(article: Partial<Article>): Promise<Article> {
   return fetchFromAPI<Article>("/api/articles", {
     method: "POST",
@@ -76,60 +87,65 @@ export async function createArticle(article: Partial<Article>): Promise<Article>
   });
 }
 
-// ---------- Update Article (Optional) ----------
-const handleUpdate = async () => {
-  const updatedArticle = {
-    title: newTitle,
-    content: newContent,
-    category: "east",
-    is_featured: false,
-    is_published: true
-  };
-
-  try {
-    const response = await axios.put(
-      `https://animac-metaverse.onrender.com/api/articles/${articleId}`,
-      updatedArticle
-    );
-    console.log("✅ Article updated:", response.data);
-  } catch (error) {
-    console.error("❌ Failed to update article:", error);
-  }
-};
-
-
-// ---------- Health Check ----------
-export async function healthCheck(): Promise<{ status: string }> {
-  return fetchFromAPI<{ status: string }>(`/api/health`);
+// Update existing article
+export async function updateArticle(id: string, article: Partial<Article>): Promise<Article> {
+  return fetchFromAPI<Article>(`/api/articles/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(article),
+  });
 }
 
-// ---------- Unified API Endpoints ----------
+// Delete article
+export async function deleteArticle(id: string): Promise<{ success: boolean }> {
+  return fetchFromAPI<{ success: boolean }>(`/api/articles/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// Fetch featured east/west articles
+export async function fetchFeaturedContent(): Promise<FeaturedContent> {
+  return fetchFromAPI<FeaturedContent>("/api/featured-content");
+}
+
+// Health check
+export async function healthCheck(): Promise<{ status: string }> {
+  return fetchFromAPI<{ status: string }>("/api/health");
+}
+
+// ---------- Consolidated API Endpoints ----------
 export const apiEndpoints = {
   getArticles: async (params: Record<string, any>) => {
     const { category, region, tag, page = 1, limit = 10, featured } = params;
     const searchParams = new URLSearchParams();
 
-    if (category) searchParams.append('category', category);
-    if (region) searchParams.append('region', region);
-    if (tag) searchParams.append('tag', tag);
-    if (featured !== undefined) searchParams.append('featured', String(featured));
-    searchParams.append('page', page.toString());
-    searchParams.append('limit', limit.toString());
+    if (category) searchParams.append("category", category);
+    if (region) searchParams.append("region", region);
+    if (tag) searchParams.append("tag", tag);
+    if (featured !== undefined) searchParams.append("featured", String(featured));
+    searchParams.append("page", page.toString());
+    searchParams.append("limit", limit.toString());
 
     const query = searchParams.toString();
-    return await fetchFromAPI<Article[]>(`/api/articles?${query}`);
+    return fetchFromAPI<Article[]>(`/api/articles?${query}`);
   },
 
-  getArticle: fetchArticleById,              // ✅ Added this line
+  getArticle: fetchArticleById,
   getArticleById: fetchArticleById,
   getFeaturedContent: fetchFeaturedContent,
-  createArticle: createArticle,
+  createArticle,
+  updateArticle,
+  deleteArticle,
+  healthCheck,
 };
+
+// Optional global API object (for external usage)
 export const api = {
   fetchArticles,
   fetchArticleById,
   fetchFeaturedContent,
   createArticle,
+  updateArticle,
+  deleteArticle,
   healthCheck,
   endpoints: apiEndpoints,
 };

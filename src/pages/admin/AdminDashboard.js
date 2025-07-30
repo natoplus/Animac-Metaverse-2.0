@@ -11,7 +11,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
 import { motion } from 'framer-motion';
-import '../../styles/admin.css'; // 🔥 Make sure this path is correct
+import '../../styles/admin.css'; // 🔥 Ensure this matches your folder
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
@@ -34,7 +34,12 @@ export default function AdminDashboard() {
 
   const loadArticles = async () => {
     const data = await fetchArticles();
-    setArticles(data || []);
+    if (data && Array.isArray(data)) {
+      // Remove duplicates by ID
+      const uniqueMap = new Map();
+      data.forEach(article => uniqueMap.set(article.id, article));
+      setArticles([...uniqueMap.values()]);
+    }
   };
 
   useEffect(() => {
@@ -100,76 +105,30 @@ export default function AdminDashboard() {
     >
       <h1 className="font-ackno text-3xl font-bold">ANIMAC Admin Panel</h1>
 
-      {/* Form */}
+      {/* Form Section */}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
-        <Card className="neon-red">
+        <Card className="neon-red bg-black border border-red-700">
           <CardContent className="space-y-4 p-5">
             <h2 className="font-japanese text-3xl font-semibold">
               {isEditing ? 'Edit Article' : 'Post New Article'}
             </h2>
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <Input
-                name="title"
-                placeholder="Title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-              />
-              <Textarea
-                name="excerpt"
-                placeholder="Excerpt"
-                value={formData.excerpt}
-                onChange={handleChange}
-              />
-              <Textarea
-                name="content"
-                placeholder="Content"
-                rows={6}
-                value={formData.content}
-                onChange={handleChange}
-                required
-              />
-              <Input
-                name="category"
-                placeholder="Category (east/west)"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              />
-              <Input
-                name="tags"
-                placeholder="Tags (comma-separated)"
-                value={formData.tags}
-                onChange={handleChange}
-              />
-              <Input
-                name="featured_image"
-                placeholder="Featured Image URL"
-                value={formData.featured_image}
-                onChange={handleChange}
-              />
+              <Input name="title" placeholder="Title" value={formData.title} onChange={handleChange} required />
+              <Textarea name="excerpt" placeholder="Excerpt" value={formData.excerpt} onChange={handleChange} />
+              <Textarea name="content" placeholder="Content" rows={6} value={formData.content} onChange={handleChange} required />
+              <Input name="category" placeholder="Category (east/west)" value={formData.category} onChange={handleChange} required />
+              <Input name="tags" placeholder="Tags (comma-separated)" value={formData.tags} onChange={handleChange} />
+              <Input name="featured_image" placeholder="Featured Image URL" value={formData.featured_image} onChange={handleChange} />
               <div className="flex gap-6">
                 <label>
-                  <input
-                    type="checkbox"
-                    name="is_featured"
-                    checked={formData.is_featured}
-                    onChange={handleChange}
-                  />{' '}
-                  Featured
+                  <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} /> Featured
                 </label>
                 <label>
-                  <input
-                    type="checkbox"
-                    name="is_published"
-                    checked={formData.is_published}
-                    onChange={handleChange}
-                  />{' '}
-                  Published
+                  <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} /> Published
                 </label>
               </div>
               <Button type="submit">
@@ -186,7 +145,7 @@ export default function AdminDashboard() {
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.6, delay: 0.3 }}
       >
-        <Card className="neon-blue">
+        <Card className="neon-blue bg-black border border-blue-700">
           <CardContent className="space-y-4 p-5">
             <h2 className="font-japanese text-3xl font-semibold">Existing Articles</h2>
             {articles.length === 0 ? (
@@ -201,16 +160,8 @@ export default function AdminDashboard() {
                         {article.is_published ? '✅ Published' : '❌ Draft'}
                       </div>
                       <div className="space-x-2">
-                        <Button size="sm" onClick={() => handleEdit(article)}>
-                          Edit
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(article.id)}
-                        >
-                          Delete
-                        </Button>
+                        <Button size="sm" onClick={() => handleEdit(article)}>Edit</Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(article.id)}>Delete</Button>
                       </div>
                     </div>
                   </li>
