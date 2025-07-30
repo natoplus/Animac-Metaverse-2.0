@@ -27,6 +27,9 @@ const ArticlePage = () => {
         const res = await apiEndpoints.get(`/articles/${id}`);
         const data = res.data?.article || res.data || res;
         console.log("✅ Article fetched:", res.data);
+        console.log('🛠 apiEndpoints:', apiEndpoints);
+        console.log('🛠 getArticle:', apiEndpoints.getArticle);
+
         setArticle(res.data);
         setError(null);
       } catch (err) {
