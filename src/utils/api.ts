@@ -34,8 +34,6 @@ async function fetchFromAPI<T>(endpoint: string, options?: RequestInit): Promise
   const res = await fetch(fullUrl, {
     headers: {
       'Content-Type': 'application/json',
-      // Optional token if needed:
-      // 'Authorization': `Bearer ${token}`
     },
     ...options,
   });
@@ -54,7 +52,7 @@ async function fetchFromAPI<T>(endpoint: string, options?: RequestInit): Promise
 
 // ---------- CRUD Operations ----------
 
-// Fetch multiple articles with filters
+// ✅ Fetch articles
 export async function fetchArticles(
   category?: string,
   region?: string,
@@ -63,23 +61,21 @@ export async function fetchArticles(
   limit: number = 10
 ): Promise<Article[]> {
   const params = new URLSearchParams();
-
   if (category) params.append("category", category);
   if (region) params.append("region", region);
   if (tag) params.append("tag", tag);
   params.append("page", String(page));
   params.append("limit", String(limit));
 
-  const query = params.toString();
-  return fetchFromAPI<Article[]>(`/api/articles?${query}`);
+  return fetchFromAPI<Article[]>(`/api/articles?${params.toString()}`);
 }
 
-// Fetch single article by ID
+// ✅ Fetch article by ID
 export async function fetchArticleById(id: string): Promise<Article> {
-  return fetchFromAPI<Article>(`/api/articles/${id}`);
+  return fetchFromAPI<Article>(`/api/articles/by-id/${id}`);
 }
 
-// Create new article
+// ✅ Create
 export async function createArticle(article: Partial<Article>): Promise<Article> {
   return fetchFromAPI<Article>("/api/articles", {
     method: "POST",
@@ -87,7 +83,7 @@ export async function createArticle(article: Partial<Article>): Promise<Article>
   });
 }
 
-// Update existing article
+// ✅ Update
 export async function updateArticle(id: string, article: Partial<Article>): Promise<Article> {
   return fetchFromAPI<Article>(`/api/articles/${id}`, {
     method: "PATCH",
@@ -95,41 +91,27 @@ export async function updateArticle(id: string, article: Partial<Article>): Prom
   });
 }
 
-// Delete article
+// ✅ Delete
 export async function deleteArticle(id: string): Promise<{ success: boolean }> {
   return fetchFromAPI<{ success: boolean }>(`/api/articles/${id}`, {
     method: "DELETE",
   });
 }
 
-// Fetch featured east/west articles
+// ✅ Featured
 export async function fetchFeaturedContent(): Promise<FeaturedContent> {
   return fetchFromAPI<FeaturedContent>("/api/featured-content");
 }
 
-// Health check
+// ✅ Health
 export async function healthCheck(): Promise<{ status: string }> {
   return fetchFromAPI<{ status: string }>("/api/health");
 }
 
-// ---------- Consolidated API Endpoints ----------
+// ---------- Unified API Endpoints ----------
 export const apiEndpoints = {
-  getArticles: async (params: Record<string, any>) => {
-    const { category, region, tag, page = 1, limit = 10, featured } = params;
-    const searchParams = new URLSearchParams();
-
-    if (category) searchParams.append("category", category);
-    if (region) searchParams.append("region", region);
-    if (tag) searchParams.append("tag", tag);
-    if (featured !== undefined) searchParams.append("featured", String(featured));
-    searchParams.append("page", page.toString());
-    searchParams.append("limit", limit.toString());
-
-    const query = searchParams.toString();
-    return fetchFromAPI<Article[]>(`/api/articles?${query}`);
-  },
-
-  getArticle: fetchArticleById,
+  getArticles: fetchArticles,
+  getArticle: fetchArticleById,         // ✅ Fix for ArticlePage usage
   getArticleById: fetchArticleById,
   getFeaturedContent: fetchFeaturedContent,
   createArticle,
@@ -138,14 +120,8 @@ export const apiEndpoints = {
   healthCheck,
 };
 
-// Optional global API object (for external usage)
+// Optional consolidated export
 export const api = {
-  fetchArticles,
-  fetchArticleById,
-  fetchFeaturedContent,
-  createArticle,
-  updateArticle,
-  deleteArticle,
-  healthCheck,
-  endpoints: apiEndpoints,
+  ...apiEndpoints,
+  endpoints: apiEndpoints, // alias
 };
