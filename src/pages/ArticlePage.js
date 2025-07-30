@@ -24,10 +24,13 @@ const ArticlePage = () => {
     const fetchArticle = async () => {
       setLoading(true);
       try {
-        const res = await apiEndpoints.getArticle(id);
-        setArticle(res); // direct response (assuming it's already the article)
+        const res = await apiEndpoints.get(`/articles/${id}`);
+        const data = res.data?.article || res.data || res;
+        console.log("✅ Article fetched:", res.data);
+        setArticle(res.data);
         setError(null);
       } catch (err) {
+        console.error("❌ Failed to fetch article", err);
         setError('Article not found or failed to load.');
         setArticle(null);
       } finally {
@@ -99,7 +102,7 @@ const ArticlePage = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="min-h-screen pt-20">
-      {/* Hero */}
+      {/* Hero Section */}
       <div className={`relative overflow-hidden bg-gradient-to-br ${theme.gradient}`}>
         {article.featured_image && (
           <div
@@ -108,8 +111,12 @@ const ArticlePage = () => {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-netflix-black via-transparent to-transparent z-10" />
+
         <div className="relative z-20 container mx-auto px-4 py-16 max-w-4xl">
-          <Link to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'} className="text-gray-400 hover:text-white font-inter inline-flex items-center mb-4">
+          <Link
+            to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'}
+            className="text-gray-400 hover:text-white font-inter inline-flex items-center mb-4"
+          >
             <ArrowLeft size={20} className="mr-2" /> Back to {article.category?.toUpperCase() || 'Home'}
           </Link>
 
@@ -146,7 +153,7 @@ const ArticlePage = () => {
         </div>
       </div>
 
-      {/* Article Content */}
+      {/* Article Body */}
       <div className="bg-netflix-black">
         <div className="container mx-auto px-4 py-16 max-w-4xl">
           {article.excerpt && (
