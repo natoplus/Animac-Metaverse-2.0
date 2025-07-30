@@ -13,6 +13,8 @@ import {
   Loader,
 } from 'lucide-react';
 import { apiEndpoints } from '../utils/api';
+import CommentSection from '../components/CommentSection'; // adjust path if different
+
 
 const CommentSection = ({ articleId }) => {
   return (

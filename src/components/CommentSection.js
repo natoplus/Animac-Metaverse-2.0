@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import CommentSection from '../components/CommentSection'; // adjust path if different
+
 
 const CommentSection = ({ articleId }) => {
   const [comments, setComments] = useState([
