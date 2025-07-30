@@ -4,6 +4,10 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Users, BookOpen, TrendingUp } from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
 
+console.log("East Articles:", eastArticles);
+console.log("West Articles:", westArticles);
+
+
 const BuzzfeedHub = () => {
   const { articles: eastArticles } = useArticles('east');
   const { articles: westArticles } = useArticles('west');
@@ -22,7 +26,7 @@ const BuzzfeedHub = () => {
       path: '/buzzfeed/east',
       articles: eastArticles,
       stats: {
-        articles: eastArticles.length,
+        articles: eastArticles?.length || 0,
         readers: '125K',
         trending: 'Attack on Titan Final Season'
       }
@@ -40,7 +44,7 @@ const BuzzfeedHub = () => {
       path: '/buzzfeed/west',
       articles: westArticles,
       stats: {
-        articles: westArticles.length,
+        articles: westArticles?.length || 0,
         readers: '98K',
         trending: 'Spider-Verse Revolution'
       }
@@ -70,7 +74,7 @@ const BuzzfeedHub = () => {
                  src="/assets/images/buzzfeed-logo.svg"
                  alt="Buzzfeed logo"
                  className="mx-auto h-80 w-30 mb-2"
-  />
+              />
             <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
               Where Culture Meets Commentary
             </p>
