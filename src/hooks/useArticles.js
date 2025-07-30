@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { apiEndpoints } from '../utils/api';
 
+// ✅ Hook to fetch a list of articles by category and/or featured flag
 export const useArticles = (category = null, featured = null) => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,21 +10,18 @@ export const useArticles = (category = null, featured = null) => {
 
   useEffect(() => {
     const fetchArticles = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
         const params = {};
         if (category) params.category = category;
         if (featured !== null) params.featured = featured;
 
-        console.log("📡 Fetching articles with params:", params);
-        const response = await apiEndpoints.getArticles(params);
-        console.log("📦 Articles received:", response);
-
-        setArticles(response || []);
+        const res = await apiEndpoints.getArticles(params);
+        setArticles(res || []);
         setError(null);
       } catch (err) {
-        console.error("❌ Error fetching articles:", err);
-        setError(err.message);
+        console.error("❌ Failed to fetch articles", err);
+        setError('Failed to load articles.');
         setArticles([]);
       } finally {
         setLoading(false);
@@ -36,6 +34,7 @@ export const useArticles = (category = null, featured = null) => {
   return { articles, loading, error };
 };
 
+// ✅ Hook to fetch featured content block (hero + recent content)
 export const useFeaturedContent = () => {
   const [featuredContent, setFeaturedContent] = useState(null);
   const [loading, setLoading] = useState(true);
