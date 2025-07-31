@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { ThumbsUp } from 'lucide-react';
 
@@ -10,13 +10,7 @@ const Comment = ({ comment, onReply, onLike }) => (
     <div className="flex justify-between items-center text-xs text-gray-500">
       <span>by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}</span>
       <div className="flex gap-3">
-        <button
-          onClick={() => onLike(comment.id)}
-          className={`hover:text-white flex items-center gap-1 ${
-            localStorage.getItem(`liked-${comment.id}`) ? 'text-blue-400' : ''
-          }`}
-          disabled={localStorage.getItem(`liked-${comment.id}`)}
-        >
+        <button onClick={() => onLike(comment.id)} className="hover:text-white flex items-center gap-1">
           <ThumbsUp size={14} /> {comment.likes}
         </button>
         <button onClick={() => onReply(comment.id)} className="hover:text-white">Reply</button>
@@ -28,15 +22,22 @@ const Comment = ({ comment, onReply, onLike }) => (
 const CommentSection = ({ articleId }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [guestName, setGuestName] = useState('');
   const [parentId, setParentId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+  const [expandedThreads, setExpandedThreads] = useState({});
+  const formRef = useRef(null);
 
   const fetchComments = async () => {
     try {
+      setFetching(true);
       const res = await axios.get(`${API_URL}/api/comments/${articleId}`);
       setComments(res.data || []);
     } catch (err) {
       console.error('Error fetching comments:', err);
+    } finally {
+      setFetching(false);
     }
   };
 
@@ -47,50 +48,89 @@ const CommentSection = ({ articleId }) => {
   const handlePost = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
+
     setLoading(true);
     try {
       await axios.post(`${API_URL}/api/comments`, {
         article_id: articleId,
         content: newComment,
-        author: "Guest",
+        author: guestName || "Guest",
         parent_id: parentId || null,
       });
       setNewComment('');
+      setGuestName('');
       setParentId(null);
-      fetchComments();
+      await fetchComments();
+      if (formRef.current) {
+        formRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
     } catch (err) {
       console.error('Post failed:', err);
+      alert('Failed to post comment. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const handleLike = async (commentId) => {
-    if (localStorage.getItem(`liked-${commentId}`)) return;
     try {
       await axios.post(`${API_URL}/api/comments/${commentId}/like`);
-      localStorage.setItem(`liked-${commentId}`, 'true');
       fetchComments();
     } catch (err) {
       console.error('Like failed:', err);
     }
   };
 
-  const renderThread = (parentId = null) => {
-    return comments
-      .filter(c => c.parent_id === parentId)
-      .map(c => (
-        <div key={c.id} className={parentId ? 'ml-6' : ''}>
+  const toggleReplies = (commentId) => {
+    setExpandedThreads(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId]
+    }));
+  };
+
+  const renderThread = (parent = null, level = 0) => {
+    const replies = comments.filter(c => c.parent_id === parent);
+    if (replies.length === 0) return null;
+
+    return replies.map((c, i) => {
+      const children = comments.filter(child => child.parent_id === c.id);
+      const isExpanded = expandedThreads[c.id];
+      const shouldCollapse = children.length > 2 && !isExpanded;
+
+      return (
+        <div key={c.id} className={parent ? 'ml-6' : ''}>
           <Comment comment={c} onReply={setParentId} onLike={handleLike} />
-          {renderThread(c.id)}
+
+          {children.length > 0 && (
+            <>
+              {renderThread(c.id, level + 1)}
+              {shouldCollapse && (
+                <button
+                  onClick={() => toggleReplies(c.id)}
+                  className="text-xs text-blue-400 ml-6 mt-1 mb-3 hover:underline"
+                >
+                  Show more replies ({children.length - 2})
+                </button>
+              )}
+            </>
+          )}
         </div>
-      ));
+      );
+    });
   };
 
   return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl border-t border-gray-800">
+    <div className="container mx-auto px-4 py-12 max-w-4xl border-t border-gray-800" ref={formRef}>
       <h3 className="text-white text-xl font-bold mb-4">Comments</h3>
+
       <form onSubmit={handlePost} className="mb-6">
+        <input
+          type="text"
+          placeholder="Your name (optional)"
+          value={guestName}
+          onChange={(e) => setGuestName(e.target.value)}
+          className="w-full mb-2 p-2 rounded bg-gray-800 text-gray-100 text-sm"
+        />
         <textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
@@ -117,7 +157,14 @@ const CommentSection = ({ articleId }) => {
           )}
         </div>
       </form>
-      {renderThread()}
+
+      {fetching ? (
+        <p className="text-gray-400 text-sm">Loading comments...</p>
+      ) : comments.length > 0 ? (
+        renderThread()
+      ) : (
+        <p className="text-gray-500 text-sm">No comments yet. Be the first to share your thoughts!</p>
+      )}
     </div>
   );
 };
