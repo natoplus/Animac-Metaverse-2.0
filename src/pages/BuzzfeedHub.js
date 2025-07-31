@@ -4,13 +4,13 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Users, BookOpen, TrendingUp } from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
 
-console.log("East Articles:", eastArticles);
-console.log("West Articles:", westArticles);
-
-
 const BuzzfeedHub = () => {
   const { articles: eastArticles } = useArticles('east');
   const { articles: westArticles } = useArticles('west');
+
+  // ✅ Logging after hooks
+  console.log("East Articles:", eastArticles);
+  console.log("West Articles:", westArticles);
 
   const portalData = [
     {
@@ -70,11 +70,11 @@ const BuzzfeedHub = () => {
             transition={{ duration: 0.8 }}
             className="text-center max-w-4xl mx-auto h-70"
           >
-              <img
-                 src="/assets/images/buzzfeed-logo.svg"
-                 alt="Buzzfeed logo"
-                 className="mx-auto h-80 w-30 mb-2"
-              />
+            <img
+              src="/assets/images/buzzfeed-logo.svg"
+              alt="Buzzfeed logo"
+              className="mx-auto h-80 w-30 mb-2"
+            />
             <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
               Where Culture Meets Commentary
             </p>
@@ -106,7 +106,7 @@ const BuzzfeedHub = () => {
                         <h2
                           className={`font-bold mb-2 ${portal.textGlow} ${portal.id === 'east' ? 'font-japanese text-5xl' : ''} ${portal.id === 'west' ? 'font-ackno text-4xl' : 'text-4xl'}`}
                         >
-                         {portal.title}
+                          {portal.title}
                         </h2>
 
                         <p className="text-xl font-montserrat font-medium text-gray-300">
@@ -176,10 +176,7 @@ const BuzzfeedHub = () => {
                     </div>
 
                     {/* Enter Button */}
-                    <motion.div
-                      whileHover={{ scale: 1.02 }}
-                      className="mt-8"
-                    >
+                    <motion.div whileHover={{ scale: 1.02 }} className="mt-8">
                       <div className={`w-full py-3 px-6 bg-gradient-to-r from-${portal.color}-600 to-${portal.color}-500 text-white font-montserrat font-semibold rounded-lg text-center transition-all duration-300 hover:from-${portal.color}-700 hover:to-${portal.color}-600`}>
                         Enter {portal.title} Portal
                       </div>
