@@ -219,25 +219,33 @@ async def like_comment(comment_id: str, request: Request):
         raise HTTPException(status_code=400, detail="Missing session identifier")
 
     try:
+        # Check if already liked
         existing = supabase.table("comment_likes").select("id").eq("comment_id", comment_id).eq("session_id", session_id).execute()
         if existing.data:
             raise HTTPException(status_code=403, detail="Already liked by this session")
 
+        # Insert like
         supabase.table("comment_likes").insert({
             "comment_id": comment_id,
             "session_id": session_id
         }).execute()
 
+        # Fetch current likes
         res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
         if not res.data:
             raise HTTPException(status_code=404, detail="Comment not found")
 
         current_likes = res.data[0].get("likes", 0)
-        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
 
-        return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
+        # Update likes count
+        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+        if not updated.data:
+            raise HTTPException(status_code=500, detail="Failed to update likes")
+
+        return {"message": "Comment liked", "likes": updated.data[0].get("likes", current_likes + 1)}
+
     except Exception as e:
-        logging.error("❌ Error liking comment", exc_info=True)
+        logging.error(f"❌ Error liking comment: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to like comment: {str(e)}")
 
 @app.post("/api/comments/{comment_id}/unlike")
