@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from pydantic import BaseModel, Field
@@ -33,7 +33,7 @@ app.add_middleware(
         "http://localhost:3000",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -112,7 +112,7 @@ async def create_article(article: ArticleBase):
     try:
         res = supabase.table("articles").insert(data).execute()
         return ArticleResponse(**res.data[0])
-    except Exception as e:
+    except Exception:
         logging.error("❌ Error creating article:", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to create article")
 
@@ -129,7 +129,7 @@ async def get_articles(category: Optional[str] = None, featured: Optional[bool] 
 
         res = query.range(skip, skip + limit - 1).order("created_at", desc=True).execute()
         return [ArticleResponse(**item) for item in res.data]
-    except Exception as e:
+    except Exception:
         logging.error("❌ Error fetching articles:", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -147,117 +147,24 @@ async def get_article_by_slug(slug: str):
         raise HTTPException(status_code=404, detail="Article not found")
     return ArticleResponse(**res.data[0])
 
-@app.put("/api/articles/{article_id}", response_model=ArticleResponse)
-async def update_article_full(article_id: str, updated_data: ArticleBase):
-    update_dict = updated_data.dict()
-    update_dict["updated_at"] = datetime.utcnow().isoformat()
-
-    if "title" in update_dict:
-        update_dict["slug"] = slugify(update_dict["title"])
-    if "category" in update_dict:
-        update_dict["category"] = update_dict["category"].lower()
-
-    res = supabase.table("articles").update(update_dict).eq("id", article_id).execute()
-    if res.data:
-        return ArticleResponse(**res.data[0])
-    raise HTTPException(status_code=404, detail="Article not found")
-
-@app.patch("/api/articles/{article_id}", response_model=ArticleResponse)
-async def update_article_partial(article_id: str, updated_data: ArticleBase):
-    partial = updated_data.dict(exclude_unset=True)
-    partial["updated_at"] = datetime.utcnow().isoformat()
-
-    if "title" in partial:
-        partial["slug"] = slugify(partial["title"])
-    if "category" in partial:
-        partial["category"] = partial["category"].lower()
-
-    res = supabase.table("articles").update(partial).eq("id", article_id).execute()
-    if res.data:
-        return ArticleResponse(**res.data[0])
-    raise HTTPException(status_code=404, detail="Article not found")
-
-@app.delete("/api/articles/{article_id}")
-async def delete_article(article_id: str):
-    try:
-        res = supabase.table("articles").delete().eq("id", article_id).execute()
-        if res.data:
-            return {"message": "Article deleted successfully"}
-        raise HTTPException(status_code=404, detail="Article not found or delete failed")
-    except Exception as e:
-        logging.error("❌ Error deleting article:", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
-
-@app.get("/api/categories/stats", response_model=List[CategoryStats])
-async def get_category_stats():
-    all_articles = supabase.table("articles").select("*").execute().data
-    stats = {}
-    for article in all_articles:
-        cat = article["category"]
-        if cat not in stats:
-            stats[cat] = {"count": 0, "latest": None}
-        stats[cat]["count"] += 1
-        if not stats[cat]["latest"] or article["created_at"] > stats[cat]["latest"]["created_at"]:
-            stats[cat]["latest"] = article
-
-    return [
-        CategoryStats(
-            category=cat,
-            count=data["count"],
-            latest_article={
-                "id": data["latest"]["id"],
-                "title": data["latest"]["title"],
-                "excerpt": data["latest"]["excerpt"],
-                "created_at": data["latest"]["created_at"]
-            }
-        )
-        for cat, data in stats.items()
-    ]
-
-@app.get("/api/featured-content")
-async def get_featured_content():
-    hero = { "east": None, "west": None }
-    recent = {}
-
-    for cat in ["east", "west"]:
-        hero_res = supabase.table("articles").select("*").eq("category", cat).eq("is_featured", True).limit(1).execute()
-        hero[cat] = hero_res.data[0] if hero_res.data else None
-
-        recent_res = supabase.table("articles").select("*").eq("category", cat).order("created_at", desc=True).limit(6).execute()
-        recent[cat] = recent_res.data
-
-    return {
-        "hero": hero,
-        "recent_content": recent
-    }
-
 @app.post("/api/comments", response_model=CommentResponse)
-async def create_comment(comment: CommentBase):
+async def create_comment(comment: CommentBase, request: Request):
     comment_model = Comment(**comment.dict())
     data = comment_model.dict()
     data["created_at"] = comment_model.created_at.isoformat()
-
     try:
         res = supabase.table("comments").insert(data).execute()
-        if not res.data or not isinstance(res.data, list) or not res.data[0]:
-            raise HTTPException(status_code=500, detail="Insert failed or response invalid")
+        if not res.data:
+            raise HTTPException(status_code=500, detail="Insert failed")
         return CommentResponse(**res.data[0], replies=[])
-    except Exception as e:
+    except Exception:
         logging.error("❌ Error creating comment", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to create comment")
 
 @app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
 async def get_comments_for_article(article_id: str):
     try:
-        res = (
-            supabase
-            .table("comments")
-            .select("*")
-            .eq("article_id", article_id)
-            .order("created_at", desc=False)
-            .execute()
-        )
-
+        res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", desc=False).execute()
         flat_comments = res.data
         comment_map: dict[str, CommentResponse] = {}
         root_comments: List[CommentResponse] = []
@@ -275,21 +182,27 @@ async def get_comments_for_article(article_id: str):
                 root_comments.append(comment_map[cid])
 
         return root_comments
-    except Exception as e:
-        logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
+    except Exception:
+        logging.error("❌ Error fetching comments", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch comments")
 
 @app.post("/api/comments/{comment_id}/like")
-async def like_comment(comment_id: str):
+async def like_comment(comment_id: str, request: Request):
+    user_ip = request.client.host
+    like_key = f"{user_ip}_{comment_id}"
+
     try:
-        res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Comment not found")
+        existing_like = supabase.table("comment_likes").select("*").eq("key", like_key).execute()
+        if existing_like.data:
+            return {"message": "Already liked", "likes": None}
 
-        current_likes = res.data[0].get("likes", 0)
-        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+        supabase.table("comment_likes").insert({"key": like_key, "comment_id": comment_id}).execute()
 
-        return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
+        current = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+        new_likes = (current.data[0].get("likes") or 0) + 1
+        supabase.table("comments").update({"likes": new_likes}).eq("id", comment_id).execute()
+
+        return {"message": "Comment liked", "likes": new_likes}
     except Exception:
         logging.error("❌ Error liking comment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to like comment")
