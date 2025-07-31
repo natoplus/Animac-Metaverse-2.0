@@ -6,7 +6,7 @@ import {
   ArrowLeft, User, Clock, Calendar, Share2, Bookmark, Heart, Loader,
 } from 'lucide-react';
 import { apiEndpoints } from '../utils/api';
-import CommentSection from '../components/CommentSection'; // ✅ IMPORT
+import CommentSection from '../components/CommentSection';
 
 const ArticlePage = () => {
   const { id } = useParams();
@@ -16,6 +16,7 @@ const ArticlePage = () => {
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -24,6 +25,7 @@ const ArticlePage = () => {
         const res = await apiEndpoints.getArticle(id);
         setArticle(res);
         setError(null);
+        window.scrollTo(0, 0);
       } catch (err) {
         console.error("❌ Failed to fetch article", err);
         setError('Article not found or failed to load.');
@@ -65,6 +67,16 @@ const ArticlePage = () => {
     }
   };
 
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("❌ Failed to copy link:", err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen pt-20 bg-netflix-black flex justify-center items-center">
@@ -82,10 +94,7 @@ const ArticlePage = () => {
           <div className="text-6xl mb-4">😢</div>
           <h2 className="text-white text-2xl font-bold font-montserrat mb-2">Article Not Found</h2>
           <p className="text-gray-400 mb-6 font-inter">{error}</p>
-          <Link
-            to="/"
-            className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
-          >
+          <Link to="/" className="px-6 py-3 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition">
             <ArrowLeft size={20} className="inline mr-2" />
             Back to Home
           </Link>
@@ -99,24 +108,98 @@ const ArticlePage = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="min-h-screen pt-20">
-      {/* Hero Section and Body remain unchanged... */}
+      {/* Hero Section */}
+      <div className={`relative overflow-hidden bg-gradient-to-br ${theme.gradient}`}>
+        {article.featured_image && (
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-20"
+            style={{ backgroundImage: `url(${article.featured_image})` }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-netflix-black via-transparent to-transparent z-10" />
 
-      {/* Tags */}
-      {article.tags?.length > 0 && (
-        <div className="mt-12 pt-8 border-t border-gray-800">
-          <h3 className="text-white font-montserrat font-semibold mb-4">Tags</h3>
-          <div className="flex flex-wrap gap-3">
-            {article.tags.map((tag, i) => (
-              <span key={i} className={`px-3 py-2 rounded-lg font-inter text-sm border ${theme.badge}`}>
-                #{tag}
-              </span>
-            ))}
+        <div className="relative z-20 container mx-auto px-4 py-16 max-w-4xl">
+          <Link
+            to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'}
+            className="text-gray-400 hover:text-white font-inter inline-flex items-center mb-4"
+          >
+            <ArrowLeft size={20} className="mr-2" /> Back to {article.category?.toUpperCase() || 'Home'}
+          </Link>
+
+          <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge}`}>
+            {article.category?.toUpperCase() || 'FEATURED'}
+          </span>
+
+          <h1 className="text-white text-4xl md:text-5xl font-bold font-montserrat mt-4 mb-6">
+            {article.title}
+          </h1>
+
+          <div className="flex flex-wrap gap-6 text-sm text-gray-300 mb-8">
+            <span className="flex items-center gap-2"><User size={16} /> {article.author || 'ANIMAC Team'}</span>
+            <span className="flex items-center gap-2"><Calendar size={16} /> {new Date(article.created_at).toLocaleDateString()}</span>
+            <span className="flex items-center gap-2"><Clock size={16} /> {estimatedReadTime} min read</span>
+          </div>
+
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={() => setLiked(!liked)}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 border transition ${liked ? `${theme.button} ${theme.border} text-white` : 'bg-transparent border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white'}`}
+            >
+              <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
+              Like
+            </button>
+
+            <button
+              onClick={() => setBookmarked(!bookmarked)}
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 border transition ${bookmarked ? `${theme.button} ${theme.border} text-white` : 'bg-transparent border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white'}`}
+            >
+              <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} />
+              Save
+            </button>
+
+            <button
+              onClick={() => setShowShareModal(true)}
+              className="px-4 py-2 rounded-lg flex items-center gap-2 border border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white transition"
+            >
+              <Share2 size={18} />
+              Share
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* ✅ COMMENT SECTION */}
-      <CommentSection articleId={article.id} />
+      {/* Article Body */}
+      <div className="bg-netflix-black">
+        <div className="container mx-auto px-4 py-16 max-w-4xl">
+          {article.excerpt && (
+            <div className="mb-12 italic text-xl text-gray-300 border-l-4 border-gray-600 pl-6 font-inter">
+              {article.excerpt}
+            </div>
+          )}
+          <div className="prose prose-invert max-w-none text-gray-300 text-lg space-y-6 font-inter">
+            {(article.content || '').split('\n').map((para, idx) => (
+              <p key={idx}>{para}</p>
+            ))}
+          </div>
+
+          {/* Tags */}
+          {article.tags?.length > 0 && (
+            <div className="mt-12 pt-8 border-t border-gray-800">
+              <h3 className="text-white font-montserrat font-semibold mb-4">Tags</h3>
+              <div className="flex flex-wrap gap-3">
+                {article.tags.map((tag, i) => (
+                  <span key={i} className={`px-3 py-2 rounded-lg font-inter text-sm border ${theme.badge}`}>
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ✅ Comment Section */}
+        <CommentSection articleId={article.id} />
+      </div>
 
       {/* Share Modal */}
       {showShareModal && (
@@ -126,11 +209,20 @@ const ArticlePage = () => {
             <p className="text-gray-300 mb-4 text-sm">Copy the link and share it with friends:</p>
             <input
               readOnly
-              className="w-full p-2 rounded bg-gray-800 text-gray-300 text-sm mb-4"
+              className="w-full p-2 rounded bg-gray-800 text-gray-300 text-sm mb-2"
               value={window.location.href}
               onClick={(e) => e.target.select()}
             />
-            <button onClick={() => setShowShareModal(false)} className="text-sm text-gray-400 hover:text-white underline">
+            <button
+              onClick={handleCopyLink}
+              className="text-sm font-semibold text-white py-1 px-4 rounded bg-gray-700 hover:bg-gray-600 mb-2"
+            >
+              {copied ? 'Copied!' : 'Copy Link'}
+            </button>
+            <button
+              onClick={() => setShowShareModal(false)}
+              className="text-sm text-gray-400 hover:text-white underline block"
+            >
               Close
             </button>
           </div>
