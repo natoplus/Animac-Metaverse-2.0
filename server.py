@@ -181,7 +181,7 @@ async def create_comment(comment: CommentBase, request: Request):
         res = supabase.table("comments").insert(data).execute()
         if not res.data:
             raise HTTPException(status_code=500, detail="Insert failed")
-        return CommentResponse(**res.data[0], replies=[])
+        return CommentResponse(**res.data[0], replies=[], reply_count=0)
     except Exception:
         logging.error("❌ Error creating comment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to create comment")
@@ -193,9 +193,12 @@ async def get_comments_for_article(article_id: str):
         flat_comments = res.data
         comment_map: dict[str, CommentResponse] = {}
         root_comments: List[CommentResponse] = []
+
         for c in flat_comments:
-            comment = CommentResponse(**c, replies=[])
+            reply_count = sum(1 for r in flat_comments if r.get("parent_id") == c["id"])
+            comment = CommentResponse(**c, replies=[], reply_count=reply_count)
             comment_map[comment.id] = comment
+
         for c in flat_comments:
             cid = c["id"]
             parent_id = c.get("parent_id")
@@ -203,6 +206,7 @@ async def get_comments_for_article(article_id: str):
                 comment_map[parent_id].replies.append(comment_map[cid])
             else:
                 root_comments.append(comment_map[cid])
+
         return root_comments
     except Exception:
         logging.error("❌ Error fetching comments", exc_info=True)
@@ -213,24 +217,29 @@ async def like_comment(comment_id: str, request: Request):
     session_id = request.headers.get("X-Session-ID")
     if not session_id:
         raise HTTPException(status_code=400, detail="Missing session identifier")
+
     try:
         existing = supabase.table("comment_likes").select("id").eq("comment_id", comment_id).eq("session_id", session_id).execute()
         if existing.data:
             raise HTTPException(status_code=403, detail="Already liked by this session")
+
         supabase.table("comment_likes").insert({
             "comment_id": comment_id,
             "session_id": session_id
         }).execute()
+
         res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
         if not res.data:
             raise HTTPException(status_code=404, detail="Comment not found")
+
         current_likes = res.data[0].get("likes", 0)
         updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+
         return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
     except Exception as e:
-        logging.error(f"❌ Error liking comment: {str(e)}", exc_info=True)
+        logging.error("❌ Error liking comment", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to like comment: {str(e)}")
-    
+
 @app.post("/api/comments/{comment_id}/unlike")
 async def unlike_comment(comment_id: str, request: Request):
     session_id = request.headers.get("X-Session-ID")
@@ -238,35 +247,24 @@ async def unlike_comment(comment_id: str, request: Request):
         raise HTTPException(status_code=400, detail="Missing session identifier")
 
     try:
-        # Check if like exists
-        existing = (
-            supabase
-            .table("comment_likes")
-            .select("id")
-            .eq("comment_id", comment_id)
-            .eq("session_id", session_id)
-            .execute()
-        )
-
-        if not existing.data:
+        like = supabase.table("comment_likes").select("id").eq("comment_id", comment_id).eq("session_id", session_id).execute()
+        if not like.data:
             raise HTTPException(status_code=404, detail="Like not found")
 
-        # Delete the like
         supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
 
-        # Decrease likes count
         res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
         if not res.data:
             raise HTTPException(status_code=404, detail="Comment not found")
 
-        current_likes = max(res.data[0].get("likes", 1) - 1, 0)
-        updated = supabase.table("comments").update({"likes": current_likes}).eq("id", comment_id).execute()
+        current_likes = res.data[0].get("likes", 0)
+        new_likes = max(current_likes - 1, 0)
+        updated = supabase.table("comments").update({"likes": new_likes}).eq("id", comment_id).execute()
 
         return {"message": "Comment unliked", "likes": updated.data[0]["likes"]}
     except Exception as e:
-        logging.error(f"❌ Error unliking comment: {str(e)}", exc_info=True)
+        logging.error("❌ Error unliking comment", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to unlike comment: {str(e)}")
-
 
 # ---------- Run ----------
 if __name__ == "__main__":
