@@ -218,42 +218,34 @@ async def toggle_like_comment(comment_id: str, request: Request):
     if not session_id:
         raise HTTPException(status_code=400, detail="Missing session ID")
 
-    # Check if the like already exists
     existing_like = supabase.table("comment_likes") \
         .select("*") \
         .eq("comment_id", comment_id) \
         .eq("session_id", session_id) \
-        .single() \
         .execute()
 
     if existing_like.data:
-        # If like exists, remove it (unlike)
         supabase.table("comment_likes") \
             .delete() \
             .eq("comment_id", comment_id) \
             .eq("session_id", session_id) \
             .execute()
 
-        # Decrease like count on comment
-        supabase.table("comments") \
-            .update({"likes": SupabaseRpc("greatest", {"a": 0, "b": "likes - 1"})}) \
-            .eq("id", comment_id) \
-            .execute()
-
+        comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+        current_likes = comment_res.data[0].get("likes", 0)
+        new_likes = max(current_likes - 1, 0)
+        supabase.table("comments").update({"likes": new_likes}).eq("id", comment_id).execute()
         return {"message": "Unliked"}
     else:
-        # Like the comment
         supabase.table("comment_likes").insert({
             "comment_id": comment_id,
             "session_id": session_id
         }).execute()
 
-        # Increase like count on comment
-        supabase.table("comments") \
-            .update({"likes": SupabaseRpc("least", {"a": "likes + 1", "b": 999999})}) \
-            .eq("id", comment_id) \
-            .execute()
-
+        comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+        current_likes = comment_res.data[0].get("likes", 0)
+        new_likes = current_likes + 1
+        supabase.table("comments").update({"likes": new_likes}).eq("id", comment_id).execute()
         return {"message": "Liked"}
 
 @app.post("/api/comments/{comment_id}/unlike")
