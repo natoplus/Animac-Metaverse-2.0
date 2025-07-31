@@ -71,7 +71,7 @@ const BuzzfeedHub = () => {
             className="text-center max-w-4xl mx-auto h-70"
           >
             <img
-              src="/assets/buzzfeed-logo.png"
+              src="/assets/buzzfeed-logo.svg"
               alt="Buzzfeed logo"
               className="mx-auto h-80 w-30 mb-2"
             />
