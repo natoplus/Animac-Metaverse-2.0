@@ -4,29 +4,44 @@ import { ThumbsUp } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
-const getSessionId = () => {
-  let id = localStorage.getItem("session_id");
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem("session_id", id);
-  }
-  return id;
-};
+const Comment = ({ comment, onReply, onLike, likedComments, setLikedComments, repliesCount }) => {
+  const handleDoubleClick = () => {
+    if (likedComments.includes(comment.id)) {
+      setLikedComments(prev => prev.filter(id => id !== comment.id));
+    }
+  };
 
-const Comment = ({ comment, onReply, onLike }) => (
-  <div className="bg-gray-900 p-4 rounded-lg mb-3 text-gray-200 text-sm">
-    <p className="mb-2">{comment.content}</p>
-    <div className="flex justify-between items-center text-xs text-gray-500">
-      <span>by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}</span>
-      <div className="flex gap-3">
-        <button onClick={() => onLike(comment.id)} className="hover:text-white flex items-center gap-1">
-          <ThumbsUp size={14} /> {comment.likes}
-        </button>
-        <button onClick={() => onReply(comment.id)} className="hover:text-white">Reply</button>
+  return (
+    <div
+      className="bg-gray-900 p-4 rounded-lg mb-3 text-gray-200 text-sm"
+      onDoubleClick={handleDoubleClick}
+    >
+      <p className="mb-2">{comment.content}</p>
+      <div className="flex justify-between items-center text-xs text-gray-500">
+        <span>
+          by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}
+          {repliesCount > 0 && (
+            <span className="ml-2 text-blue-400">• {repliesCount} repl{repliesCount === 1 ? 'y' : 'ies'}</span>
+          )}
+        </span>
+        <div className="flex gap-3">
+          <button
+            onClick={() => {
+              if (!likedComments.includes(comment.id)) {
+                onLike(comment.id);
+                setLikedComments(prev => [...prev, comment.id]);
+              }
+            }}
+            className="hover:text-white flex items-center gap-1"
+          >
+            <ThumbsUp size={14} /> {comment.likes}
+          </button>
+          <button onClick={() => onReply(comment.id)} className="hover:text-white">Reply</button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 const CommentSection = ({ articleId }) => {
   const [comments, setComments] = useState([]);
@@ -36,6 +51,8 @@ const CommentSection = ({ articleId }) => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [expandedThreads, setExpandedThreads] = useState({});
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [likedComments, setLikedComments] = useState([]);
   const formRef = useRef(null);
 
   const fetchComments = async () => {
@@ -82,16 +99,25 @@ const CommentSection = ({ articleId }) => {
   };
 
   const handleLike = async (commentId) => {
+    const sessionId = sessionStorage.getItem('session_id') || Date.now().toString();
+    sessionStorage.setItem('session_id', sessionId);
+
     try {
-      await axios.post(`${API_URL}/api/comments/${commentId}/like`, null, {
-        headers: {
-          'X-Session-ID': getSessionId(),
-        },
+      const alreadyLiked = likedComments.includes(commentId);
+
+      const url = `${API_URL}/api/comments/${commentId}/${alreadyLiked ? 'unlike' : 'like'}`;
+      await axios.post(url, null, {
+        headers: { "X-Session-ID": sessionId },
       });
+
+      const updated = alreadyLiked
+        ? likedComments.filter(id => id !== commentId)
+        : [...likedComments, commentId];
+      setLikedComments(updated);
+
       fetchComments();
     } catch (err) {
-      console.error('Like failed:', err);
-      alert('You can only like once per comment.');
+      console.error('Like/unlike failed:', err);
     }
   };
 
@@ -102,36 +128,56 @@ const CommentSection = ({ articleId }) => {
     }));
   };
 
-  const renderThread = (parent = null, level = 0) => {
+  const renderThread = (parent = null) => {
     const replies = comments.filter(c => c.parent_id === parent);
     if (replies.length === 0) return null;
 
-    return replies.map((c, i) => {
+    const visibleReplies = 2;
+
+    return replies.map((c) => {
       const children = comments.filter(child => child.parent_id === c.id);
       const isExpanded = expandedThreads[c.id];
-      const shouldCollapse = children.length > 2 && !isExpanded;
+      const shouldCollapse = children.length > visibleReplies && !isExpanded;
 
       return (
         <div key={c.id} className={parent ? 'ml-6' : ''}>
-          <Comment comment={c} onReply={setParentId} onLike={handleLike} />
+          <Comment
+            comment={c}
+            onReply={setParentId}
+            onLike={handleLike}
+            likedComments={likedComments}
+            setLikedComments={setLikedComments}
+            repliesCount={children.length}
+          />
 
-          {children.length > 0 && (
-            <>
-              {renderThread(c.id, level + 1)}
-              {shouldCollapse && (
-                <button
-                  onClick={() => toggleReplies(c.id)}
-                  className="text-xs text-blue-400 ml-6 mt-1 mb-3 hover:underline"
-                >
-                  Show more replies ({children.length - 2})
-                </button>
-              )}
-            </>
+          {children.slice(0, isExpanded ? children.length : visibleReplies).map(child => (
+            <div key={child.id} className="ml-6">
+              <Comment
+                comment={child}
+                onReply={setParentId}
+                onLike={handleLike}
+                likedComments={likedComments}
+                setLikedComments={setLikedComments}
+                repliesCount={0}
+              />
+            </div>
+          ))}
+
+          {shouldCollapse && (
+            <button
+              onClick={() => toggleReplies(c.id)}
+              className="text-xs text-blue-400 ml-6 mt-1 mb-3 hover:underline"
+            >
+              View more replies ({children.length - visibleReplies})
+            </button>
           )}
         </div>
       );
     });
   };
+
+  const topLevelComments = comments.filter(c => !c.parent_id).slice(0, visibleCount);
+  const moreCommentsExist = comments.filter(c => !c.parent_id).length > visibleCount;
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl border-t border-gray-800" ref={formRef}>
@@ -172,13 +218,31 @@ const CommentSection = ({ articleId }) => {
         </div>
       </form>
 
-      {fetching ? (
-        <p className="text-gray-400 text-sm">Loading comments...</p>
-      ) : comments.length > 0 ? (
-        renderThread()
-      ) : (
-        <p className="text-gray-500 text-sm">No comments yet. Be the first to share your thoughts!</p>
-      )}
+      <div className="relative max-h-[600px] overflow-hidden group">
+        <div className="overflow-y-auto pr-2">
+          {fetching ? (
+            <p className="text-gray-400 text-sm">Loading comments...</p>
+          ) : comments.length > 0 ? (
+            renderThread()
+          ) : (
+            <p className="text-gray-500 text-sm">No comments yet.</p>
+          )}
+        </div>
+
+        {comments.length > 3 && (
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center">
+            <button
+              onClick={() => {
+                const container = formRef.current?.querySelector('.overflow-y-auto');
+                if (container) container.style.maxHeight = 'none';
+              }}
+              className="bg-east-500 hover:bg-east-600 text-white px-4 py-1 text-xs rounded mb-4"
+            >
+              Read more comments
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
