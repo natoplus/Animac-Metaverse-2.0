@@ -195,7 +195,6 @@ async def like_comment(comment_id: str, request: Request):
         raise HTTPException(status_code=400, detail="Missing session identifier")
 
     try:
-        # Check if already liked
         existing = (
             supabase
             .table("comment_likes")
@@ -208,13 +207,11 @@ async def like_comment(comment_id: str, request: Request):
         if existing.data:
             raise HTTPException(status_code=403, detail="Already liked by this session")
 
-        # Add like record
         supabase.table("comment_likes").insert({
             "comment_id": comment_id,
             "session_id": session_id
         }).execute()
 
-        # Increment likes count
         res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
         if not res.data:
             raise HTTPException(status_code=404, detail="Comment not found")
@@ -223,9 +220,10 @@ async def like_comment(comment_id: str, request: Request):
         updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
 
         return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
-    except Exception:
-        logging.error("❌ Error liking comment", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to like comment")
+    except Exception as e:
+        logging.error(f"❌ Error liking comment: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to like comment: {str(e)}")
+
 
 # ---------- Run ----------
 if __name__ == "__main__":
