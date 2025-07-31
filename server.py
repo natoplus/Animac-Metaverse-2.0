@@ -82,6 +82,7 @@ class CommentResponse(CommentBase):
     created_at: str
     likes: int
     replies: Optional[List['CommentResponse']] = []
+    reply_count: int = 0
 
 CommentResponse.update_forward_refs()
 
@@ -158,7 +159,6 @@ async def get_featured_articles():
     except Exception:
         logging.error("❌ Error fetching featured content", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch featured content")
-
 
 @app.delete("/api/articles/{article_id}")
 async def delete_article(article_id: str):
