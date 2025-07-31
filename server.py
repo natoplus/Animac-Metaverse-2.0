@@ -113,7 +113,7 @@ async def create_article(article: ArticleBase):
         res = supabase.table("articles").insert(data).execute()
         return ArticleResponse(**res.data[0])
     except Exception:
-        logging.error("❌ Error creating article:", exc_info=True)
+        logging.error("❌ Error creating article", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to create article")
 
 @app.get("/api/articles", response_model=List[ArticleResponse])
@@ -130,7 +130,7 @@ async def get_articles(category: Optional[str] = None, featured: Optional[bool] 
         res = query.range(skip, skip + limit - 1).order("created_at", desc=True).execute()
         return [ArticleResponse(**item) for item in res.data]
     except Exception:
-        logging.error("❌ Error fetching articles:", exc_info=True)
+        logging.error("❌ Error fetching articles", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @app.get("/api/articles/by-id/{article_id}", response_model=ArticleResponse)
@@ -150,6 +150,8 @@ async def get_article_by_slug(slug: str):
 @app.post("/api/comments", response_model=CommentResponse)
 async def create_comment(comment: CommentBase, request: Request):
     comment_model = Comment(**comment.dict())
+    if not comment_model.author:
+        comment_model.author = "Anonymous"
     data = comment_model.dict()
     data["created_at"] = comment_model.created_at.isoformat()
     try:
@@ -188,21 +190,39 @@ async def get_comments_for_article(article_id: str):
 
 @app.post("/api/comments/{comment_id}/like")
 async def like_comment(comment_id: str, request: Request):
-    user_ip = request.client.host
-    like_key = f"{user_ip}_{comment_id}"
+    session_id = request.headers.get("X-Session-ID")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Missing session identifier")
 
     try:
-        existing_like = supabase.table("comment_likes").select("*").eq("key", like_key).execute()
-        if existing_like.data:
-            return {"message": "Already liked", "likes": None}
+        # Check if already liked
+        existing = (
+            supabase
+            .table("comment_likes")
+            .select("id")
+            .eq("comment_id", comment_id)
+            .eq("session_id", session_id)
+            .execute()
+        )
 
-        supabase.table("comment_likes").insert({"key": like_key, "comment_id": comment_id}).execute()
+        if existing.data:
+            raise HTTPException(status_code=403, detail="Already liked by this session")
 
-        current = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-        new_likes = (current.data[0].get("likes") or 0) + 1
-        supabase.table("comments").update({"likes": new_likes}).eq("id", comment_id).execute()
+        # Add like record
+        supabase.table("comment_likes").insert({
+            "comment_id": comment_id,
+            "session_id": session_id
+        }).execute()
 
-        return {"message": "Comment liked", "likes": new_likes}
+        # Increment likes count
+        res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
+
+        current_likes = res.data[0].get("likes", 0)
+        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+
+        return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
     except Exception:
         logging.error("❌ Error liking comment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to like comment")
