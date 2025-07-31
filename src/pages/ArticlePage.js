@@ -22,33 +22,32 @@ const ArticlePage = () => {
   const [shareCount, setShareCount] = useState(0);
 
   useEffect(() => {
-    const fetchArticle = async () => {
-      setLoading(true);
-      try {
-        const res = await apiEndpoints.getArticle(id);
-        setArticle(res);
-        setLikeCount(res.likes || 0);
-        setBookmarkCount(res.bookmarks || 0);
-        setShareCount(res.shares || 0);
+  const fetchArticle = async () => {
+    setLoading(true);
+    try {
+      const res = await apiEndpoints.getArticle(id);
+      setArticle(res);
+      setLikeCount(res.likes || 0);
+      setBookmarkCount(res.bookmarks || 0);
+      setShareCount(res.shares || 0);
 
-        const likeKey = `liked-${res.id}`;
-        const bookmarkKey = `bookmarked-${res.id}`;
-        setLiked(localStorage.getItem(likeKey) === 'true');
-        setBookmarked(localStorage.getItem(bookmarkKey) === 'true');
+      setLiked(res.likedByCurrentUser);       // server returns true/false
+      setBookmarked(res.bookmarkedByCurrentUser);
 
-        setError(null);
-        window.scrollTo(0, 0);
-      } catch (err) {
-        console.error("❌ Failed to fetch article", err);
-        setError('Article not found or failed to load.');
-        setArticle(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setError(null);
+      window.scrollTo(0, 0);
+    } catch (err) {
+      console.error("❌ Failed to fetch article", err);
+      setError('Article not found or failed to load.');
+      setArticle(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    if (id) fetchArticle();
-  }, [id]);
+  if (id) fetchArticle();
+}, [id]);
+
 
   const theme = getTheme(article?.category);
   const estimatedReadTime = article?.read_time || Math.ceil((article?.content || '').split(' ').length / 200);
@@ -64,21 +63,28 @@ const ArticlePage = () => {
     }
   };
 
-  const handleLike = () => {
-    const key = `liked-${article.id}`;
-    const newState = !liked;
-    setLiked(newState);
-    setLikeCount(prev => prev + (newState ? 1 : -1));
-    localStorage.setItem(key, newState);
-  };
+  const handleLike = async () => {
+  try {
+    const res = await apiEndpoints.toggleArticleLike(article.id); // POST call
+    setLiked(res.liked);
+    setLikeCount(res.likes);
+    localStorage.setItem(`liked-${article.id}`, res.liked);
+  } catch (err) {
+    console.error('❌ Like toggle failed:', err);
+  }
+};
 
-  const handleBookmark = () => {
-    const key = `bookmarked-${article.id}`;
-    const newState = !bookmarked;
-    setBookmarked(newState);
-    setBookmarkCount(prev => prev + (newState ? 1 : -1));
-    localStorage.setItem(key, newState);
-  };
+const handleBookmark = async () => {
+  try {
+    const res = await apiEndpoints.toggleArticleBookmark(article.id); // POST call
+    setBookmarked(res.bookmarked);
+    setBookmarkCount(res.bookmarks);
+    localStorage.setItem(`bookmarked-${article.id}`, res.bookmarked);
+  } catch (err) {
+    console.error('❌ Bookmark toggle failed:', err);
+  }
+};
+
 
   if (loading) {
     return (
