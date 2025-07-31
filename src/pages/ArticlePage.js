@@ -68,7 +68,7 @@ const ArticlePage = () => {
     const key = `liked-${article.id}`;
     const newState = !liked;
     setLiked(newState);
-    setLikeCount(prev => prev + (newState ? 1 : 0));
+    setLikeCount(prev => prev + (newState ? 1 : -1));
     localStorage.setItem(key, newState);
   };
 
@@ -76,7 +76,7 @@ const ArticlePage = () => {
     const key = `bookmarked-${article.id}`;
     const newState = !bookmarked;
     setBookmarked(newState);
-    setBookmarkCount(prev => prev + (newState ? 1 : 0));
+    setBookmarkCount(prev => prev + (newState ? 1 : -1));
     localStorage.setItem(key, newState);
   };
 
