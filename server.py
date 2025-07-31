@@ -81,7 +81,7 @@ class CommentResponse(CommentBase):
     id: str
     created_at: str
     likes: int
-    replies: Optional[List["CommentResponse"]] = []
+    replies: Optional[List['CommentResponse']] = []
 
 CommentResponse.update_forward_refs()
 
@@ -239,11 +239,13 @@ async def create_comment(comment: CommentBase):
 
     try:
         res = supabase.table("comments").insert(data).execute()
-        return CommentResponse(**res.data[0], replies=[])
-    except Exception:
-        logging.error("❌ Error creating comment", exc_info=True)
+        if res.data:
+            return CommentResponse(**res.data[0], replies=[])
+        else:
+            raise HTTPException(status_code=500, detail="No data returned from Supabase")
+    except Exception as e:
+        logging.error(f"❌ Error creating comment: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to create comment")
-
 
 @app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
 async def get_comments_for_article(article_id: str):
@@ -253,12 +255,12 @@ async def get_comments_for_article(article_id: str):
         comment_map: Dict[str, CommentResponse] = {}
         root_comments: List[CommentResponse] = []
 
-        # First pass: Map comments by ID
+        # First pass: Map by ID
         for c in flat_comments:
             comment = CommentResponse(**c, replies=[])
             comment_map[comment.id] = comment
 
-        # Second pass: Build threaded structure
+        # Second pass: Nest replies
         for c in flat_comments:
             cid = c["id"]
             parent_id = c.get("parent_id")
@@ -268,28 +270,26 @@ async def get_comments_for_article(article_id: str):
                 root_comments.append(comment_map[cid])
 
         return root_comments
-    except Exception:
+    except Exception as e:
         logging.error("❌ Error fetching comments", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch comments")
-
 
 @app.post("/api/comments/{comment_id}/like")
 async def like_comment(comment_id: str):
     try:
-        comment = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-        if not comment.data:
+        res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+        if not res.data:
             raise HTTPException(status_code=404, detail="Comment not found")
-        
-        current_likes = comment.data[0].get("likes", 0)
+
+        current_likes = res.data[0].get("likes", 0)
         updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+
         return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
     except Exception:
         logging.error("❌ Error liking comment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to like comment")
 
-
-
-# ---------- Run Locally ----------
+# ---------- Run ----------
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
