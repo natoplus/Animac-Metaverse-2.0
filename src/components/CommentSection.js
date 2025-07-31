@@ -229,7 +229,7 @@ const CommentSection = ({ articleId }) => {
           )}
         </div>
 
-        {comments.length > 6 && (
+        {comments.length > 3 && (
           <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center">
             <button
               onClick={() => {
