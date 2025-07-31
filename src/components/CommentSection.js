@@ -4,7 +4,7 @@ import { ThumbsUp } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
-const Comment = ({ comment, onReply, onLike, likedComments, setLikedComments }) => {
+const Comment = ({ comment, onReply, onLike, likedComments, setLikedComments, repliesCount }) => {
   const handleDoubleClick = () => {
     if (likedComments.includes(comment.id)) {
       setLikedComments(prev => prev.filter(id => id !== comment.id));
@@ -18,7 +18,12 @@ const Comment = ({ comment, onReply, onLike, likedComments, setLikedComments }) 
     >
       <p className="mb-2">{comment.content}</p>
       <div className="flex justify-between items-center text-xs text-gray-500">
-        <span>by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}</span>
+        <span>
+          by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}
+          {repliesCount > 0 && (
+            <span className="ml-2 text-blue-400">• {repliesCount} repl{repliesCount === 1 ? 'y' : 'ies'}</span>
+          )}
+        </span>
         <div className="flex gap-3">
           <button
             onClick={() => {
@@ -142,6 +147,7 @@ const CommentSection = ({ articleId }) => {
             onLike={handleLike}
             likedComments={likedComments}
             setLikedComments={setLikedComments}
+            repliesCount={children.length}
           />
 
           {children.slice(0, isExpanded ? children.length : visibleReplies).map(child => (
@@ -152,6 +158,7 @@ const CommentSection = ({ articleId }) => {
                 onLike={handleLike}
                 likedComments={likedComments}
                 setLikedComments={setLikedComments}
+                repliesCount={0}
               />
             </div>
           ))}
