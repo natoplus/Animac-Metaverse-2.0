@@ -4,6 +4,15 @@ import { ThumbsUp } from 'lucide-react';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
+const getSessionId = () => {
+  let id = localStorage.getItem("session_id");
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem("session_id", id);
+  }
+  return id;
+};
+
 const Comment = ({ comment, onReply, onLike }) => (
   <div className="bg-gray-900 p-4 rounded-lg mb-3 text-gray-200 text-sm">
     <p className="mb-2">{comment.content}</p>
@@ -74,10 +83,15 @@ const CommentSection = ({ articleId }) => {
 
   const handleLike = async (commentId) => {
     try {
-      await axios.post(`${API_URL}/api/comments/${commentId}/like`);
+      await axios.post(`${API_URL}/api/comments/${commentId}/like`, null, {
+        headers: {
+          'X-Session-ID': getSessionId(),
+        },
+      });
       fetchComments();
     } catch (err) {
       console.error('Like failed:', err);
+      alert('You can only like once per comment.');
     }
   };
 
