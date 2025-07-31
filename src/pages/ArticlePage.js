@@ -26,6 +26,11 @@ const ArticlePage = () => {
         setArticle(res);
         setError(null);
         window.scrollTo(0, 0);
+
+        const likeKey = `liked-${res.id}`;
+        const bookmarkKey = `bookmarked-${res.id}`;
+        setLiked(localStorage.getItem(likeKey) === 'true');
+        setBookmarked(localStorage.getItem(bookmarkKey) === 'true');
       } catch (err) {
         console.error("❌ Failed to fetch article", err);
         setError('Article not found or failed to load.');
@@ -75,6 +80,20 @@ const ArticlePage = () => {
     } catch (err) {
       console.error("❌ Failed to copy link:", err);
     }
+  };
+
+  const handleLike = () => {
+    const key = `liked-${article.id}`;
+    const newState = !liked;
+    setLiked(newState);
+    localStorage.setItem(key, newState);
+  };
+
+  const handleBookmark = () => {
+    const key = `bookmarked-${article.id}`;
+    const newState = !bookmarked;
+    setBookmarked(newState);
+    localStorage.setItem(key, newState);
   };
 
   if (loading) {
@@ -142,7 +161,7 @@ const ArticlePage = () => {
 
           <div className="flex flex-wrap gap-4">
             <button
-              onClick={() => setLiked(!liked)}
+              onClick={handleLike}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 border transition ${liked ? `${theme.button} ${theme.border} text-white` : 'bg-transparent border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white'}`}
             >
               <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
@@ -150,7 +169,7 @@ const ArticlePage = () => {
             </button>
 
             <button
-              onClick={() => setBookmarked(!bookmarked)}
+              onClick={handleBookmark}
               className={`px-4 py-2 rounded-lg flex items-center gap-2 border transition ${bookmarked ? `${theme.button} ${theme.border} text-white` : 'bg-transparent border-gray-600 text-gray-300 hover:border-gray-400 hover:text-white'}`}
             >
               <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} />
