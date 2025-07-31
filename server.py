@@ -239,29 +239,33 @@ async def create_comment(comment: CommentBase):
 
     try:
         res = supabase.table("comments").insert(data).execute()
-        if not res.data:
-            logging.error("Supabase insert failed: %s", res)
-            raise HTTPException(status_code=500, detail="Insert failed")
+        if not res.data or not isinstance(res.data, list) or not res.data[0]:
+            raise HTTPException(status_code=500, detail="Insert failed or response invalid")
         return CommentResponse(**res.data[0], replies=[])
     except Exception as e:
         logging.error("❌ Error creating comment", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
 
-
 @app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
 async def get_comments_for_article(article_id: str):
     try:
-        res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", asc=True).execute()
+        res = (
+            supabase
+            .table("comments")
+            .select("*")
+            .eq("article_id", article_id)
+            .order("created_at", desc=False)
+            .execute()
+        )
+
         flat_comments = res.data
-        comment_map: Dict[str, CommentResponse] = {}
+        comment_map: dict[str, CommentResponse] = {}
         root_comments: List[CommentResponse] = []
 
-        # First pass: Map by ID
         for c in flat_comments:
             comment = CommentResponse(**c, replies=[])
             comment_map[comment.id] = comment
 
-        # Second pass: Nest replies
         for c in flat_comments:
             cid = c["id"]
             parent_id = c.get("parent_id")
@@ -272,7 +276,7 @@ async def get_comments_for_article(article_id: str):
 
         return root_comments
     except Exception as e:
-        logging.error("❌ Error fetching comments", exc_info=True)
+        logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch comments")
 
 @app.post("/api/comments/{comment_id}/like")
