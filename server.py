@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request, Depends, Security
+from fastapi import FastAPI, HTTPException, Response, Request, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from pydantic import BaseModel, Field
@@ -252,45 +252,51 @@ async def get_comments_for_article(article_id: str):
     return root_comments
 
 @app.post("/api/comments/{comment_id}/like")
-async def toggle_like_comment(comment_id: str, request: Request):
+async def toggle_like_comment(comment_id: str, request: Request, response: Response):
     session_id = request.cookies.get("session_id")
-    if not session_id:
-        raise HTTPException(status_code=400, detail="Missing session ID")
 
+    # Generate session_id if not present (useful for guests)
+    if not session_id:
+        session_id = str(uuid.uuid4())
+        response.set_cookie(key="session_id", value=session_id, max_age=60*60*24*30, httponly=True)
+
+    # Check if already liked
     existing_like = supabase.table("comment_likes") \
-        .select("*") \
+        .select("id") \
         .eq("comment_id", comment_id) \
         .eq("session_id", session_id) \
         .execute()
 
+    # Get current like count safely
+    comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+    if not comment_res.data:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    
+    current_likes = comment_res.data[0].get("likes", 0)
+
     if existing_like.data:
-        supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
-        comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-        current_likes = comment_res.data[0].get("likes", 0)
-        supabase.table("comments").update({"likes": max(current_likes - 1, 0)}).eq("id", comment_id).execute()
-        return {"message": "Unliked"}
+        # Unlike
+        supabase.table("comment_likes").delete() \
+            .eq("comment_id", comment_id) \
+            .eq("session_id", session_id).execute()
+
+        updated_likes = max(current_likes - 1, 0)
+        supabase.table("comments").update({"likes": updated_likes}) \
+            .eq("id", comment_id).execute()
+
+        return {"message": "Unliked", "likes": updated_likes}
     else:
-        supabase.table("comment_likes").insert({"comment_id": comment_id, "session_id": session_id}).execute()
-        comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-        current_likes = comment_res.data[0].get("likes", 0)
-        supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
-        return {"message": "Liked"}
+        # Like
+        supabase.table("comment_likes").insert({
+            "comment_id": comment_id,
+            "session_id": session_id
+        }).execute()
 
-@app.post("/api/comments/{comment_id}/unlike")
-async def unlike_comment(comment_id: str, request: Request):
-    session_id = request.headers.get("X-Session-ID")
-    if not session_id:
-        raise HTTPException(status_code=400, detail="Missing session identifier")
+        updated_likes = current_likes + 1
+        supabase.table("comments").update({"likes": updated_likes}) \
+            .eq("id", comment_id).execute()
 
-    like = supabase.table("comment_likes").select("id").eq("comment_id", comment_id).eq("session_id", session_id).execute()
-    if not like.data:
-        raise HTTPException(status_code=404, detail="Like not found")
-
-    supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
-    res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-    current_likes = res.data[0].get("likes", 0)
-    updated = supabase.table("comments").update({"likes": max(current_likes - 1, 0)}).eq("id", comment_id).execute()
-    return {"message": "Comment unliked", "likes": updated.data[0]["likes"]}
+        return {"message": "Liked", "likes": updated_likes}
 
 # ---------- Run ----------
 if __name__ == "__main__":
