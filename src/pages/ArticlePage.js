@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 import CommentSection from '../components/CommentSection';
-import { toggleArticleLike, toggleBookmark } from '../services/ArticleService';
+import { likeArticle } from '../services/articleService';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
@@ -41,28 +41,26 @@ const ArticlePage = () => {
 
   const fetchArticle = useCallback(async () => {
     if (!id) {
-      setError("Missing article ID in URL.");
+      setError('Missing article ID in URL.');
       return;
     }
 
     setLoading(true);
-    console.log('[Fetch] Fetching article with ID:', id);
-
     try {
-      const res = await axios.get(`${API_URL}/api/articles/${id}`);
+      const res = await axios.get(`${API_URL}/api/articles/by-id/${id}`);
       const data = res.data;
 
       setArticle(data);
       setLikeCount(data.likes ?? 0);
       setBookmarkCount(data.bookmarks ?? 0);
       setShareCount(data.shares ?? 0);
-      setLiked(!!data.likedByCurrentUser);
-      setBookmarked(!!data.bookmarkedByCurrentUser);
+      setLiked(Boolean(data.likedByCurrentUser));
+      setBookmarked(Boolean(data.bookmarkedByCurrentUser));
       setError(null);
       window.scrollTo(0, 0);
     } catch (err) {
       console.error('❌ Failed to fetch article:', err?.response?.data || err.message);
-      setError("Article not found or failed to load.");
+      setError('Article not found or failed to load.');
       setArticle(null);
     } finally {
       setLoading(false);
@@ -77,7 +75,7 @@ const ArticlePage = () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
-      setShareCount((prev) => prev + 1);
+      setShareCount(prev => prev + 1);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('❌ Failed to copy link:', err);
@@ -87,10 +85,11 @@ const ArticlePage = () => {
   const handleLike = async () => {
     if (!article?.id || likeProcessing) return;
     setLikeProcessing(true);
+
     const sessionId = getSessionId();
     const newLiked = !liked;
     setLiked(newLiked);
-    setLikeCount((prev) => newLiked ? prev + 1 : Math.max(prev - 1, 0));
+    setLikeCount(prev => newLiked ? prev + 1 : Math.max(prev - 1, 0));
 
     try {
       await toggleArticleLike(article.id, sessionId, newLiked);
@@ -104,10 +103,11 @@ const ArticlePage = () => {
   const handleBookmark = async () => {
     if (!article?.id || bookmarkProcessing) return;
     setBookmarkProcessing(true);
+
     const sessionId = getSessionId();
     const newBookmarked = !bookmarked;
     setBookmarked(newBookmarked);
-    setBookmarkCount((prev) => newBookmarked ? prev + 1 : Math.max(prev - 1, 0));
+    setBookmarkCount(prev => newBookmarked ? prev + 1 : Math.max(prev - 1, 0));
 
     try {
       await toggleBookmark(article.id, sessionId, newBookmarked);
