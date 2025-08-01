@@ -10,7 +10,7 @@ import {
 import CommentSection from '../components/CommentSection';
 import { toggleArticleLike, toggleBookmark } from '../services/articleService';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://animac-metaverse.onrender.com';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const ArticlePage = () => {
   const { id } = useParams();
