@@ -170,61 +170,44 @@ const ArticlePage = () => {
       transition={{ duration: 0.5 }}
       className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}
     >
-      {/* Hero Section with Feature Image */}
-      <div className="relative h-[380px] sm:h-[460px] w-full overflow-hidden">
-        {article.featured_image && (
-          <motion.div
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${article.featured_image})` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" />
-        <div className="relative z-20 h-full flex items-end justify-center text-center px-6 pb-10">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-2">{article.title}</h1>
-            {article.excerpt && (
-              <p className="text-md sm:text-lg font-medium text-gray-300 italic">{article.excerpt}</p>
-            )}
-          </div>
-        </div>
-      </div>
+    
+{/* Hero Section with Feature Image */}
+ <div className="relative h-[380px] sm:h-[460px] w-full overflow-hidden">
+  {article.featured_image && (
+    <motion.div
+      initial={{ opacity: 0, scale: 1.1 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.6 }}
+      className="absolute inset-0 bg-cover bg-center"
+      style={{ backgroundImage: `url(${article.featured_image})` }}
+    />
+  )}
 
-      {/* Article Meta and Body */}
-      <div className="container mx-auto px-4 py-10 max-w-4xl">
-        {/* Back + Category */}
-        <Link
-          to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'}
-          className="text-gray-400 hover:text-white font-inter inline-flex items-center mb-4"
-        >
-          <ArrowLeft size={20} className="mr-2" /> Back to {article.category?.toUpperCase() || 'Home'}
-        </Link>
+  {/* Dark gradient overlay */}
+  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent z-10" />
 
-        <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
-          {article.category?.toUpperCase() || 'FEATURED'}
-        </span>
+  {/* Back button at top-left */}
+  <div className="absolute top-5 left-5 z-20">
+    <Link
+      to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'}
+      className="inline-flex items-center text-white bg-black/60 hover:bg-black/80 px-4 py-2 rounded-full text-sm transition"
+    >
+      <ArrowLeft size={18} className="mr-2" />
+      Back to {article.category?.toUpperCase() || 'Home'}
+    </Link>
+  </div>
 
-        {/* Author Info */}
-        <div className="text-sm text-gray-400 flex gap-4 items-center mb-6">
-          <span><User size={14} className="inline mr-1" /> {article.author}</span>
-          <span><Calendar size={14} className="inline mr-1" /> {new Date(article.created_at).toLocaleDateString()}</span>
-          <span><Clock size={14} className="inline mr-1" /> {estimatedReadTime} min read</span>
-        </div>
+  {/* Centered article title and excerpt */}
+  <div className="relative z-20 h-full flex items-end justify-center text-center px-6 pb-10">
+    <div className="max-w-3xl">
+      <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-2">{article.title}</h1>
+      {article.excerpt && (
+        <p className="text-md sm:text-lg font-medium text-gray-300 italic">{article.excerpt}</p>
+      )}
+    </div>
+  </div>
+</div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-4 text-gray-300 mb-10">
-          <button onClick={handleLike} disabled={likeProcessing} className="hover:text-pink-500 transition flex items-center gap-1">
-            <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
-          </button>
-          <button onClick={handleBookmark} disabled={bookmarkProcessing} className="hover:text-yellow-400 transition flex items-center gap-1">
-            <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
-          </button>
-          <button onClick={handleCopyLink} className="hover:text-blue-400 transition flex items-center gap-1">
-            <Share2 size={18} /> {copied ? 'Copied!' : 'Share'} ({shareCount})
-          </button>
-        </div>
 
         {/* Content */}
         <div className="prose prose-invert max-w-none text-gray-300 text-lg space-y-6 font-inter">
