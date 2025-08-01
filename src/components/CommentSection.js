@@ -95,6 +95,7 @@ const CommentSection = ({ articleId }) => {
   const [sessionId, setSessionId] = useState('');
   const commentBoxRef = useRef(null);
 
+  // Initialize session and saved states
   useEffect(() => {
     let existing = sessionStorage.getItem('session_id');
     if (!existing) {
@@ -111,14 +112,19 @@ const CommentSection = ({ articleId }) => {
     if (savedReplyId) setParentId(savedReplyId);
   }, []);
 
+  // Fetch comments only if articleId is valid
   useEffect(() => {
+    if (!articleId) return;
     fetchComments();
   }, [articleId]);
 
+  // Save parentId for pending reply in sessionStorage
   useEffect(() => {
-    sessionStorage.setItem('pending_reply', parentId || '');
+    if (parentId) sessionStorage.setItem('pending_reply', parentId);
+    else sessionStorage.removeItem('pending_reply');
   }, [parentId]);
 
+  // Fetch comments from API
   const fetchComments = async () => {
     try {
       setFetching(true);
@@ -131,6 +137,7 @@ const CommentSection = ({ articleId }) => {
     }
   };
 
+  // Handle posting new comment or reply
   const handlePost = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -156,6 +163,7 @@ const CommentSection = ({ articleId }) => {
     }
   };
 
+  // Handle voting logic (upvote/downvote/unvote)
   const handleVote = async (commentId, direction) => {
     const upvoted = upvotedComments.includes(commentId);
     const downvoted = downvotedComments.includes(commentId);
@@ -191,6 +199,7 @@ const CommentSection = ({ articleId }) => {
     }
   };
 
+  // Handle bookmark toggle
   const handleBookmark = async (commentId) => {
     const isBookmarked = bookmarkedComments.includes(commentId);
     const endpoint = isBookmarked ? 'unbookmark' : 'bookmark';
@@ -212,6 +221,7 @@ const CommentSection = ({ articleId }) => {
     }
   };
 
+  // Toggle reply thread expansion
   const toggleReplies = (commentId) => {
     setExpandedThreads(prev => ({
       ...prev,
@@ -219,6 +229,7 @@ const CommentSection = ({ articleId }) => {
     }));
   };
 
+  // Recursive rendering of replies for a given comment
   const renderReplies = (parentId) => {
     const replies = comments.filter(c => c.parent_id === parentId);
     const expanded = expandedThreads[parentId];

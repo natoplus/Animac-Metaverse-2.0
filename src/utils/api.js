@@ -75,7 +75,6 @@ export const updateArticle = async (id, data) => {
   }
 };
 
-// ✅ Delete article by ID
 export const deleteArticle = async (id) => {
   try {
     const res = await api.delete(`/api/articles/${id}`);
@@ -86,7 +85,6 @@ export const deleteArticle = async (id) => {
   }
 };
 
-// ✅ Fetch category stats
 export const fetchCategoryStats = async () => {
   try {
     const res = await api.get('/api/categories/stats');
@@ -117,10 +115,33 @@ export const healthCheck = async () => {
   }
 };
 
+// ---------- Article Like/Bookmark Toggles ----------
+export const toggleLikeArticle = async (articleId, sessionId) => {
+  try {
+    const res = await api.post(`/api/articles/${articleId}/like`, { session_id: sessionId });
+    return res.data;
+  } catch (err) {
+    console.error(`❌ Error liking/unliking article [${articleId}]:`, err.message);
+    return null;
+  }
+};
+
+export const toggleBookmarkArticle = async (articleId, sessionId) => {
+  try {
+    const res = await api.post(`/api/articles/${articleId}/bookmark`, { session_id: sessionId });
+    return res.data;
+  } catch (err) {
+    console.error(`❌ Error bookmarking/unbookmarking article [${articleId}]:`, err.message);
+    return null;
+  }
+};
+
 // ---------- Comment Endpoints ----------
 export const fetchComments = async (articleId) => {
   try {
-    const res = await api.get(`/api/comments`, { params: { article_id: articleId } });
+    const res = await api.get('/api/comments', {
+      params: { article_id: articleId },
+    });
     return res.data || [];
   } catch (err) {
     console.error(`❌ Error fetching comments for article [${articleId}]:`, err.message);
@@ -128,14 +149,45 @@ export const fetchComments = async (articleId) => {
   }
 };
 
-export const postComment = async ({ article_id, name, message }) => {
+export const postComment = async ({ article_id, name, message, parent_id = null }) => {
   try {
-    const res = await api.post('/api/comments', { article_id, name, message });
+    const res = await api.post('/api/comments', {
+      article_id,
+      name,
+      message,
+      ...(parent_id && { parent_id }),
+    });
     return res.data;
   } catch (err) {
     console.error('❌ Error posting comment:', err.message);
     return null;
   }
+};
+
+export const likeComment = async (commentId, sessionId) => {
+  try {
+    const res = await api.post(`/api/comments/${commentId}/like`, { session_id: sessionId });
+    return res.data;
+  } catch (err) {
+    console.error(`❌ Error liking comment [${commentId}]:`, err.message);
+    return null;
+  }
+};
+
+export const unlikeComment = async (commentId, sessionId) => {
+  try {
+    const res = await api.post(`/api/comments/${commentId}/unlike`, { session_id: sessionId });
+    return res.data;
+  } catch (err) {
+    console.error(`❌ Error unliking comment [${commentId}]:`, err.message);
+    return null;
+  }
+};
+
+export const toggleLikeComment = async (commentId, sessionId, isLiked) => {
+  return isLiked
+    ? await unlikeComment(commentId, sessionId)
+    : await likeComment(commentId, sessionId);
 };
 
 // ---------- Export Group ----------
@@ -149,11 +201,16 @@ export const apiEndpoints = {
   deleteArticle,
   getFeaturedContent: fetchFeaturedContent,
   getCategoryStats: fetchCategoryStats,
+  toggleLikeArticle,
+  toggleBookmarkArticle,
   healthCheck,
 
   // Comments
   getComments: fetchComments,
-  postComment: postComment,
+  postComment,
+  likeComment,
+  unlikeComment,
+  toggleLikeComment,
 };
 
 export default apiEndpoints;
