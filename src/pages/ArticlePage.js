@@ -113,21 +113,24 @@ const ArticlePage = () => {
   };
 
   const getTheme = (category) => {
-    switch (category) {
+    switch (category?.toLowerCase()) {
       case 'east':
         return {
           gradient: 'from-east-900/50 via-netflix-dark to-netflix-black',
           accent: 'text-east-400',
+          badge: 'border-east-400 text-east-300 bg-east-800/20',
         };
       case 'west':
         return {
           gradient: 'from-west-900/50 via-netflix-dark to-netflix-black',
           accent: 'text-west-400',
+          badge: 'border-west-400 text-west-300 bg-west-800/20',
         };
       default:
         return {
           gradient: 'from-gray-900 via-netflix-dark to-netflix-black',
           accent: 'text-gray-300',
+          badge: 'border-gray-500 text-gray-300 bg-gray-800/20',
         };
     }
   };
@@ -191,17 +194,37 @@ const ArticlePage = () => {
           </button>
         </div>
 
-        <div className="prose prose-invert max-w-none text-gray-100 prose-h2:text-white prose-a:text-blue-400 prose-strong:text-white prose-em:text-gray-400">
-          {article.content ? (
-            <div
-              className="space-y-6 leading-relaxed text-lg tracking-wide"
-              dangerouslySetInnerHTML={{ __html: article.content }}
-            />
-          ) : (
-            <p className="text-gray-500 italic">No content available.</p>
-          )}
+        {/* Article Body */}
+        <div className="bg-netflix-black">
+          <div className="container mx-auto px-4 py-10 max-w-4xl">
+            {article.excerpt && (
+              <div className="mb-12 italic text-xl text-gray-300 border-l-4 border-gray-600 pl-6 font-inter">
+                {article.excerpt}
+              </div>
+            )}
+            <div className="prose prose-invert max-w-none text-gray-300 text-lg space-y-6 font-inter">
+              {(article.content || '').split('\n').map((para, idx) => (
+                <p key={idx}>{para.trim()}</p>
+              ))}
+            </div>
+
+            {/* Tags */}
+            {article.tags?.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-gray-800">
+                <h3 className="text-white font-montserrat font-semibold mb-4">Tags</h3>
+                <div className="flex flex-wrap gap-3">
+                  {article.tags.map((tag, i) => (
+                    <span key={i} className={`px-3 py-2 rounded-lg font-inter text-sm border ${theme.badge}`}>
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Comments */}
         <div className="mt-12">
           <CommentSection articleId={article.id} />
         </div>
