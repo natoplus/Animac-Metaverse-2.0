@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 import CommentSection from '../components/CommentSection';
-import { likeArticle } from '../services/articleService';
+import { toggleLikeArticle, toggleBookmarkArticle } from '../api'; // ✅ Fixed import
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
@@ -92,7 +92,7 @@ const ArticlePage = () => {
     setLikeCount(prev => newLiked ? prev + 1 : Math.max(prev - 1, 0));
 
     try {
-      await toggleArticleLike(article.id, sessionId, newLiked);
+      await toggleLikeArticle(article.id, sessionId);
     } catch (error) {
       console.error('❌ Like toggle failed:', error);
     } finally {
@@ -110,7 +110,7 @@ const ArticlePage = () => {
     setBookmarkCount(prev => newBookmarked ? prev + 1 : Math.max(prev - 1, 0));
 
     try {
-      await toggleBookmark(article.id, sessionId, newBookmarked);
+      await toggleBookmarkArticle(article.id, sessionId);
     } catch (error) {
       console.error('❌ Bookmark toggle failed:', error);
     } finally {
