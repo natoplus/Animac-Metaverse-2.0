@@ -170,63 +170,75 @@ const ArticlePage = () => {
       transition={{ duration: 0.4 }}
       className={`min-h-screen pt-20 bg-gradient-to-b ${theme.gradient} text-gray-200`}
     >
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-extrabold leading-tight text-white mb-3">{article.title}</h1>
-        <p className={`text-md sm:text-lg font-medium ${theme.accent} mb-6 italic`}>
-          {article.excerpt || 'An insightful read from Animac.'}
-        </p>
+      <div className={`relative overflow-hidden bg-gradient-to-br ${theme.gradient}`}>
+        {article.featured_image && (
+          <div
+            className="absolute inset-0 bg-cover bg-center opacity-20"
+            style={{ backgroundImage: `url(${article.featured_image})` }}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-netflix-black via-transparent to-transparent z-10" />
 
-        <div className="text-sm text-gray-400 flex gap-4 items-center mb-6">
-          <span><User size={14} className="inline mr-1" /> {article.author}</span>
-          <span><Calendar size={14} className="inline mr-1" /> {new Date(article.created_at).toLocaleDateString()}</span>
-          <span><Clock size={14} className="inline mr-1" /> {estimatedReadTime} min read</span>
-        </div>
+        <div className="relative z-20 container mx-auto px-4 py-16 max-w-4xl">
+          <Link
+            to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'}
+            className="text-gray-400 hover:text-white font-inter inline-flex items-center mb-4"
+          >
+            <ArrowLeft size={20} className="mr-2" /> Back to {article.category?.toUpperCase() || 'Home'}
+          </Link>
 
-        <div className="flex flex-wrap items-center gap-4 text-gray-300 mb-8">
-          <button onClick={handleLike} disabled={likeProcessing} className="hover:text-pink-500 transition flex items-center gap-1">
-            <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
-          </button>
-          <button onClick={handleBookmark} disabled={bookmarkProcessing} className="hover:text-yellow-400 transition flex items-center gap-1">
-            <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
-          </button>
-          <button onClick={handleCopyLink} className="hover:text-blue-400 transition flex items-center gap-1">
-            <Share2 size={18} /> {copied ? 'Copied!' : 'Share'} ({shareCount})
-          </button>
-        </div>
+          <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge}`}>
+            {article.category?.toUpperCase() || 'FEATURED'}
+          </span>
 
-        {/* Article Body */}
-        <div className="bg-netflix-black">
-          <div className="container mx-auto px-4 py-10 max-w-4xl">
-            {article.excerpt && (
-              <div className="mb-12 italic text-xl text-gray-300 border-l-4 border-gray-600 pl-6 font-inter">
-                {article.excerpt}
-              </div>
-            )}
-            <div className="prose prose-invert max-w-none text-gray-300 text-lg space-y-6 font-inter">
-              {(article.content || '').split('\n').map((para, idx) => (
-                <p key={idx}>{para.trim()}</p>
-              ))}
-            </div>
+          <h1 className="text-4xl font-extrabold leading-tight text-white mt-4 mb-3">{article.title}</h1>
+          <p className={`text-md sm:text-lg font-medium ${theme.accent} mb-6 italic`}>
+            {article.excerpt || 'An insightful read from Animac.'}
+          </p>
 
-            {/* Tags */}
-            {article.tags?.length > 0 && (
-              <div className="mt-12 pt-8 border-t border-gray-800">
-                <h3 className="text-white font-montserrat font-semibold mb-4">Tags</h3>
-                <div className="flex flex-wrap gap-3">
-                  {article.tags.map((tag, i) => (
-                    <span key={i} className={`px-3 py-2 rounded-lg font-inter text-sm border ${theme.badge}`}>
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="text-sm text-gray-400 flex gap-4 items-center mb-6">
+            <span><User size={14} className="inline mr-1" /> {article.author}</span>
+            <span><Calendar size={14} className="inline mr-1" /> {new Date(article.created_at).toLocaleDateString()}</span>
+            <span><Clock size={14} className="inline mr-1" /> {estimatedReadTime} min read</span>
           </div>
-        </div>
 
-        {/* Comments */}
-        <div className="mt-12">
-          <CommentSection articleId={article.id} />
+          <div className="flex flex-wrap items-center gap-4 text-gray-300 mb-8">
+            <button onClick={handleLike} disabled={likeProcessing} className="hover:text-pink-500 transition flex items-center gap-1">
+              <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
+            </button>
+            <button onClick={handleBookmark} disabled={bookmarkProcessing} className="hover:text-yellow-400 transition flex items-center gap-1">
+              <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
+            </button>
+            <button onClick={handleCopyLink} className="hover:text-blue-400 transition flex items-center gap-1">
+              <Share2 size={18} /> {copied ? 'Copied!' : 'Share'} ({shareCount})
+            </button>
+          </div>
+
+          {/* Article Body */}
+          <div className="prose prose-invert max-w-none text-gray-300 text-lg space-y-6 font-inter">
+            {(article.content || '').split('\n').map((para, idx) => (
+              <p key={idx}>{para.trim()}</p>
+            ))}
+          </div>
+
+          {/* Tags */}
+          {article.tags?.length > 0 && (
+            <div className="mt-12 pt-8 border-t border-gray-800">
+              <h3 className="text-white font-montserrat font-semibold mb-4">Tags</h3>
+              <div className="flex flex-wrap gap-3">
+                {article.tags.map((tag, i) => (
+                  <span key={i} className={`px-3 py-2 rounded-lg font-inter text-sm border ${theme.badge}`}>
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Comments */}
+          <div className="mt-12">
+            <CommentSection articleId={article.id} />
+          </div>
         </div>
       </div>
     </motion.div>
