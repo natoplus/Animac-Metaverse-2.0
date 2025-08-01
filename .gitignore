@@ -1,12 +1,10 @@
-# dependencies
+# Ignore frontend stuff
 node_modules/
-.env
-
-# production
 build/
-dist/
-
-# misc
-.DS_Store
-*.log
-.cache/
+public/
+src/
+package.json
+package-lock.json
+tailwind.config.js
+postcss.config.js
+jsconfig.json
