@@ -1,5 +1,6 @@
 // src/pages/ArticlePage.js
 import React, { useState, useEffect, useCallback } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -63,9 +64,22 @@ const ArticlePage = () => {
     }
   }, [id]);
 
-  useEffect(() => {
+   useEffect(() => {
+    if (!id) return;
+
+    const fetchArticle = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/articles/${id}`);
+        setArticle(res.data);
+      } catch (err) {
+        console.error('❌ Error fetching article:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchArticle();
-  }, [fetchArticle]);
+  }, [id]);
 
   const handleCopyLink = async () => {
     try {
