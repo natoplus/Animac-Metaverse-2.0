@@ -1,3 +1,11 @@
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bookmark } from 'lucide-react';
+
+// Replace with your actual API base URL
+const API_URL = "https://animac-metaverse.onrender.com"; // or your actual backend URL
+
 const Comment = ({
   comment,
   onReply,
@@ -13,8 +21,7 @@ const Comment = ({
   const isUpvoted = upvotedComments.includes(comment.id);
   const isDownvoted = downvotedComments.includes(comment.id);
   const isBookmarked = bookmarkedComments.includes(comment.id);
-
-  const voteScore = comment.score ?? (comment.likes - comment.dislikes || 0);
+  const voteScore = comment.score ?? ((comment.likes || 0) - (comment.dislikes || 0));
 
   return (
     <motion.div
@@ -83,17 +90,16 @@ const CommentSection = ({ articleId }) => {
   const commentBoxRef = useRef(null);
 
   useEffect(() => {
-    const existing = sessionStorage.getItem('session_id');
-    const id = existing || crypto.randomUUID();
-    sessionStorage.setItem('session_id', id);
-    setSessionId(id);
+    let existing = sessionStorage.getItem('session_id');
+    if (!existing) {
+      existing = Math.random().toString(36).substring(2, 15);
+      sessionStorage.setItem('session_id', existing);
+    }
+    setSessionId(existing);
 
-    const up = JSON.parse(sessionStorage.getItem('upvoted_comments') || '[]');
-    const down = JSON.parse(sessionStorage.getItem('downvoted_comments') || '[]');
-    const bookmarked = JSON.parse(sessionStorage.getItem('bookmarked_comments') || '[]');
-    setUpvotedComments(up);
-    setDownvotedComments(down);
-    setBookmarkedComments(bookmarked);
+    setUpvotedComments(JSON.parse(sessionStorage.getItem('upvoted_comments') || '[]'));
+    setDownvotedComments(JSON.parse(sessionStorage.getItem('downvoted_comments') || '[]'));
+    setBookmarkedComments(JSON.parse(sessionStorage.getItem('bookmarked_comments') || '[]'));
 
     const savedReplyId = sessionStorage.getItem('pending_reply');
     if (savedReplyId) setParentId(savedReplyId);
@@ -135,7 +141,6 @@ const CommentSection = ({ articleId }) => {
       setGuestName('');
       setParentId(null);
       await fetchComments();
-
       commentBoxRef.current?.scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
       console.error('Post failed:', err);
