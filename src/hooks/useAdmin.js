@@ -12,20 +12,30 @@ export function useAdmin() {
         if (!supabase || !supabase.auth) {
           console.error("❌ Supabase client is not properly initialized.");
           setIsAdmin(false);
-          setLoading(false);
           return;
         }
 
         const { data, error } = await supabase.auth.getUser();
 
-        if (error || !data?.user) {
-          console.warn("⚠️ Failed to fetch user or no user logged in:", error);
+        if (error) {
+          console.warn("⚠️ Error fetching user:", error.message);
           setIsAdmin(false);
           return;
         }
 
-        const role = data.user?.user_metadata?.role;
-        setIsAdmin(role === 'admin');
+        if (!data?.user) {
+          console.log("⚠️ No user logged in.");
+          setIsAdmin(false);
+          return;
+        }
+
+        const role = data.user?.user_metadata?.role || localStorage.getItem('role');
+        if (role === 'admin') {
+          setIsAdmin(true);
+        } else {
+          setIsAdmin(false);
+        }
+
       } catch (err) {
         console.error("❌ Unexpected error in useAdmin:", err);
         setIsAdmin(false);

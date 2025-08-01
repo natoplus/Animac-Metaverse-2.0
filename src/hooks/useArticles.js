@@ -4,14 +4,20 @@ import { useState, useEffect } from 'react';
 import { apiEndpoints } from '../utils/api';
 
 /**
- * Hook to fetch articles based on category, featured flag, limit, etc.
- * @param {string|null} category - Article category ("east", "west", etc.)
- * @param {boolean|null} featured - Whether to filter only featured articles
- * @param {number} limit - Max number of articles to fetch
- * @param {number} skip - Number of articles to skip (pagination)
- * @param {boolean|null} is_published - Filter by published status
+ * Hook to fetch articles based on filters such as:
+ * - category: e.g., "east", "west"
+ * - featured: true/false/null
+ * - limit: max items to fetch
+ * - skip: offset for pagination
+ * - is_published: only published if true
  */
-export const useArticles = (category = null, featured = null, limit = 20, skip = 0, is_published = true) => {
+export const useArticles = (
+  category = null,
+  featured = null,
+  limit = 20,
+  skip = 0,
+  is_published = true
+) => {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -25,7 +31,7 @@ export const useArticles = (category = null, featured = null, limit = 20, skip =
         if (featured !== null) params.featured = featured;
         if (is_published !== null) params.is_published = is_published;
 
-        const res = await apiEndpoints.getArticles(params);
+        const res = await apiEndpoints?.getArticles?.(params);
         setArticles(res || []);
         setError(null);
       } catch (err) {
@@ -44,7 +50,9 @@ export const useArticles = (category = null, featured = null, limit = 20, skip =
 };
 
 /**
- * Hook to fetch the featured content (hero + recent content per category)
+ * Hook to fetch the homepage featured content:
+ * - Main hero article
+ * - Top recent articles per category
  */
 export const useFeaturedContent = () => {
   const [featuredContent, setFeaturedContent] = useState(null);
@@ -53,9 +61,9 @@ export const useFeaturedContent = () => {
 
   useEffect(() => {
     const fetchFeatured = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const response = await apiEndpoints.getFeaturedContent();
+        const response = await apiEndpoints?.getFeaturedContent?.();
         console.log("🌟 Featured content received:", response);
         setFeaturedContent(response || {});
         setError(null);

@@ -47,12 +47,12 @@ const Footer = () => {
                   Streaming Culture. Streaming Stories.
                 </div>
               </Link>
-              
+
               <p className="text-gray-400 font-inter leading-relaxed mb-6 max-w-sm">
                 Your ultimate destination for anime, movies, and western cartoons content. 
                 Discover stories that shape our streaming culture.
               </p>
-              
+
               {/* Social Media Links */}
               <div className="flex space-x-4">
                 {[
@@ -94,6 +94,7 @@ const Footer = () => {
                     <Link
                       to={link.path}
                       className="text-gray-400 hover:text-white font-inter transition-colors duration-300 hover:translate-x-1 inline-block"
+                      aria-label={link.label}
                     >
                       {link.label}
                     </Link>
@@ -118,14 +119,18 @@ const Footer = () => {
             <p className="text-gray-400 font-inter mb-6">
               Get weekly updates on the latest anime releases, movie reviews, and cartoon spotlights.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
               <input
                 type="email"
                 placeholder="Enter your email"
+                aria-label="Enter your email"
                 className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-inter placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
               />
-              <button className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-inter font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105">
+              <button
+                type="button"
+                className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-inter font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105"
+              >
                 Subscribe
               </button>
             </div>
@@ -142,7 +147,7 @@ const Footer = () => {
           <div className="text-gray-400 font-inter text-sm">
             © {currentYear} ANIMAC. All rights reserved.
           </div>
-          
+
           <div className="flex space-x-6 text-sm">
             {[
               'Privacy Policy',
@@ -153,6 +158,7 @@ const Footer = () => {
               <Link
                 key={index}
                 to="#"
+                aria-label={item}
                 className="text-gray-400 hover:text-white font-inter transition-colors duration-300"
               >
                 {item}

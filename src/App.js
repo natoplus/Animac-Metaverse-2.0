@@ -13,7 +13,7 @@ import BuzzfeedHub from './pages/BuzzfeedHub';
 import EastPortal from './pages/EastPortal';
 import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
-import AdminDashboard from './pages/admin/AdminDashboard'; // ✅ Admin Panel
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 // Supabase
 import { supabase } from './utils/supabaseClient';
@@ -24,31 +24,37 @@ import './App.css';
 function App() {
   useEffect(() => {
     async function testSupabaseAuth() {
-      const result = await supabase.auth.getUser();
-      console.log('✅ Supabase Auth Test:', result);
+      try {
+        const result = await supabase.auth.getUser();
+        console.log('✅ Supabase Auth Test:', result);
+      } catch (error) {
+        console.error('❌ Supabase Auth Error:', error);
+      }
     }
     testSupabaseAuth();
   }, []);
 
   return (
-    <Router>
-      <div className="min-h-screen bg-netflix-black text-white">
-        <Header />
+    <React.StrictMode>
+      <Router>
+        <div className="min-h-screen bg-netflix-black text-white">
+          <Header />
 
-        <AnimatePresence mode="wait">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/buzzfeed" element={<BuzzfeedHub />} />
-            <Route path="/buzzfeed/east" element={<EastPortal />} />
-            <Route path="/buzzfeed/west" element={<WestPortal />} />
-            <Route path="/article/:id" element={<ArticlePage />} />
-            <Route path="/admin" element={<AdminDashboard />} /> {/* ✅ Admin route */}
-          </Routes>
-        </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/buzzfeed" element={<BuzzfeedHub />} />
+              <Route path="/buzzfeed/east" element={<EastPortal />} />
+              <Route path="/buzzfeed/west" element={<WestPortal />} />
+              <Route path="/article/:id" element={<ArticlePage />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+            </Routes>
+          </AnimatePresence>
 
-        <Footer />
-      </div>
-    </Router>
+          <Footer />
+        </div>
+      </Router>
+    </React.StrictMode>
   );
 }
 

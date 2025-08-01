@@ -1,9 +1,8 @@
 // src/pages/ArticlePage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
-
 import {
   ArrowLeft, User, Clock, Calendar, Share2, Bookmark, Heart, Loader,
 } from 'lucide-react';
@@ -11,7 +10,6 @@ import {
 import CommentSection from '../components/CommentSection';
 import { toggleArticleLike, toggleBookmark } from '../services/articleService';
 
-// Optional: Use env variable if you prefer (make sure it's set in .env)
 const API_URL = import.meta.env.VITE_API_URL || 'https://animac-metaverse.onrender.com';
 
 const ArticlePage = () => {
@@ -19,13 +17,17 @@ const ArticlePage = () => {
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
+
   const [likeCount, setLikeCount] = useState(0);
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [shareCount, setShareCount] = useState(0);
+
+  const [likeProcessing, setLikeProcessing] = useState(false);
+  const [bookmarkProcessing, setBookmarkProcessing] = useState(false);
 
   const getSessionId = () => {
     let sessionId = localStorage.getItem('session_id');
@@ -69,7 +71,7 @@ const ArticlePage = () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
-      setShareCount(prev => prev + 1);
+      setShareCount((prev) => prev + 1);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('❌ Failed to copy link:', err);
@@ -77,52 +79,67 @@ const ArticlePage = () => {
   };
 
   const handleLike = async () => {
-    if (!article?.id) return;
+    if (!article?.id || likeProcessing) return;
+    setLikeProcessing(true);
+
     const sessionId = getSessionId();
+    const newLiked = !liked;
+    setLiked(newLiked);
+    setLikeCount((prev) => newLiked ? prev + 1 : Math.max(prev - 1, 0));
+
     try {
       await toggleArticleLike(article.id, sessionId, liked);
-      setLiked(!liked);
-      setLikeCount(prev => liked ? Math.max(prev - 1, 0) : prev + 1);
     } catch (error) {
       console.error('Like toggle failed:', error);
+    } finally {
+      setLikeProcessing(false);
     }
   };
 
   const handleBookmark = async () => {
-    if (!article?.id) return;
+    if (!article?.id || bookmarkProcessing) return;
+    setBookmarkProcessing(true);
+
     const sessionId = getSessionId();
+    const newBookmarked = !bookmarked;
+    setBookmarked(newBookmarked);
+    setBookmarkCount((prev) => newBookmarked ? prev + 1 : Math.max(prev - 1, 0));
+
     try {
       await toggleBookmark(article.id, sessionId, bookmarked);
-      setBookmarked(!bookmarked);
-      setBookmarkCount(prev => bookmarked ? Math.max(prev - 1, 0) : prev + 1);
     } catch (error) {
       console.error('Bookmark toggle failed:', error);
+    } finally {
+      setBookmarkProcessing(false);
     }
   };
 
   const getTheme = (category) => {
     switch (category) {
-      case 'east': return {
-        gradient: 'from-east-900/30 via-netflix-dark to-netflix-black',
-        accent: 'text-east-400',
-        badge: 'bg-east-500/20 text-east-300 border-east-500/30',
-        button: 'bg-east-500 hover:bg-east-600',
-        border: 'border-east-500',
-      };
-      case 'west': return {
-        gradient: 'from-west-900/30 via-netflix-dark to-netflix-black',
-        accent: 'text-west-400',
-        badge: 'bg-west-500/20 text-west-300 border-west-500/30',
-        button: 'bg-west-500 hover:bg-west-600',
-        border: 'border-west-500',
-      };
-      default: return {
-        gradient: 'from-netflix-dark to-netflix-black',
-        accent: 'text-gray-400',
-        badge: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
-        button: 'bg-gray-600 hover:bg-gray-700',
-        border: 'border-gray-500',
-      };
+      case 'east':
+        return {
+          gradient: 'from-east-900/30 via-netflix-dark to-netflix-black',
+          accent: 'text-east-400',
+          badge: 'bg-east-500/20 text-east-300 border-east-500/30',
+          button: 'bg-east-500 hover:bg-east-600',
+          border: 'border-east-500',
+        };
+      case 'west':
+        return {
+          gradient: 'from-west-900/30 via-netflix-dark to-netflix-black',
+          accent: 'text-west-400',
+          badge: 'bg-west-500/20 text-west-300 border-west-500/30',
+          button: 'bg-west-500 hover:bg-west-600',
+          border: 'border-west-500',
+        };
+      default:
+        return {
+          gradient: 'from-netflix-dark to-netflix-black',
+          accent: 'text-gray-400',
+          badge: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
+          button: 'bg-gray-600 hover:bg-gray-700',
+          border: 'border-gray-500',
+        };
     }
   };
 
@@ -155,7 +172,12 @@ const ArticlePage = () => {
   const estimatedReadTime = article.read_time || Math.ceil((article.content || '').split(' ').length / 200);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="min-h-screen pt-20 bg-netflix-black text-gray-200">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+      className="min-h-screen pt-20 bg-netflix-black text-gray-200"
+    >
       <div className="max-w-4xl mx-auto p-4">
         <h1 className="text-3xl font-bold mb-2 text-white">{article.title}</h1>
         <div className="text-sm text-gray-400 flex gap-4 items-center mb-4">
@@ -165,12 +187,22 @@ const ArticlePage = () => {
         </div>
 
         <div className="flex items-center gap-4 text-gray-300 mb-6">
-          <button onClick={handleLike} className="hover:text-pink-500 transition flex items-center gap-1">
+          <button
+            onClick={handleLike}
+            disabled={likeProcessing}
+            className="hover:text-pink-500 transition flex items-center gap-1"
+          >
             <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
           </button>
-          <button onClick={handleBookmark} className="hover:text-yellow-400 transition flex items-center gap-1">
+
+          <button
+            onClick={handleBookmark}
+            disabled={bookmarkProcessing}
+            className="hover:text-yellow-400 transition flex items-center gap-1"
+          >
             <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
           </button>
+
           <button onClick={handleCopyLink} className="hover:text-blue-400 transition flex items-center gap-1">
             <Share2 size={18} /> {copied ? 'Copied!' : 'Share'} ({shareCount})
           </button>

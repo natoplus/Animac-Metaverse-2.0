@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark } from 'lucide-react';
 
-// Replace with your actual API base URL
-const API_URL = "https://animac-metaverse.onrender.com"; // or your actual backend URL
+const API_URL = "https://animac-metaverse.onrender.com";
 
 const Comment = ({
   comment,
@@ -32,7 +31,7 @@ const Comment = ({
       transition={{ duration: 0.2 }}
       className="bg-gray-900 p-4 rounded-lg mb-3 text-gray-200 text-sm"
     >
-      <p className="mb-2">{comment.content}</p>
+      <p className="mb-2">{comment.content || '[Deleted]'}</p>
       <div className="flex justify-between items-center text-xs text-gray-500">
         <span>
           by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}
@@ -45,6 +44,7 @@ const Comment = ({
             <button
               onClick={() => onVote(comment.id, 'up')}
               className={`hover:text-white ${isUpvoted ? 'text-green-400' : ''}`}
+              aria-label="Upvote"
             >
               👍
             </button>
@@ -52,19 +52,25 @@ const Comment = ({
             <button
               onClick={() => onVote(comment.id, 'down')}
               className={`hover:text-white ${isDownvoted ? 'text-red-400' : ''}`}
+              aria-label="Downvote"
             >
               👎
             </button>
           </div>
-          <button onClick={() => onReply(comment.id)} className="hover:text-white">Reply</button>
+          <button onClick={() => onReply(comment.id)} className="hover:text-white" aria-label="Reply">Reply</button>
           <button
             onClick={() => onBookmark(comment.id)}
             className={`hover:text-white flex items-center gap-1 ${isBookmarked ? 'text-yellow-400' : ''}`}
+            aria-label="Bookmark"
           >
             <Bookmark size={14} />
           </button>
           {repliesCount > 0 && (
-            <button onClick={() => onToggle(comment.id)} className="text-blue-400 hover:text-white ml-2">
+            <button
+              onClick={() => onToggle(comment.id)}
+              className="text-blue-400 hover:text-white ml-2"
+              aria-label="Toggle replies"
+            >
               {toggleState === 'expanded' ? 'Hide Replies' : 'View Replies'}
             </button>
           )}
@@ -166,23 +172,16 @@ const CommentSection = ({ articleId }) => {
         headers: { 'X-Session-ID': sessionId },
       });
 
-      let newUp = [...upvotedComments];
-      let newDown = [...downvotedComments];
+      const newUp = action === 'upvote'
+        ? [...new Set([...upvotedComments, commentId])]
+        : upvotedComments.filter(id => id !== commentId);
 
-      if (action === 'upvote') {
-        newUp.push(commentId);
-        newDown = newDown.filter(id => id !== commentId);
-      } else if (action === 'downvote') {
-        newDown.push(commentId);
-        newUp = newUp.filter(id => id !== commentId);
-      } else {
-        newUp = newUp.filter(id => id !== commentId);
-        newDown = newDown.filter(id => id !== commentId);
-      }
+      const newDown = action === 'downvote'
+        ? [...new Set([...downvotedComments, commentId])]
+        : downvotedComments.filter(id => id !== commentId);
 
       setUpvotedComments(newUp);
       setDownvotedComments(newDown);
-
       sessionStorage.setItem('upvoted_comments', JSON.stringify(newUp));
       sessionStorage.setItem('downvoted_comments', JSON.stringify(newDown));
 
@@ -203,7 +202,7 @@ const CommentSection = ({ articleId }) => {
 
       const updated = isBookmarked
         ? bookmarkedComments.filter(id => id !== commentId)
-        : [...bookmarkedComments, commentId];
+        : [...new Set([...bookmarkedComments, commentId])];
 
       setBookmarkedComments(updated);
       sessionStorage.setItem('bookmarked_comments', JSON.stringify(updated));
@@ -257,8 +256,13 @@ const CommentSection = ({ articleId }) => {
     );
   };
 
-  const topLevelComments = comments.filter(c => !c.parent_id).slice(0, visibleCount);
-  const moreCommentsExist = comments.filter(c => !c.parent_id).length > visibleCount;
+  const topLevelComments = useMemo(() => (
+    comments.filter(c => !c.parent_id).slice(0, visibleCount)
+  ), [comments, visibleCount]);
+
+  const moreCommentsExist = useMemo(() => (
+    comments.filter(c => !c.parent_id).length > visibleCount
+  ), [comments, visibleCount]);
 
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl border-t border-gray-800" ref={commentBoxRef}>
@@ -317,7 +321,7 @@ const CommentSection = ({ articleId }) => {
                     bookmarkedComments={bookmarkedComments}
                     repliesCount={comments.filter(c => c.parent_id === comment.id).length}
                     toggleState={expandedThreads[comment.id] ? 'expanded' : 'collapsed'}
-                    onToggle={() => toggleReplies(comment.id)}
+                    onToggle={toggleReplies}
                   />
                   {renderReplies(comment.id)}
                 </div>

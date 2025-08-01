@@ -1,41 +1,45 @@
+// services/ArticleService.js
 import axios from 'axios';
 
-const API_URL = 'https://animac-metaverse.onrender.com/api';
+export const API_URL = 'https://animac-metaverse.onrender.com/api';
+
+// Helper function to DRY up axios POST calls
+const postToEndpoint = (endpoint, data) => {
+  return axios.post(`${API_URL}${endpoint}`, data);
+};
 
 export const likeArticle = (articleId, sessionId) =>
-  axios.post(`${API_URL}/articles/${articleId}/like`, {
-    session_id: sessionId,
-  });
+  postToEndpoint(`/articles/${articleId}/like`, { session_id: sessionId });
 
 export const unlikeArticle = (articleId, sessionId) =>
-  axios.post(`${API_URL}/articles/${articleId}/unlike`, {
-    session_id: sessionId,
-  });
+  postToEndpoint(`/articles/${articleId}/unlike`, { session_id: sessionId });
 
 export const bookmarkArticle = (articleId, sessionId) =>
-  axios.post(`${API_URL}/articles/${articleId}/bookmark`, {
-    session_id: sessionId,
-  });
+  postToEndpoint(`/articles/${articleId}/bookmark`, { session_id: sessionId });
 
 export const unbookmarkArticle = (articleId, sessionId) =>
-  axios.post(`${API_URL}/articles/${articleId}/unbookmark`, {
-    session_id: sessionId,
-  });
+  postToEndpoint(`/articles/${articleId}/unbookmark`, { session_id: sessionId });
 
-// ✅ Toggle like logic
+// ✅ Toggle like logic with error handling
 export const toggleArticleLike = async (articleId, sessionId, liked) => {
-  if (liked) {
-    return unlikeArticle(articleId, sessionId);
-  } else {
-    return likeArticle(articleId, sessionId);
+  try {
+    return liked
+      ? await unlikeArticle(articleId, sessionId)
+      : await likeArticle(articleId, sessionId);
+  } catch (err) {
+    console.error('Error toggling like:', err.message);
+    throw err;
   }
 };
 
-// ✅ Toggle bookmark logic
+// ✅ Toggle bookmark logic with error handling
 export const toggleBookmark = async (articleId, sessionId, bookmarked) => {
-  if (bookmarked) {
-    return unbookmarkArticle(articleId, sessionId);
-  } else {
-    return bookmarkArticle(articleId, sessionId);
+  try {
+    return bookmarked
+      ? await unbookmarkArticle(articleId, sessionId)
+      : await bookmarkArticle(articleId, sessionId);
+  } catch (err) {
+    console.error('Error toggling bookmark:', err.message);
+    throw err;
   }
 };

@@ -11,7 +11,19 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
 import { motion } from 'framer-motion';
-import '../../styles/admin.css'; // 🔥 Ensure this matches your folder
+import '../../styles/admin.css';
+
+// ✅ Extracted to avoid re-declaring on each render
+const initialFormState = () => ({
+  title: '',
+  content: '',
+  excerpt: '',
+  category: 'east',
+  tags: '',
+  featured_image: '',
+  is_featured: true,
+  is_published: true,
+});
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
@@ -19,26 +31,19 @@ export default function AdminDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  function initialFormState() {
-    return {
-      title: '',
-      content: '',
-      excerpt: '',
-      category: 'east',
-      tags: '',
-      featured_image: '',
-      is_featured: true,
-      is_published: true,
-    };
-  }
-
   const loadArticles = async () => {
-    const data = await fetchArticles();
-    if (data && Array.isArray(data)) {
-      // Remove duplicates by ID
-      const uniqueMap = new Map();
-      data.forEach(article => uniqueMap.set(article.id, article));
-      setArticles([...uniqueMap.values()]);
+    try {
+      const data = await fetchArticles();
+      if (data && Array.isArray(data)) {
+        const uniqueMap = new Map();
+        data.forEach(article => uniqueMap.set(article.id, article));
+        setArticles([...uniqueMap.values()]);
+      } else {
+        setArticles([]);
+      }
+    } catch (err) {
+      console.error('❌ Failed to load articles:', err);
+      setArticles([]);
     }
   };
 
@@ -69,6 +74,7 @@ export default function AdminDashboard() {
         await createArticle(payload);
         alert('✅ Article posted!');
       }
+
       setFormData(initialFormState());
       setIsEditing(false);
       setEditingId(null);
@@ -86,13 +92,19 @@ export default function AdminDashboard() {
     });
     setEditingId(article.id);
     setIsEditing(true);
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this article?')) {
-      await deleteArticle(id);
-      loadArticles();
+    const confirmDelete = window.confirm('Are you sure you want to delete this article?');
+    if (confirmDelete) {
+      try {
+        await deleteArticle(id);
+        loadArticles();
+      } catch (err) {
+        console.error('❌ Failed to delete article:', err);
+        alert('Failed to delete article.');
+      }
     }
   };
 
@@ -117,18 +129,64 @@ export default function AdminDashboard() {
               {isEditing ? 'Edit Article' : 'Post New Article'}
             </h2>
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <Input name="title" placeholder="Title" value={formData.title} onChange={handleChange} required />
-              <Textarea name="excerpt" placeholder="Excerpt" value={formData.excerpt} onChange={handleChange} />
-              <Textarea name="content" placeholder="Content" rows={6} value={formData.content} onChange={handleChange} required />
-              <Input name="category" placeholder="Category (east/west)" value={formData.category} onChange={handleChange} required />
-              <Input name="tags" placeholder="Tags (comma-separated)" value={formData.tags} onChange={handleChange} />
-              <Input name="featured_image" placeholder="Featured Image URL" value={formData.featured_image} onChange={handleChange} />
+              <Input
+                name="title"
+                placeholder="Title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+              />
+              <Textarea
+                name="excerpt"
+                placeholder="Excerpt"
+                value={formData.excerpt}
+                onChange={handleChange}
+              />
+              <Textarea
+                name="content"
+                placeholder="Content"
+                rows={6}
+                value={formData.content}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                name="category"
+                placeholder="Category (east/west)"
+                value={formData.category}
+                onChange={handleChange}
+                required
+              />
+              <Input
+                name="tags"
+                placeholder="Tags (comma-separated)"
+                value={formData.tags}
+                onChange={handleChange}
+              />
+              <Input
+                name="featured_image"
+                placeholder="Featured Image URL"
+                value={formData.featured_image}
+                onChange={handleChange}
+              />
               <div className="flex gap-6">
                 <label>
-                  <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} /> Featured
+                  <input
+                    type="checkbox"
+                    name="is_featured"
+                    checked={formData.is_featured}
+                    onChange={handleChange}
+                  />{' '}
+                  Featured
                 </label>
                 <label>
-                  <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} /> Published
+                  <input
+                    type="checkbox"
+                    name="is_published"
+                    checked={formData.is_published}
+                    onChange={handleChange}
+                  />{' '}
+                  Published
                 </label>
               </div>
               <Button type="submit">
@@ -160,8 +218,16 @@ export default function AdminDashboard() {
                         {article.is_published ? '✅ Published' : '❌ Draft'}
                       </div>
                       <div className="space-x-2">
-                        <Button size="sm" onClick={() => handleEdit(article)}>Edit</Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(article.id)}>Delete</Button>
+                        <Button size="sm" onClick={() => handleEdit(article)}>
+                          Edit
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(article.id)}
+                        >
+                          Delete
+                        </Button>
                       </div>
                     </div>
                   </li>

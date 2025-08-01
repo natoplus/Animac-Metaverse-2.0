@@ -6,53 +6,55 @@ import { Link } from 'react-router-dom';
 const HeroSection = ({ featuredContent }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Hero slides data with cinematic images
-  const heroSlides = [
+  const heroSlides = featuredContent?.length > 0 ? featuredContent : [
     {
       id: 1,
       title: 'Attack on Titan Final Season',
       subtitle: 'The Ultimate Battle Begins',
-      description: 'Eren Yeager\'s journey reaches its climactic end as humanity faces its greatest threat yet. Experience the stunning conclusion to Hajime Isayama\'s masterpiece.',
+      description:
+        "Eren Yeager's journey reaches its climactic end as humanity faces its greatest threat yet. Experience the stunning conclusion to Hajime Isayama's masterpiece.",
       category: 'east',
-      image: 'https://images.unsplash.com/photo-1615592389070-bcc97e05ad01?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwxfHxhbmltZSUyMGhlcm98ZW58MHx8fGJsYWNrfDE3NTMwNjk1NzR8MA&ixlib=rb-4.1.0&q=85',
-      link: '/article/attack-on-titan'
+      image:
+        'https://images.unsplash.com/photo-1615592389070-bcc97e05ad01?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwxfHxhbmltZSUyMGhlcm98ZW58MHx8fGJsYWNrfDE3NTMwNjk1NzR8MA&ixlib=rb-4.1.0&q=85',
+      link: '/article/attack-on-titan',
     },
     {
       id: 2,
       title: 'Spider-Verse Revolution',
       subtitle: 'Animation Redefined',
-      description: 'How Into the Spider-Verse changed animation forever with groundbreaking visual storytelling that influenced a generation of filmmakers.',
+      description:
+        'How Into the Spider-Verse changed animation forever with groundbreaking visual storytelling that influenced a generation of filmmakers.',
       category: 'west',
-      image: 'https://images.unsplash.com/photo-1717395948943-f2a38e2e41f4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwyfHxhbmltZSUyMGhlcm98ZW58MHx8fGJsYWNrfDE3NTMwNjk1NzR8MA&ixlib=rb-4.1.0&q=85',
-      link: '/article/spider-verse'
+      image:
+        'https://images.unsplash.com/photo-1717395948943-f2a38e2e41f4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwyfHxhbmltZSUyMGhlcm98ZW58MHx8fGJsYWNrfDE3NTMwNjk1NzR8MA&ixlib=rb-4.1.0&q=85',
+      link: '/article/spider-verse',
     },
     {
       id: 3,
       title: 'Studio Culture Chronicles',
       subtitle: 'Behind the Animation',
-      description: 'Dive deep into the studios that shape our favorite animated worlds, from MAPPA\'s revolutionary techniques to Pixar\'s emotional storytelling.',
+      description:
+        "Dive deep into the studios that shape our favorite animated worlds, from MAPPA's revolutionary techniques to Pixar's emotional storytelling.",
       category: 'both',
-      image: 'https://images.unsplash.com/photo-1720576127187-12d4b9045d93?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxhbmltZSUyMGNpbmVtYXRpY3xlbnwwfHx8YmxhY2t8MTc1MzA2OTU2Nnww&ixlib=rb-4.1.0&q=85',
-      link: '/buzzfeed'
-    }
+      image:
+        'https://images.unsplash.com/photo-1720576127187-12d4b9045d93?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxhbmltZSUyMGNpbmVtYXRpY3xlbnwwfHx8YmxhY2t8MTc1MzA2OTU2Nnww&ixlib=rb-4.1.0&q=85',
+      link: '/buzzfeed',
+    },
   ];
 
-  // Auto-slide functionality
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
     }, 6000);
-
     return () => clearInterval(timer);
   }, [heroSlides.length]);
 
-  const nextSlide = () => {
+  const nextSlide = () =>
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-  };
-
-  const prevSlide = () => {
+  const prevSlide = () =>
     setCurrentSlide((prev) => (prev - 1 + heroSlides.length) % heroSlides.length);
-  };
+
+  const current = heroSlides[currentSlide];
 
   const getThemeClasses = (category) => {
     switch (category) {
@@ -76,8 +78,6 @@ const HeroSection = ({ featuredContent }) => {
     }
   };
 
-  const current = heroSlides[currentSlide];
-
   return (
     <div className="relative h-screen overflow-hidden">
       <AnimatePresence mode="wait">
@@ -89,19 +89,15 @@ const HeroSection = ({ featuredContent }) => {
           transition={{ duration: 0.8 }}
           className="absolute inset-0"
         >
-          {/* Background Image */}
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: `url(${current.image})` }}
           />
-          
-          {/* Gradient Overlay */}
           <div className={`absolute inset-0 bg-gradient-to-r ${getThemeClasses(current.category)}`} />
           <div className="absolute inset-0 bg-gradient-to-t from-netflix-black via-transparent to-transparent" />
         </motion.div>
       </AnimatePresence>
 
-      {/* Content */}
       <div className="relative z-10 h-full flex items-center">
         <div className="container mx-auto px-4">
           <motion.div
@@ -111,7 +107,6 @@ const HeroSection = ({ featuredContent }) => {
             transition={{ delay: 0.3, duration: 0.8 }}
             className="max-w-2xl"
           >
-            {/* Category Badge */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -124,11 +119,13 @@ const HeroSection = ({ featuredContent }) => {
                   : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
               }`}
             >
-              {current.category === 'east' ? 'EAST • ANIME' : 
-               current.category === 'west' ? 'WEST • MOVIES & CARTOONS' : 'FEATURED'}
+              {current.category === 'east'
+                ? 'EAST • ANIME'
+                : current.category === 'west'
+                ? 'WEST • MOVIES & CARTOONS'
+                : 'FEATURED'}
             </motion.div>
 
-            {/* Title */}
             <motion.h1
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -138,7 +135,6 @@ const HeroSection = ({ featuredContent }) => {
               {current.title}
             </motion.h1>
 
-            {/* Subtitle */}
             <motion.h2
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -148,7 +144,6 @@ const HeroSection = ({ featuredContent }) => {
               {current.subtitle}
             </motion.h2>
 
-            {/* Description */}
             <motion.p
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -158,7 +153,6 @@ const HeroSection = ({ featuredContent }) => {
               {current.description}
             </motion.p>
 
-            {/* Buttons */}
             <motion.div
               initial={{ y: 30, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -167,14 +161,16 @@ const HeroSection = ({ featuredContent }) => {
             >
               <Link
                 to={current.link}
-                className={`inline-flex items-center px-8 py-3 bg-white text-black font-inter font-semibold rounded transition-all duration-300 hover:bg-gray-200 hover:scale-105`}
+                className="inline-flex items-center px-8 py-3 bg-white text-black font-inter font-semibold rounded transition-all duration-300 hover:bg-gray-200 hover:scale-105"
               >
                 <Play size={20} className="mr-2" fill="currentColor" />
                 Read Story
               </Link>
-              
+
               <button
-                className={`inline-flex items-center px-8 py-3 border-2 bg-transparent font-inter font-semibold rounded transition-all duration-300 ${getButtonClasses(current.category)}`}
+                className={`inline-flex items-center px-8 py-3 border-2 bg-transparent font-inter font-semibold rounded transition-all duration-300 ${getButtonClasses(
+                  current.category
+                )}`}
               >
                 <Info size={20} className="mr-2" />
                 More Info
@@ -191,7 +187,6 @@ const HeroSection = ({ featuredContent }) => {
       >
         <ChevronLeft size={24} />
       </button>
-      
       <button
         onClick={nextSlide}
         className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all duration-300 hover:scale-110"
