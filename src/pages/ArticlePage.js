@@ -1,13 +1,18 @@
 // src/pages/ArticlePage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
+import axios from 'axios';
+
 import {
   ArrowLeft, User, Clock, Calendar, Share2, Bookmark, Heart, Loader,
 } from 'lucide-react';
-import { apiEndpoints } from '../utils/api';
+
 import CommentSection from '../components/CommentSection';
 import { toggleArticleLike, toggleBookmark } from '../services/articleService';
+
+// Optional: Use env variable if you prefer (make sure it's set in .env)
+const API_URL = import.meta.env.VITE_API_URL || 'https://animac-metaverse.onrender.com';
 
 const ArticlePage = () => {
   const { id } = useParams();
@@ -33,18 +38,18 @@ const ArticlePage = () => {
 
   const fetchArticle = useCallback(async () => {
     if (!id) return;
-
     setLoading(true);
-    try {
-      const res = await apiEndpoints.getArticle(id);
-      if (!res || typeof res !== 'object') throw new Error('Invalid article response');
 
-      setArticle(res);
-      setLikeCount(res.likes ?? 0);
-      setBookmarkCount(res.bookmarks ?? 0);
-      setShareCount(res.shares ?? 0);
-      setLiked(!!res.likedByCurrentUser);
-      setBookmarked(!!res.bookmarkedByCurrentUser);
+    try {
+      const res = await axios.get(`${API_URL}/articles/${id}`);
+      const data = res.data;
+
+      setArticle(data);
+      setLikeCount(data.likes ?? 0);
+      setBookmarkCount(data.bookmarks ?? 0);
+      setShareCount(data.shares ?? 0);
+      setLiked(!!data.likedByCurrentUser);
+      setBookmarked(!!data.bookmarkedByCurrentUser);
       setError(null);
       window.scrollTo(0, 0);
     } catch (err) {
@@ -72,6 +77,7 @@ const ArticlePage = () => {
   };
 
   const handleLike = async () => {
+    if (!article?.id) return;
     const sessionId = getSessionId();
     try {
       await toggleArticleLike(article.id, sessionId, liked);
@@ -83,6 +89,7 @@ const ArticlePage = () => {
   };
 
   const handleBookmark = async () => {
+    if (!article?.id) return;
     const sessionId = getSessionId();
     try {
       await toggleBookmark(article.id, sessionId, bookmarked);
@@ -149,7 +156,6 @@ const ArticlePage = () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="min-h-screen pt-20 bg-netflix-black text-gray-200">
-      {/* Add your article rendering code here */}
       <div className="max-w-4xl mx-auto p-4">
         <h1 className="text-3xl font-bold mb-2 text-white">{article.title}</h1>
         <div className="text-sm text-gray-400 flex gap-4 items-center mb-4">
