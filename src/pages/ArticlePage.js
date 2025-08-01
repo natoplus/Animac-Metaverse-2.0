@@ -1,5 +1,3 @@
-// src/pages/ArticlePage.js
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
@@ -10,7 +8,6 @@ import {
 
 import CommentSection from '../components/CommentSection';
 import { toggleLikeArticle, toggleBookmarkArticle } from '../services/articleService';
-
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
@@ -86,12 +83,10 @@ const ArticlePage = () => {
   const handleLike = async () => {
     if (!article?.id || likeProcessing) return;
     setLikeProcessing(true);
-
     const sessionId = getSessionId();
     const newLiked = !liked;
     setLiked(newLiked);
     setLikeCount(prev => newLiked ? prev + 1 : Math.max(prev - 1, 0));
-
     try {
       await toggleLikeArticle(article.id, sessionId);
     } catch (error) {
@@ -104,12 +99,10 @@ const ArticlePage = () => {
   const handleBookmark = async () => {
     if (!article?.id || bookmarkProcessing) return;
     setBookmarkProcessing(true);
-
     const sessionId = getSessionId();
     const newBookmarked = !bookmarked;
     setBookmarked(newBookmarked);
     setBookmarkCount(prev => newBookmarked ? prev + 1 : Math.max(prev - 1, 0));
-
     try {
       await toggleBookmarkArticle(article.id, sessionId);
     } catch (error) {
@@ -123,27 +116,18 @@ const ArticlePage = () => {
     switch (category) {
       case 'east':
         return {
-          gradient: 'from-east-900/30 via-netflix-dark to-netflix-black',
+          gradient: 'from-east-900/50 via-netflix-dark to-netflix-black',
           accent: 'text-east-400',
-          badge: 'bg-east-500/20 text-east-300 border-east-500/30',
-          button: 'bg-east-500 hover:bg-east-600',
-          border: 'border-east-500',
         };
       case 'west':
         return {
-          gradient: 'from-west-900/30 via-netflix-dark to-netflix-black',
+          gradient: 'from-west-900/50 via-netflix-dark to-netflix-black',
           accent: 'text-west-400',
-          badge: 'bg-west-500/20 text-west-300 border-west-500/30',
-          button: 'bg-west-500 hover:bg-west-600',
-          border: 'border-west-500',
         };
       default:
         return {
-          gradient: 'from-netflix-dark to-netflix-black',
-          accent: 'text-gray-400',
-          badge: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
-          button: 'bg-gray-600 hover:bg-gray-700',
-          border: 'border-gray-500',
+          gradient: 'from-gray-900 via-netflix-dark to-netflix-black',
+          accent: 'text-gray-300',
         };
     }
   };
@@ -181,17 +165,21 @@ const ArticlePage = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen pt-20 bg-netflix-black text-gray-200"
+      className={`min-h-screen pt-20 bg-gradient-to-b ${theme.gradient} text-gray-200`}
     >
-      <div className="max-w-4xl mx-auto p-4">
-        <h1 className="text-3xl font-bold mb-2 text-white">{article.title}</h1>
-        <div className="text-sm text-gray-400 flex gap-4 items-center mb-4">
-          <span><User className="inline mr-1" size={14} /> {article.author}</span>
-          <span><Calendar className="inline mr-1" size={14} /> {new Date(article.created_at).toLocaleDateString()}</span>
-          <span><Clock className="inline mr-1" size={14} /> {estimatedReadTime} min read</span>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 className="text-4xl font-extrabold leading-tight text-white mb-3">{article.title}</h1>
+        <p className={`text-md sm:text-lg font-medium ${theme.accent} mb-6 italic`}>
+          {article.excerpt || 'An insightful read from Animac.'}
+        </p>
+
+        <div className="text-sm text-gray-400 flex gap-4 items-center mb-6">
+          <span><User size={14} className="inline mr-1" /> {article.author}</span>
+          <span><Calendar size={14} className="inline mr-1" /> {new Date(article.created_at).toLocaleDateString()}</span>
+          <span><Clock size={14} className="inline mr-1" /> {estimatedReadTime} min read</span>
         </div>
 
-        <div className="flex items-center gap-4 text-gray-300 mb-6">
+        <div className="flex flex-wrap items-center gap-4 text-gray-300 mb-8">
           <button onClick={handleLike} disabled={likeProcessing} className="hover:text-pink-500 transition flex items-center gap-1">
             <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
           </button>
@@ -203,15 +191,18 @@ const ArticlePage = () => {
           </button>
         </div>
 
-        <div className="prose prose-invert max-w-none text-gray-100">
+        <div className="prose prose-invert max-w-none text-gray-100 prose-h2:text-white prose-a:text-blue-400 prose-strong:text-white prose-em:text-gray-400">
           {article.content ? (
-            <div dangerouslySetInnerHTML={{ __html: article.content }} />
+            <div
+              className="space-y-6 leading-relaxed text-lg tracking-wide"
+              dangerouslySetInnerHTML={{ __html: article.content }}
+            />
           ) : (
             <p className="text-gray-500 italic">No content available.</p>
           )}
         </div>
 
-        <div className="mt-10">
+        <div className="mt-12">
           <CommentSection articleId={article.id} />
         </div>
       </div>
