@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 
 import CommentSection from '../components/CommentSection';
-import { toggleLikeArticle, toggleBookmarkArticle } from '../api'; // ✅ Fixed import
+import { toggleArticleLike, toggleBookmark } from '../services/articleService';
+
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
