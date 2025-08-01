@@ -29,8 +29,12 @@ export type Comment = {
   name: string;
   message: string;
   created_at: string;
+  likes?: number;
+  parent_id?: string | null;
+  replies?: Comment[];
 };
 
+// Structured response if backend provides
 export type FeaturedContent = {
   east: Article;
   west: Article;
@@ -117,11 +121,30 @@ export async function postComment(data: {
   article_id: string;
   name: string;
   message: string;
+  parent_id?: string;
 }): Promise<Comment> {
   return fetchFromAPI<Comment>("/api/comments", {
     method: "POST",
     body: JSON.stringify(data),
   });
+}
+
+export async function likeComment(commentId: string, session_id: string): Promise<{ success: boolean }> {
+  return fetchFromAPI<{ success: boolean }>(`/api/comments/${commentId}/like`, {
+    method: "POST",
+    body: JSON.stringify({ session_id }),
+  });
+}
+
+export async function unlikeComment(commentId: string, session_id: string): Promise<{ success: boolean }> {
+  return fetchFromAPI<{ success: boolean }>(`/api/comments/${commentId}/unlike`, {
+    method: "POST",
+    body: JSON.stringify({ session_id }),
+  });
+}
+
+export async function fetchCommentThread(commentId: string): Promise<Comment[]> {
+  return fetchFromAPI<Comment[]>(`/api/comments/thread/${commentId}`);
 }
 
 // ---------- Unified API Endpoints ----------
@@ -139,6 +162,9 @@ export const apiEndpoints = {
   // Comments
   getComments: fetchComments,
   postComment: postComment,
+  likeComment,
+  unlikeComment,
+  fetchCommentThread,
 };
 
 // Optional consolidated export

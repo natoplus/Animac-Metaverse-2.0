@@ -1,5 +1,5 @@
 // src/pages/ArticlePage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -21,37 +21,34 @@ const ArticlePage = () => {
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [shareCount, setShareCount] = useState(0);
 
-  useEffect(() => {
-    const fetchArticle = async () => {
-      setLoading(true);
-      try {
-        const res = await apiEndpoints.getArticle(id);
-        setArticle(res);
-        setLikeCount(res.likes || 0);
-        setBookmarkCount(res.bookmarks || 0);
-        setShareCount(res.shares || 0);
+  const fetchArticle = useCallback(async () => {
+    if (!id) return;
 
-        const likeKey = `liked-${res.id}`;
-        const bookmarkKey = `bookmarked-${res.id}`;
-        setLiked(localStorage.getItem(likeKey) === 'true');
-        setBookmarked(localStorage.getItem(bookmarkKey) === 'true');
+    setLoading(true);
+    try {
+      const res = await apiEndpoints.getArticle(id);
+      if (!res || typeof res !== 'object') throw new Error('Invalid article response');
 
-        setError(null);
-        window.scrollTo(0, 0);
-      } catch (err) {
-        console.error("❌ Failed to fetch article", err);
-        setError('Article not found or failed to load.');
-        setArticle(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) fetchArticle();
+      setArticle(res);
+      setLikeCount(res.likes ?? 0);
+      setBookmarkCount(res.bookmarks ?? 0);
+      setShareCount(res.shares ?? 0);
+      setLiked(!!res.likedByCurrentUser);
+      setBookmarked(!!res.bookmarkedByCurrentUser);
+      setError(null);
+      window.scrollTo(0, 0);
+    } catch (err) {
+      console.error('❌ Failed to fetch article:', err);
+      setError('Article not found or failed to load.');
+      setArticle(null);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
 
-  const theme = getTheme(article?.category);
-  const estimatedReadTime = article?.read_time || Math.ceil((article?.content || '').split(' ').length / 200);
+  useEffect(() => {
+    fetchArticle();
+  }, [fetchArticle]);
 
   const handleCopyLink = async () => {
     try {
@@ -60,24 +57,58 @@ const ArticlePage = () => {
       setShareCount(prev => prev + 1);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error("❌ Failed to copy link:", err);
+      console.error('❌ Failed to copy link:', err);
     }
   };
 
-  const handleLike = () => {
-    const key = `liked-${article.id}`;
-    const newState = !liked;
-    setLiked(newState);
-    setLikeCount(prev => prev + (newState ? 1 : -1));
-    localStorage.setItem(key, newState);
+  const handleLike = async () => {
+    if (!article) return;
+    try {
+      const res = await apiEndpoints.toggleArticleLike(article.id);
+      setLiked(!!res.liked);
+      setLikeCount(res.likes ?? likeCount);
+      localStorage.setItem(`liked-${article.id}`, res.liked);
+    } catch (err) {
+      console.error('❌ Like toggle failed:', err);
+    }
   };
 
-  const handleBookmark = () => {
-    const key = `bookmarked-${article.id}`;
-    const newState = !bookmarked;
-    setBookmarked(newState);
-    setBookmarkCount(prev => prev + (newState ? 1 : -1));
-    localStorage.setItem(key, newState);
+  const handleBookmark = async () => {
+    if (!article) return;
+    try {
+      const res = await apiEndpoints.toggleArticleBookmark(article.id);
+      setBookmarked(!!res.bookmarked);
+      setBookmarkCount(res.bookmarks ?? bookmarkCount);
+      localStorage.setItem(`bookmarked-${article.id}`, res.bookmarked);
+    } catch (err) {
+      console.error('❌ Bookmark toggle failed:', err);
+    }
+  };
+
+  const getTheme = (category) => {
+    switch (category) {
+      case 'east': return {
+        gradient: 'from-east-900/30 via-netflix-dark to-netflix-black',
+        accent: 'text-east-400',
+        badge: 'bg-east-500/20 text-east-300 border-east-500/30',
+        button: 'bg-east-500 hover:bg-east-600',
+        border: 'border-east-500',
+      };
+      case 'west': return {
+        gradient: 'from-west-900/30 via-netflix-dark to-netflix-black',
+        accent: 'text-west-400',
+        badge: 'bg-west-500/20 text-west-300 border-west-500/30',
+        button: 'bg-west-500 hover:bg-west-600',
+        border: 'border-west-500',
+      };
+      default: return {
+        gradient: 'from-netflix-dark to-netflix-black',
+        accent: 'text-gray-400',
+        badge: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
+        button: 'bg-gray-600 hover:bg-gray-700',
+        border: 'border-gray-500',
+      };
+    }
   };
 
   if (loading) {
@@ -105,31 +136,8 @@ const ArticlePage = () => {
     );
   }
 
-  function getTheme(category) {
-    switch (category) {
-      case 'east': return {
-        gradient: 'from-east-900/30 via-netflix-dark to-netflix-black',
-        accent: 'text-east-400',
-        badge: 'bg-east-500/20 text-east-300 border-east-500/30',
-        button: 'bg-east-500 hover:bg-east-600',
-        border: 'border-east-500',
-      };
-      case 'west': return {
-        gradient: 'from-west-900/30 via-netflix-dark to-netflix-black',
-        accent: 'text-west-400',
-        badge: 'bg-west-500/20 text-west-300 border-west-500/30',
-        button: 'bg-west-500 hover:bg-west-600',
-        border: 'border-west-500',
-      };
-      default: return {
-        gradient: 'from-netflix-dark to-netflix-black',
-        accent: 'text-gray-400',
-        badge: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
-        button: 'bg-gray-600 hover:bg-gray-700',
-        border: 'border-gray-500',
-      };
-    }
-  }
+  const theme = getTheme(article.category);
+  const estimatedReadTime = article.read_time || Math.ceil((article.content || '').split(' ').length / 200);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="min-h-screen pt-20 bg-netflix-black text-gray-200">
@@ -143,7 +151,9 @@ const ArticlePage = () => {
           <Link to="/" className="text-gray-400 hover:text-white mb-3 inline-flex items-center text-sm">
             <ArrowLeft size={18} className="mr-1" /> Back to Articles
           </Link>
-          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${theme.badge}`}>{article.category?.toUpperCase()}</span>
+          <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium border ${theme.badge}`}>
+            {(article.category || 'misc').toUpperCase()}
+          </span>
           <h1 className="text-white text-4xl md:text-5xl font-bold mt-4 mb-6">{article.title}</h1>
 
           <div className="flex flex-wrap gap-6 text-sm text-gray-300 mb-6">
