@@ -1,6 +1,5 @@
 // src/pages/ArticlePage.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
