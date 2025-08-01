@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { apiEndpoints } from '../utils/api';
 import CommentSection from '../components/CommentSection';
-import { toggleArticleLike, toggleArticleBookmark } from '../services/articleService'; // Make sure this path is correct
+import { toggleArticleLike, toggleBookmark } from '../services/articleService';
 
 const ArticlePage = () => {
   const { id } = useParams();
@@ -62,25 +62,24 @@ const ArticlePage = () => {
     }
   };
 
-  const handleLike = async () => {
-    try {
-      await toggleArticleLike(id);
-      setLiked(prev => !prev);
-      setLikeCount(prev => prev + (liked ? -1 : 1));
-    } catch (err) {
-      console.error('❌ Like toggle failed:', err);
-    }
-  };
 
-  const handleBookmark = async () => {
-    try {
-      await toggleArticleBookmark(id);
-      setBookmarked(prev => !prev);
-      setBookmarkCount(prev => prev + (bookmarked ? -1 : 1));
-    } catch (err) {
-      console.error('❌ Bookmark toggle failed:', err);
-    }
-  };
+const handleLike = async () => {
+  try {
+    await toggleArticleLike(articleId, sessionId, liked);
+    setLiked(!liked);
+  } catch (error) {
+    console.error('Like toggle failed:', error);
+  }
+};
+
+const handleBookmark = async () => {
+  try {
+    await toggleBookmark(articleId, sessionId, bookmarked);
+    setBookmarked(!bookmarked);
+  } catch (error) {
+    console.error('Bookmark toggle failed:', error);
+  }
+};
 
   const getTheme = (category) => {
     switch (category) {
