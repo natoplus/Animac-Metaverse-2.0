@@ -10,7 +10,7 @@ import {
 import CommentSection from '../components/CommentSection';
 import { toggleArticleLike, toggleBookmark } from '../services/articleService';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const ArticlePage = () => {
   const { id } = useParams();
@@ -34,6 +34,9 @@ const ArticlePage = () => {
     if (!sessionId) {
       sessionId = crypto.randomUUID();
       localStorage.setItem('session_id', sessionId);
+      console.log('[Session] New session ID created:', sessionId);
+    } else {
+      console.log('[Session] Existing session ID used:', sessionId);
     }
     return sessionId;
   };
@@ -41,10 +44,13 @@ const ArticlePage = () => {
   const fetchArticle = useCallback(async () => {
     if (!id) return;
     setLoading(true);
+    console.log('[Fetch] Fetching article with ID:', id);
 
     try {
-      const res = await axios.get(`${API_URL}/articles/${id}`);
+      const res = await axios.get(`${API_URL}/api/articles/${id}`);
       const data = res.data;
+
+      console.log('[Fetch] Article data received:', data);
 
       setArticle(data);
       setLikeCount(data.likes ?? 0);
@@ -63,28 +69,16 @@ const ArticlePage = () => {
     }
   }, [id]);
 
-   useEffect(() => {
-    if (!id) return;
-
-    const fetchArticle = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/api/articles/${id}`);
-        setArticle(res.data);
-      } catch (err) {
-        console.error('❌ Error fetching article:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchArticle();
-  }, [id]);
+  }, [fetchArticle]);
 
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setShareCount((prev) => prev + 1);
+      console.log('[Share] Link copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('❌ Failed to copy link:', err);
@@ -100,10 +94,13 @@ const ArticlePage = () => {
     setLiked(newLiked);
     setLikeCount((prev) => newLiked ? prev + 1 : Math.max(prev - 1, 0));
 
+    console.log(`[Like] Sending like toggle: articleId=${article.id}, liked=${newLiked}`);
+
     try {
-      await toggleArticleLike(article.id, sessionId, liked);
+      await toggleArticleLike(article.id, sessionId, newLiked);
+      console.log('[Like] Like toggled successfully');
     } catch (error) {
-      console.error('Like toggle failed:', error);
+      console.error('❌ Like toggle failed:', error);
     } finally {
       setLikeProcessing(false);
     }
@@ -118,10 +115,13 @@ const ArticlePage = () => {
     setBookmarked(newBookmarked);
     setBookmarkCount((prev) => newBookmarked ? prev + 1 : Math.max(prev - 1, 0));
 
+    console.log(`[Bookmark] Sending bookmark toggle: articleId=${article.id}, bookmarked=${newBookmarked}`);
+
     try {
-      await toggleBookmark(article.id, sessionId, bookmarked);
+      await toggleBookmark(article.id, sessionId, newBookmarked);
+      console.log('[Bookmark] Bookmark toggled successfully');
     } catch (error) {
-      console.error('Bookmark toggle failed:', error);
+      console.error('❌ Bookmark toggle failed:', error);
     } finally {
       setBookmarkProcessing(false);
     }
@@ -222,7 +222,11 @@ const ArticlePage = () => {
         </div>
 
         <div className="prose prose-invert max-w-none text-gray-100">
-          <div dangerouslySetInnerHTML={{ __html: article.content }} />
+          {article.content ? (
+            <div dangerouslySetInnerHTML={{ __html: article.content }} />
+          ) : (
+            <p className="text-gray-500 italic">No content available.</p>
+          )}
         </div>
 
         <div className="mt-10">
