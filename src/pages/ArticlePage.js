@@ -22,6 +22,15 @@ const ArticlePage = () => {
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [shareCount, setShareCount] = useState(0);
 
+  const getSessionId = () => {
+    let sessionId = localStorage.getItem('session_id');
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      localStorage.setItem('session_id', sessionId);
+    }
+    return sessionId;
+  };
+
   const fetchArticle = useCallback(async () => {
     if (!id) return;
 
@@ -62,24 +71,27 @@ const ArticlePage = () => {
     }
   };
 
+  const handleLike = async () => {
+    const sessionId = getSessionId();
+    try {
+      await toggleArticleLike(article.id, sessionId, liked);
+      setLiked(!liked);
+      setLikeCount(prev => liked ? Math.max(prev - 1, 0) : prev + 1);
+    } catch (error) {
+      console.error('Like toggle failed:', error);
+    }
+  };
 
-const handleLike = async () => {
-  try {
-    await toggleArticleLike(articleId, sessionId, liked);
-    setLiked(!liked);
-  } catch (error) {
-    console.error('Like toggle failed:', error);
-  }
-};
-
-const handleBookmark = async () => {
-  try {
-    await toggleBookmark(articleId, sessionId, bookmarked);
-    setBookmarked(!bookmarked);
-  } catch (error) {
-    console.error('Bookmark toggle failed:', error);
-  }
-};
+  const handleBookmark = async () => {
+    const sessionId = getSessionId();
+    try {
+      await toggleBookmark(article.id, sessionId, bookmarked);
+      setBookmarked(!bookmarked);
+      setBookmarkCount(prev => bookmarked ? Math.max(prev - 1, 0) : prev + 1);
+    } catch (error) {
+      console.error('Bookmark toggle failed:', error);
+    }
+  };
 
   const getTheme = (category) => {
     switch (category) {
@@ -137,8 +149,35 @@ const handleBookmark = async () => {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }} className="min-h-screen pt-20 bg-netflix-black text-gray-200">
-      {/* Article content and interaction buttons */}
-      {/* ... (rest of unchanged render logic) ... */}
+      {/* Add your article rendering code here */}
+      <div className="max-w-4xl mx-auto p-4">
+        <h1 className="text-3xl font-bold mb-2 text-white">{article.title}</h1>
+        <div className="text-sm text-gray-400 flex gap-4 items-center mb-4">
+          <span><User className="inline mr-1" size={14} /> {article.author}</span>
+          <span><Calendar className="inline mr-1" size={14} /> {new Date(article.created_at).toLocaleDateString()}</span>
+          <span><Clock className="inline mr-1" size={14} /> {estimatedReadTime} min read</span>
+        </div>
+
+        <div className="flex items-center gap-4 text-gray-300 mb-6">
+          <button onClick={handleLike} className="hover:text-pink-500 transition flex items-center gap-1">
+            <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
+          </button>
+          <button onClick={handleBookmark} className="hover:text-yellow-400 transition flex items-center gap-1">
+            <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
+          </button>
+          <button onClick={handleCopyLink} className="hover:text-blue-400 transition flex items-center gap-1">
+            <Share2 size={18} /> {copied ? 'Copied!' : 'Share'} ({shareCount})
+          </button>
+        </div>
+
+        <div className="prose prose-invert max-w-none text-gray-100">
+          <div dangerouslySetInnerHTML={{ __html: article.content }} />
+        </div>
+
+        <div className="mt-10">
+          <CommentSection articleId={article.id} />
+        </div>
+      </div>
     </motion.div>
   );
 };
