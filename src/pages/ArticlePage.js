@@ -1,4 +1,5 @@
 // src/pages/ArticlePage.js
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
@@ -8,9 +9,9 @@ import {
 } from 'lucide-react';
 
 import CommentSection from '../components/CommentSection';
-import { toggleArticleLike, toggleBookmark } from '../services/articleService';
+import { toggleArticleLike, toggleBookmark } from '../services/ArticleService';
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
 const ArticlePage = () => {
   const { id } = useParams();
@@ -34,23 +35,22 @@ const ArticlePage = () => {
     if (!sessionId) {
       sessionId = crypto.randomUUID();
       localStorage.setItem('session_id', sessionId);
-      console.log('[Session] New session ID created:', sessionId);
-    } else {
-      console.log('[Session] Existing session ID used:', sessionId);
     }
     return sessionId;
   };
 
   const fetchArticle = useCallback(async () => {
-    if (!id) return;
+    if (!id) {
+      setError("Missing article ID in URL.");
+      return;
+    }
+
     setLoading(true);
     console.log('[Fetch] Fetching article with ID:', id);
 
     try {
       const res = await axios.get(`${API_URL}/api/articles/${id}`);
       const data = res.data;
-
-      console.log('[Fetch] Article data received:', data);
 
       setArticle(data);
       setLikeCount(data.likes ?? 0);
@@ -61,8 +61,8 @@ const ArticlePage = () => {
       setError(null);
       window.scrollTo(0, 0);
     } catch (err) {
-      console.error('❌ Failed to fetch article:', err);
-      setError('Article not found or failed to load.');
+      console.error('❌ Failed to fetch article:', err?.response?.data || err.message);
+      setError("Article not found or failed to load.");
       setArticle(null);
     } finally {
       setLoading(false);
@@ -78,7 +78,6 @@ const ArticlePage = () => {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
       setShareCount((prev) => prev + 1);
-      console.log('[Share] Link copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('❌ Failed to copy link:', err);
@@ -88,17 +87,13 @@ const ArticlePage = () => {
   const handleLike = async () => {
     if (!article?.id || likeProcessing) return;
     setLikeProcessing(true);
-
     const sessionId = getSessionId();
     const newLiked = !liked;
     setLiked(newLiked);
     setLikeCount((prev) => newLiked ? prev + 1 : Math.max(prev - 1, 0));
 
-    console.log(`[Like] Sending like toggle: articleId=${article.id}, liked=${newLiked}`);
-
     try {
       await toggleArticleLike(article.id, sessionId, newLiked);
-      console.log('[Like] Like toggled successfully');
     } catch (error) {
       console.error('❌ Like toggle failed:', error);
     } finally {
@@ -109,17 +104,13 @@ const ArticlePage = () => {
   const handleBookmark = async () => {
     if (!article?.id || bookmarkProcessing) return;
     setBookmarkProcessing(true);
-
     const sessionId = getSessionId();
     const newBookmarked = !bookmarked;
     setBookmarked(newBookmarked);
     setBookmarkCount((prev) => newBookmarked ? prev + 1 : Math.max(prev - 1, 0));
 
-    console.log(`[Bookmark] Sending bookmark toggle: articleId=${article.id}, bookmarked=${newBookmarked}`);
-
     try {
       await toggleBookmark(article.id, sessionId, newBookmarked);
-      console.log('[Bookmark] Bookmark toggled successfully');
     } catch (error) {
       console.error('❌ Bookmark toggle failed:', error);
     } finally {
@@ -200,22 +191,12 @@ const ArticlePage = () => {
         </div>
 
         <div className="flex items-center gap-4 text-gray-300 mb-6">
-          <button
-            onClick={handleLike}
-            disabled={likeProcessing}
-            className="hover:text-pink-500 transition flex items-center gap-1"
-          >
+          <button onClick={handleLike} disabled={likeProcessing} className="hover:text-pink-500 transition flex items-center gap-1">
             <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
           </button>
-
-          <button
-            onClick={handleBookmark}
-            disabled={bookmarkProcessing}
-            className="hover:text-yellow-400 transition flex items-center gap-1"
-          >
+          <button onClick={handleBookmark} disabled={bookmarkProcessing} className="hover:text-yellow-400 transition flex items-center gap-1">
             <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
           </button>
-
           <button onClick={handleCopyLink} className="hover:text-blue-400 transition flex items-center gap-1">
             <Share2 size={18} /> {copied ? 'Copied!' : 'Share'} ({shareCount})
           </button>

@@ -1,3 +1,5 @@
+// src/utils/api.js
+
 import axios from 'axios';
 
 // ---------- Base Config ----------
@@ -24,34 +26,39 @@ api.interceptors.response.use(
   }
 );
 
+// ---------- Helper ----------
+const handleApiError = (err, context = 'API') => {
+  console.error(`❌ ${context} error:`, err?.response?.data?.message || err.message);
+  return null;
+};
+
 // ---------- Article Endpoints ----------
 export const fetchArticles = async (params = {}) => {
   try {
     const res = await api.get('/api/articles', { params });
     return res.data || [];
   } catch (err) {
-    console.error('❌ Error fetching articles:', err.message);
-    return [];
+    return handleApiError(err, 'Fetching articles');
   }
 };
 
 export const getArticle = async (id) => {
+  if (!id) return null;
   try {
     const res = await api.get(`/api/articles/by-id/${id}`);
     return res.data || null;
   } catch (err) {
-    console.error(`❌ Error fetching article [${id}]:`, err.message);
-    return null;
+    return handleApiError(err, `Fetching article ID: ${id}`);
   }
 };
 
 export const getArticleBySlug = async (slug) => {
+  if (!slug) return null;
   try {
     const res = await api.get(`/api/articles/${slug}`);
     return res.data || null;
   } catch (err) {
-    console.error(`❌ Error fetching article [slug: ${slug}]:`, err.message);
-    return null;
+    return handleApiError(err, `Fetching article slug: ${slug}`);
   }
 };
 
@@ -60,28 +67,27 @@ export const createArticle = async (data) => {
     const res = await api.post('/api/articles', data);
     return res.data;
   } catch (err) {
-    console.error('❌ Error creating article:', err.message);
-    return null;
+    return handleApiError(err, 'Creating article');
   }
 };
 
 export const updateArticle = async (id, data) => {
+  if (!id) return null;
   try {
     const res = await api.patch(`/api/articles/${id}`, data);
     return res.data;
   } catch (err) {
-    console.error(`❌ Error updating article [${id}]:`, err.message);
-    return null;
+    return handleApiError(err, `Updating article ID: ${id}`);
   }
 };
 
 export const deleteArticle = async (id) => {
+  if (!id) return null;
   try {
     const res = await api.delete(`/api/articles/${id}`);
     return res.data;
   } catch (err) {
-    console.error(`❌ Error deleting article [${id}]:`, err.message);
-    return null;
+    return handleApiError(err, `Deleting article ID: ${id}`);
   }
 };
 
@@ -90,8 +96,7 @@ export const fetchCategoryStats = async () => {
     const res = await api.get('/api/categories/stats');
     return res.data || [];
   } catch (err) {
-    console.error('❌ Error fetching category stats:', err.message);
-    return [];
+    return handleApiError(err, 'Fetching category stats');
   }
 };
 
@@ -100,8 +105,7 @@ export const fetchFeaturedContent = async () => {
     const res = await api.get('/api/featured-content');
     return res.data || null;
   } catch (err) {
-    console.error('❌ Error fetching featured content:', err.message);
-    return null;
+    return handleApiError(err, 'Fetching featured content');
   }
 };
 
@@ -110,8 +114,7 @@ export const healthCheck = async () => {
     const res = await api.get('/api/health');
     return res.data;
   } catch (err) {
-    console.error('❌ Health check failed:', err.message);
-    return null;
+    return handleApiError(err, 'Health check');
   }
 };
 
@@ -121,8 +124,7 @@ export const toggleLikeArticle = async (articleId, sessionId) => {
     const res = await api.post(`/api/articles/${articleId}/like`, { session_id: sessionId });
     return res.data;
   } catch (err) {
-    console.error(`❌ Error liking/unliking article [${articleId}]:`, err.message);
-    return null;
+    return handleApiError(err, `Liking/unliking article ID: ${articleId}`);
   }
 };
 
@@ -131,21 +133,20 @@ export const toggleBookmarkArticle = async (articleId, sessionId) => {
     const res = await api.post(`/api/articles/${articleId}/bookmark`, { session_id: sessionId });
     return res.data;
   } catch (err) {
-    console.error(`❌ Error bookmarking/unbookmarking article [${articleId}]:`, err.message);
-    return null;
+    return handleApiError(err, `Bookmarking/unbookmarking article ID: ${articleId}`);
   }
 };
 
 // ---------- Comment Endpoints ----------
 export const fetchComments = async (articleId) => {
+  if (!articleId) return [];
   try {
     const res = await api.get('/api/comments', {
       params: { article_id: articleId },
     });
     return res.data || [];
   } catch (err) {
-    console.error(`❌ Error fetching comments for article [${articleId}]:`, err.message);
-    return [];
+    return handleApiError(err, `Fetching comments for article ID: ${articleId}`);
   }
 };
 
@@ -159,8 +160,7 @@ export const postComment = async ({ article_id, name, message, parent_id = null 
     });
     return res.data;
   } catch (err) {
-    console.error('❌ Error posting comment:', err.message);
-    return null;
+    return handleApiError(err, 'Posting comment');
   }
 };
 
@@ -169,8 +169,7 @@ export const likeComment = async (commentId, sessionId) => {
     const res = await api.post(`/api/comments/${commentId}/like`, { session_id: sessionId });
     return res.data;
   } catch (err) {
-    console.error(`❌ Error liking comment [${commentId}]:`, err.message);
-    return null;
+    return handleApiError(err, `Liking comment ID: ${commentId}`);
   }
 };
 
@@ -179,8 +178,7 @@ export const unlikeComment = async (commentId, sessionId) => {
     const res = await api.post(`/api/comments/${commentId}/unlike`, { session_id: sessionId });
     return res.data;
   } catch (err) {
-    console.error(`❌ Error unliking comment [${commentId}]:`, err.message);
-    return null;
+    return handleApiError(err, `Unliking comment ID: ${commentId}`);
   }
 };
 

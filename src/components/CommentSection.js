@@ -3,7 +3,7 @@ import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bookmark } from 'lucide-react';
 
-const API_URL = "https://animac-metaverse.onrender.com";
+const API_URL = 'https://animac-metaverse.onrender.com';
 
 const Comment = ({
   comment,
@@ -86,7 +86,7 @@ const CommentSection = ({ articleId }) => {
   const [guestName, setGuestName] = useState('');
   const [parentId, setParentId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
+  const [fetching, setFetching] = useState(false);
   const [expandedThreads, setExpandedThreads] = useState({});
   const [visibleCount, setVisibleCount] = useState(5);
   const [upvotedComments, setUpvotedComments] = useState([]);
@@ -95,7 +95,6 @@ const CommentSection = ({ articleId }) => {
   const [sessionId, setSessionId] = useState('');
   const commentBoxRef = useRef(null);
 
-  // Initialize session and saved states
   useEffect(() => {
     let existing = sessionStorage.getItem('session_id');
     if (!existing) {
@@ -112,32 +111,28 @@ const CommentSection = ({ articleId }) => {
     if (savedReplyId) setParentId(savedReplyId);
   }, []);
 
-  // Fetch comments only if articleId is valid
   useEffect(() => {
     if (!articleId) return;
     fetchComments();
   }, [articleId]);
 
-  // Save parentId for pending reply in sessionStorage
   useEffect(() => {
     if (parentId) sessionStorage.setItem('pending_reply', parentId);
     else sessionStorage.removeItem('pending_reply');
   }, [parentId]);
 
-  // Fetch comments from API
   const fetchComments = async () => {
     try {
       setFetching(true);
       const res = await axios.get(`${API_URL}/api/comments/${articleId}`);
-      setComments(res.data || []);
+      setComments(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error('Error fetching comments:', err);
+      console.error('❌ Error fetching comments:', err.response?.data || err.message);
     } finally {
       setFetching(false);
     }
   };
 
-  // Handle posting new comment or reply
   const handlePost = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -156,24 +151,20 @@ const CommentSection = ({ articleId }) => {
       await fetchComments();
       commentBoxRef.current?.scrollIntoView({ behavior: 'smooth' });
     } catch (err) {
-      console.error('Post failed:', err);
+      console.error('❌ Post failed:', err.response?.data || err.message);
       alert('Failed to post comment. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle voting logic (upvote/downvote/unvote)
   const handleVote = async (commentId, direction) => {
     const upvoted = upvotedComments.includes(commentId);
     const downvoted = downvotedComments.includes(commentId);
     let action = '';
 
-    if (direction === 'up') {
-      action = upvoted ? 'unvote' : 'upvote';
-    } else if (direction === 'down') {
-      action = downvoted ? 'unvote' : 'downvote';
-    }
+    if (direction === 'up') action = upvoted ? 'unvote' : 'upvote';
+    if (direction === 'down') action = downvoted ? 'unvote' : 'downvote';
 
     try {
       await axios.post(`${API_URL}/api/comments/${commentId}/${action}`, {}, {
@@ -195,11 +186,10 @@ const CommentSection = ({ articleId }) => {
 
       fetchComments();
     } catch (err) {
-      console.error(`${action} failed:`, err);
+      console.error(`❌ ${action} failed:`, err.response?.data || err.message);
     }
   };
 
-  // Handle bookmark toggle
   const handleBookmark = async (commentId) => {
     const isBookmarked = bookmarkedComments.includes(commentId);
     const endpoint = isBookmarked ? 'unbookmark' : 'bookmark';
@@ -217,11 +207,10 @@ const CommentSection = ({ articleId }) => {
       sessionStorage.setItem('bookmarked_comments', JSON.stringify(updated));
       fetchComments();
     } catch (err) {
-      console.error(`${endpoint} failed:`, err);
+      console.error(`❌ ${endpoint} failed:`, err.response?.data || err.message);
     }
   };
 
-  // Toggle reply thread expansion
   const toggleReplies = (commentId) => {
     setExpandedThreads(prev => ({
       ...prev,
@@ -229,7 +218,6 @@ const CommentSection = ({ articleId }) => {
     }));
   };
 
-  // Recursive rendering of replies for a given comment
   const renderReplies = (parentId) => {
     const replies = comments.filter(c => c.parent_id === parentId);
     const expanded = expandedThreads[parentId];

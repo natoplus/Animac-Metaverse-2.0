@@ -1,6 +1,6 @@
 // App.js
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
 // Components
@@ -21,6 +21,24 @@ import { supabase } from './utils/supabaseClient';
 // Styles
 import './App.css';
 
+// Wrapper for AnimatePresence with route transitions
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Home />} />
+        <Route path="/buzzfeed" element={<BuzzfeedHub />} />
+        <Route path="/buzzfeed/east" element={<EastPortal />} />
+        <Route path="/buzzfeed/west" element={<WestPortal />} />
+        <Route path="/article/:id" element={<ArticlePage />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 function App() {
   useEffect(() => {
     async function testSupabaseAuth() {
@@ -39,18 +57,7 @@ function App() {
       <Router>
         <div className="min-h-screen bg-netflix-black text-white">
           <Header />
-
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/buzzfeed" element={<BuzzfeedHub />} />
-              <Route path="/buzzfeed/east" element={<EastPortal />} />
-              <Route path="/buzzfeed/west" element={<WestPortal />} />
-              <Route path="/article/:id" element={<ArticlePage />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-            </Routes>
-          </AnimatePresence>
-
+          <AnimatedRoutes />
           <Footer />
         </div>
       </Router>
