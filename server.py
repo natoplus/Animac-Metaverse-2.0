@@ -1,5 +1,3 @@
-# backend/server.py
-
 from fastapi import FastAPI, HTTPException, Response, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
@@ -78,10 +76,12 @@ def admin_auth(request: Request):
 
 # ---------- Routes ----------
 @app.get("/")
-async def root(): return {"message": "Welcome to ANIMAC API"}
+async def root():
+    return {"message": "Welcome to ANIMAC API"}
 
 @app.get("/api/health")
-async def health(): return {"status": "healthy"}
+async def health():
+    return {"status": "healthy"}
 
 # ---------- Article Admin ----------
 @app.post("/api/admin/articles", dependencies=[Depends(admin_auth)], response_model=ArticleResponse)
@@ -181,7 +181,7 @@ async def post_comment(comment: CommentBase):
     supabase.table("comments").insert(c.dict()).execute()
     return c
 
-@app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
+@app.get("/api/comments", response_model=List[CommentResponse])
 async def get_comments(article_id: str):
     res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at").execute()
     flat = res.data
@@ -226,6 +226,31 @@ async def toggle_like(comment_id: str, request: Request, response: Response):
         new_likes = likes + 1
         supabase.table("comments").update({"likes": new_likes}).eq("id", comment_id).execute()
         return {"message": "Liked", "likes": new_likes}
+
+# ---------- Article Likes & Bookmarks ----------
+@app.post("/api/articles/{article_id}/like")
+async def toggle_article_like(article_id: str, request: Request, response: Response):
+    session_id = request.headers.get("X-Session-ID") or str(uuid.uuid4())
+    like_check = supabase.table("article_likes").select("id").eq("article_id", article_id).eq("session_id", session_id).execute()
+
+    if like_check.data:
+        supabase.table("article_likes").delete().eq("article_id", article_id).eq("session_id", session_id).execute()
+        return {"message": "Unliked", "liked": False}
+    else:
+        supabase.table("article_likes").insert({"article_id": article_id, "session_id": session_id}).execute()
+        return {"message": "Liked", "liked": True}
+
+@app.post("/api/articles/{article_id}/bookmark")
+async def toggle_article_bookmark(article_id: str, request: Request, response: Response):
+    session_id = request.headers.get("X-Session-ID") or str(uuid.uuid4())
+    bookmark_check = supabase.table("article_bookmarks").select("id").eq("article_id", article_id).eq("session_id", session_id).execute()
+
+    if bookmark_check.data:
+        supabase.table("article_bookmarks").delete().eq("article_id", article_id).eq("session_id", session_id).execute()
+        return {"message": "Unbookmarked", "bookmarked": False}
+    else:
+        supabase.table("article_bookmarks").insert({"article_id": article_id, "session_id": session_id}).execute()
+        return {"message": "Bookmarked", "bookmarked": True}
 
 # ---------- Main ----------
 if __name__ == "__main__":
