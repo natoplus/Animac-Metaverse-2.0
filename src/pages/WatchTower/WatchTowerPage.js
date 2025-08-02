@@ -1,22 +1,21 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Switch } from "@headlessui/react";
-import { Clock10, TimerReset, Film } from "lucide-react";
+import { TimerReset, Film } from "lucide-react";
 import axios from "axios";
 
-const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY;
+const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY || "<fallback-your-key>"; // optional fallback for dev
 
 function Countdown({ targetDate }) {
   const [timeLeft, setTimeLeft] = useState({});
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const updateCountdown = () => {
       const now = new Date();
       const diff = new Date(targetDate) - now;
 
       if (diff <= 0) {
         setTimeLeft(null);
-        clearInterval(interval);
       } else {
         setTimeLeft({
           days: Math.floor(diff / (1000 * 60 * 60 * 24)),
@@ -25,30 +24,34 @@ function Countdown({ targetDate }) {
           seconds: Math.floor((diff / 1000) % 60),
         });
       }
-    }, 1000);
+    };
 
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
   }, [targetDate]);
 
-  if (!timeLeft) return <span className="text-green-400 font-semibold">Now Streaming</span>;
+  if (!timeLeft) return <span className="text-green-400 font-semibold">Now Showing</span>;
 
   return (
-    <div className="font-mono text-xs text-blue-300 tracking-wide">
+    <span className="font-mono text-sm text-blue-400">
       {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-    </div>
+    </span>
   );
 }
 
-export default function WatchTower() {
+export default function WatchTowerPage() {
   const [isEast, setIsEast] = useState(true);
   const [eastList, setEastList] = useState([]);
   const [westList, setWestList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch anime
   useEffect(() => {
     async function fetchAnime() {
       const query = `
         query {
-          Page(perPage: 12) {
+          Page(perPage: 10) {
             media(type: ANIME, sort: START_DATE, status: NOT_YET_RELEASED) {
               id
               title { romaji }
@@ -57,7 +60,8 @@ export default function WatchTower() {
               genres
             }
           }
-        `;
+        }
+      `;
       try {
         const response = await fetch("https://graphql.anilist.co", {
           method: "POST",
@@ -73,106 +77,106 @@ export default function WatchTower() {
         }));
         setEastList(list);
       } catch (error) {
-        console.error("❌ Error fetching anime:", error);
+        console.error("❌ Failed to fetch anime:", error);
       }
     }
     fetchAnime();
   }, []);
 
+  // Fetch movies
   useEffect(() => {
     async function fetchMovies() {
       try {
         const res = await axios.get(
           `https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`
         );
-        const list = res.data.results.slice(0, 12).map((movie) => ({
+        const list = res.data.results.slice(0, 10).map((movie) => ({
           title: movie.title,
           date: movie.release_date + "T00:00:00Z",
           image: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
-          genres: [],
+          genres: [], // Optional: map genre_ids if needed
         }));
         setWestList(list);
       } catch (error) {
-        console.error("❌ Error fetching movies:", error);
+        console.error("❌ Failed to fetch movies:", error);
+      } finally {
+        setLoading(false);
       }
     }
     fetchMovies();
   }, []);
 
-  const currentList = isEast ? eastList : westList;
+  const list = isEast ? eastList : westList;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-black via-zinc-900 to-black text-white px-6 py-12 font-inter">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10">
-        <motion.h1
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-4xl font-bold tracking-tight text-red-500 neon-glow"
-        >
-          ⏱️ Watch Tower: Upcoming {isEast ? "Anime" : "Movies"}
-        </motion.h1>
-
+    <div className="min-h-screen bg-black text-white px-6 py-10 font-sans">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold tracking-tight text-glow-red drop-shadow-md">
+          Upcoming {isEast ? "Anime" : "Western"} Releases
+        </h1>
         <Switch
           checked={!isEast}
           onChange={() => setIsEast(!isEast)}
           className={`${
             isEast ? "bg-red-600" : "bg-blue-600"
-          } relative inline-flex h-8 w-20 items-center rounded-full transition duration-300 ring-1 ring-white/20`}
+          } relative inline-flex h-6 w-14 items-center rounded-full transition duration-300`}
         >
           <span className="sr-only">Toggle East/West</span>
           <span
-            className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition duration-300 ${
-              isEast ? "translate-x-2" : "translate-x-12"
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-300 ${
+              isEast ? "translate-x-1" : "translate-x-9"
             }`}
           />
         </Switch>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={isEast ? "anime" : "movies"}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.4 }}
-          className="grid gap-8 md:grid-cols-2 lg:grid-cols-3"
-        >
-          {currentList.map((item, idx) => (
-            <motion.div
-              key={idx}
-              className="bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl shadow-lg hover:shadow-neon transition-all duration-300 p-4"
-              whileHover={{ scale: 1.02 }}
-            >
-              <img
-                src={item.image}
-                alt={item.title}
-                className="w-full h-64 object-cover rounded-xl mb-4 border border-white/10"
-              />
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2 mb-2">
-                <Film className="w-5 h-5 text-yellow-400" />
-                {item.title}
-              </h2>
-              {item.genres?.length > 0 && (
-                <div className="flex flex-wrap gap-1 text-xs text-pink-300 mb-3">
-                  {item.genres.slice(0, 3).map((g, i) => (
-                    <span
-                      key={i}
-                      className="px-2 py-0.5 rounded-full border border-pink-500 bg-pink-900/40"
-                    >
-                      {g}
-                    </span>
-                  ))}
+      {loading ? (
+        <div className="text-center text-zinc-400 text-sm animate-pulse">Loading upcoming titles...</div>
+      ) : (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={isEast ? "east" : "west"}
+            initial={{ opacity: 0, x: isEast ? -50 : 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: isEast ? 50 : -50 }}
+            transition={{ duration: 0.4 }}
+            className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+          >
+            {list.map((item, index) => (
+              <div
+                key={index}
+                className="bg-zinc-900/70 border border-zinc-700 backdrop-blur-md p-4 rounded-2xl shadow-xl hover:shadow-glow transition duration-300"
+              >
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="w-full h-56 object-cover rounded-xl mb-3 shadow-md"
+                />
+                <h2 className="text-xl font-semibold mb-1 flex items-center gap-2 text-white drop-shadow-sm">
+                  <Film className="w-5 h-5 text-yellow-400" />
+                  {item.title}
+                </h2>
+                {item.genres?.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2 text-xs text-pink-300">
+                    {item.genres.slice(0, 3).map((g, i) => (
+                      <span
+                        key={i}
+                        className="bg-pink-900/30 px-2 py-0.5 rounded-full border border-pink-700"
+                      >
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="flex justify-between items-center">
+                  <Countdown targetDate={item.date} />
+                  <TimerReset className="text-cyan-300" />
                 </div>
-              )}
-              <div className="flex items-center justify-between">
-                <Countdown targetDate={item.date} />
-                <Clock10 className="text-cyan-300 w-4 h-4" />
               </div>
-            </motion.div>
-          ))}
-        </motion.div>
-      </AnimatePresence>
+            ))}
+          </motion.div>
+        </AnimatePresence>
+      )}
     </div>
   );
 }
