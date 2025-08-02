@@ -155,12 +155,24 @@ const ArticlePage = () => {
           <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
 
 
-              <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
-                <Link to="/" className="inline-block items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
-                  <ArrowLeft size={18} className="mr-2"/> Back to Home
-                </Link>
-               {article.category?.toUpperCase() || 'FEATURED'}
-              </span>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6 animate-pulse">
+                  {/* Back to Home Button */}
+                     <Link
+                        to="/"
+                         className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium neon-glow backdrop-blur-md bg-black/50 hover:bg-black/70 text-white border ${theme.badge}`}
+                      >
+                      <ArrowLeft size={18} />
+                         Back to Home
+                      </Link>
+ 
+                  {/* Category Badge */}
+                      <span
+                        className={`px-4 py-2 rounded-full text-sm font-inter text-white border ${theme.badge} neon-glow bg-black/50 backdrop-blur-md`}
+                      >
+                  {article.category?.toUpperCase() || 'FEATURED'}
+                      </span>
+              </div>
+
 
              <div className="text-sm text-gray-400 flex gap-4 mb-6">
                 <span><User size={14}/> {article.author}</span>
