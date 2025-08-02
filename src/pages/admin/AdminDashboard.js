@@ -11,9 +11,13 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
 import { motion } from 'framer-motion';
+import dynamic from 'next/dynamic';
+import ReactMarkdown from 'react-markdown';
+import 'react-markdown-editor-lite/lib/index.css';
 import '../../styles/admin.css';
 
-// ✅ Extracted to avoid re-declaring on each render
+const MdEditor = dynamic(() => import('react-markdown-editor-lite'), { ssr: false });
+
 const initialFormState = () => ({
   title: '',
   content: '',
@@ -57,6 +61,10 @@ export default function AdminDashboard() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
     }));
+  };
+
+  const handleEditorChange = ({ text }) => {
+    setFormData((prev) => ({ ...prev, content: text }));
   };
 
   const handleSubmit = async (e) => {
@@ -117,7 +125,6 @@ export default function AdminDashboard() {
     >
       <h1 className="font-ackno text-3xl font-bold">ANIMAC Admin Panel</h1>
 
-      {/* Form Section */}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -142,13 +149,12 @@ export default function AdminDashboard() {
                 value={formData.excerpt}
                 onChange={handleChange}
               />
-              <Textarea
-                name="content"
-                placeholder="Content"
-                rows={6}
+              <MdEditor
                 value={formData.content}
-                onChange={handleChange}
-                required
+                style={{ height: '200px' }}
+                renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
+                onChange={handleEditorChange}
+                className="dark-mode"
               />
               <Input
                 name="category"
@@ -197,7 +203,6 @@ export default function AdminDashboard() {
         </Card>
       </motion.div>
 
-      {/* Articles List */}
       <motion.div
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
