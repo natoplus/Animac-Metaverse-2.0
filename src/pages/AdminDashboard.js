@@ -14,7 +14,7 @@ import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 
 import 'react-markdown-editor-lite/lib/index.css';
-import '../../styles/admin.css';
+import '../styles/admin.css';
 
 const MdEditor = lazy(() => import('react-markdown-editor-lite'));
 
