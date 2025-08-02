@@ -109,6 +109,16 @@ const ArticlePage = () => {
     }
   };
 
+  useEffect(() => {
+    const handleScroll = () => {
+      const backButton = document.getElementById('back-home-btn');
+      if (!backButton) return;
+      backButton.classList.toggle('collapsed', window.scrollY > 80);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   if (loading) return <div className="min-h-screen pt-20 bg-netflix-black flex justify-center items-center"><Loader className="animate-spin text-gray-400" size={24}/> Loading...</div>;
   if (error || !article) return <div className="min-h-screen pt-20 bg-netflix-black flex items-center justify-center"><h2 className="text-white">Article Not Found</h2></div>;
 
@@ -117,7 +127,8 @@ const ArticlePage = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}>
-      
+      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse z-50" />
+
       {/* Hero Section */}
       <div className="relative h-[420px] sm:h-[500px] overflow-hidden">
         {article.featured_image && (
@@ -125,7 +136,7 @@ const ArticlePage = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-10" />
 
-        <div className="absolute top-24 left-6 z-20">
+        <div className="sticky top-4 left-6 z-30 transition-transform duration-300" id="back-home-btn">
           <Link to="/" className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
             <ArrowLeft size={18} className="mr-2"/> Back to Home
           </Link>
@@ -133,7 +144,7 @@ const ArticlePage = () => {
 
         <div className="absolute inset-0 z-20 flex items-end justify-center text-center px-6 pb-10">
           <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">{article.title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white neon-glow mb-2">{article.title}</h1>
             {article.excerpt && <p className="text-lg text-gray-300 italic">{article.excerpt}</p>}
           </div>
         </div>
