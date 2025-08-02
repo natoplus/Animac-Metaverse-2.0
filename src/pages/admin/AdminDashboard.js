@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, lazy, Suspense } from 'react';
 import {
   fetchArticles,
   createArticle,
@@ -11,12 +11,12 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Textarea } from '../../components/ui/textarea';
 import { motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
 import ReactMarkdown from 'react-markdown';
+
 import 'react-markdown-editor-lite/lib/index.css';
 import '../../styles/admin.css';
 
-const MdEditor = dynamic(() => import('react-markdown-editor-lite'), { ssr: false });
+const MdEditor = lazy(() => import('react-markdown-editor-lite'));
 
 const initialFormState = () => ({
   title: '',
@@ -38,7 +38,7 @@ export default function AdminDashboard() {
   const loadArticles = async () => {
     try {
       const data = await fetchArticles();
-      if (data && Array.isArray(data)) {
+      if (Array.isArray(data)) {
         const uniqueMap = new Map();
         data.forEach(article => uniqueMap.set(article.id, article));
         setArticles([...uniqueMap.values()]);
@@ -104,8 +104,7 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this article?');
-    if (confirmDelete) {
+    if (window.confirm('Are you sure you want to delete this article?')) {
       try {
         await deleteArticle(id);
         loadArticles();
@@ -123,8 +122,9 @@ export default function AdminDashboard() {
       transition={{ duration: 0.7 }}
       className="admin-panel space-y-10 max-w-4xl mx-auto mt-10"
     >
-      <h1 className="font-ackno text-3xl font-bold">ANIMAC Admin Panel</h1>
+      <h1 className="font-ackno text-3xl font-bold text-white">ANIMAC Admin Panel</h1>
 
+      {/* Form */}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -132,70 +132,36 @@ export default function AdminDashboard() {
       >
         <Card className="neon-red bg-black border border-red-700">
           <CardContent className="space-y-4 p-5">
-            <h2 className="font-japanese text-3xl font-semibold">
+            <h2 className="font-japanese text-3xl font-semibold text-white">
               {isEditing ? 'Edit Article' : 'Post New Article'}
             </h2>
             <form className="space-y-4" onSubmit={handleSubmit}>
-              <Input
-                name="title"
-                placeholder="Title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-              />
-              <Textarea
-                name="excerpt"
-                placeholder="Excerpt"
-                value={formData.excerpt}
-                onChange={handleChange}
-              />
-              <MdEditor
-                value={formData.content}
-                style={{ height: '200px' }}
-                renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
-                onChange={handleEditorChange}
-                className="dark-mode"
-              />
-              <Input
-                name="category"
-                placeholder="Category (east/west)"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              />
-              <Input
-                name="tags"
-                placeholder="Tags (comma-separated)"
-                value={formData.tags}
-                onChange={handleChange}
-              />
-              <Input
-                name="featured_image"
-                placeholder="Featured Image URL"
-                value={formData.featured_image}
-                onChange={handleChange}
-              />
-              <div className="flex gap-6">
+              <Input name="title" placeholder="Title" value={formData.title} onChange={handleChange} required />
+              <Textarea name="excerpt" placeholder="Excerpt" value={formData.excerpt} onChange={handleChange} />
+
+              <Suspense fallback={<div className="text-white">Loading editor...</div>}>
+                <MdEditor
+                  value={formData.content}
+                  style={{ height: '300px', backgroundColor: '#111' }}
+                  renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
+                  onChange={handleEditorChange}
+                  className="dark-mode"
+                />
+              </Suspense>
+
+              <Input name="category" placeholder="Category (east/west)" value={formData.category} onChange={handleChange} required />
+              <Input name="tags" placeholder="Tags (comma-separated)" value={formData.tags} onChange={handleChange} />
+              <Input name="featured_image" placeholder="Featured Image URL" value={formData.featured_image} onChange={handleChange} />
+
+              <div className="flex gap-6 text-white">
                 <label>
-                  <input
-                    type="checkbox"
-                    name="is_featured"
-                    checked={formData.is_featured}
-                    onChange={handleChange}
-                  />{' '}
-                  Featured
+                  <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} /> Featured
                 </label>
                 <label>
-                  <input
-                    type="checkbox"
-                    name="is_published"
-                    checked={formData.is_published}
-                    onChange={handleChange}
-                  />{' '}
-                  Published
+                  <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} /> Published
                 </label>
               </div>
-              <Button type="submit">
+              <Button type="submit" className="w-full">
                 {isEditing ? 'Update Article' : 'Submit Article'}
               </Button>
             </form>
@@ -203,6 +169,7 @@ export default function AdminDashboard() {
         </Card>
       </motion.div>
 
+      {/* Articles List */}
       <motion.div
         initial={{ opacity: 0, x: 50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -210,13 +177,13 @@ export default function AdminDashboard() {
       >
         <Card className="neon-blue bg-black border border-blue-700">
           <CardContent className="space-y-4 p-5">
-            <h2 className="font-japanese text-3xl font-semibold">Existing Articles</h2>
+            <h2 className="font-japanese text-3xl font-semibold text-white">Existing Articles</h2>
             {articles.length === 0 ? (
               <p className="text-gray-400">No articles found.</p>
             ) : (
               <ul className="space-y-4">
                 {articles.map((article) => (
-                  <li key={article.id} className="border-b border-gray-700 pb-2">
+                  <li key={article.id} className="border-b border-gray-700 pb-2 text-white">
                     <div className="flex justify-between items-center">
                       <div>
                         <strong>{article.title}</strong> — {article.category} —{' '}
@@ -226,11 +193,7 @@ export default function AdminDashboard() {
                         <Button size="sm" onClick={() => handleEdit(article)}>
                           Edit
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(article.id)}
-                        >
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(article.id)}>
                           Delete
                         </Button>
                       </div>
