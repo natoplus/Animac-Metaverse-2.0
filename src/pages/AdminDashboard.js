@@ -4,7 +4,7 @@ import {
   createArticle,
   updateArticle,
   deleteArticle,
-} from './utils/api';
+} from '../utils/api';
 
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
