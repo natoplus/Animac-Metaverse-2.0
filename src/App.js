@@ -13,7 +13,7 @@ import BuzzfeedHub from './pages/BuzzfeedHub';
 import EastPortal from './pages/EastPortal';
 import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
-import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 
 // Supabase
 import { supabase } from './utils/supabaseClient';

@@ -14,6 +14,7 @@ const Header = () => {
     { path: '/buzzfeed', label: 'BUZZFEED' },
     { path: '/buzzfeed/east', label: 'EAST' },
     { path: '/buzzfeed/west', label: 'WEST' },
+     { path: '/Watcher', label: 'WATCHER TOWER' },
   ];
 
   const navItems = isAdmin
