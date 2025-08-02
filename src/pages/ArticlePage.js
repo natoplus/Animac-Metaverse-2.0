@@ -135,11 +135,6 @@ const ArticlePage = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-10" />
 
-        <div className="sticky top-4 left-6 z-30 transition-transform duration-300" id="back-home-btn">
-          <Link to="/" className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
-            <ArrowLeft size={18} className="mr-2"/> Back to Home
-          </Link>
-        </div>
 
         <div className="absolute inset-0 z-20 flex items-end justify-center text-center px-6 pb-10">
           <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
@@ -155,8 +150,16 @@ const ArticlePage = () => {
       {/* Body */}
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
+
         
-          <div className="bg-purple/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
+          <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
+
+              <div className="sticky top-4 left-6 z-30 transition-transform duration-300" id="back-home-btn">
+                <Link to="/" className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
+                  <ArrowLeft size={18} className="mr-2"/> Back to Home
+                </Link>
+              </div>
+
               <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
                {article.category?.toUpperCase() || 'FEATURED'}
               </span>
