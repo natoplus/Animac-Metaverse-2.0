@@ -156,7 +156,7 @@ const ArticlePage = () => {
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
         
-          <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
+          <div className="bg-purple/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
               <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
                {article.category?.toUpperCase() || 'FEATURED'}
               </span>
