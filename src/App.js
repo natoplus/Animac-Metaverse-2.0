@@ -14,6 +14,7 @@ import EastPortal from './pages/EastPortal';
 import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
 import WatchTowerPage from './pages/WatchTower/WatchTowerPage'; // ✅ Confirm correct path
+import AdminDashboard from './pages/Admin'; // ✅ Adjust path if moved
 
 // Supabase
 import { supabase } from './utils/supabaseClient';
@@ -33,6 +34,7 @@ const AnimatedRoutes = () => {
         <Route path="/buzzfeed/west" element={<WestPortal />} />
         <Route path="/article/:id" element={<ArticlePage />} />
         <Route path="/watch-tower" element={<WatchTowerPage />} /> {/* ✅ Route must match the URL exactly */}
+        <Route path="/admin/*" element={<AdminDashboard />} /> {/* ✅ Adjust path if moved */}
       </Routes>
     </AnimatePresence>
   );
