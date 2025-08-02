@@ -186,7 +186,7 @@ const ArticlePage = () => {
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent z-10" />
 
         {/* Back button with spacing */}
-        <div className="absolute top-8 left-6 z-20">
+        <div className="absolute top-16 left-6 z-20">
           <Link
             to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'}
             className="inline-flex items-center text-white bg-black/60 hover:bg-black/80 px-4 py-2 rounded-full text-sm transition backdrop-blur-md"
