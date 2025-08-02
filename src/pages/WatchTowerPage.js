@@ -4,15 +4,16 @@ import { Switch } from "@headlessui/react";
 import { TimerReset, Film } from "lucide-react";
 import axios from "axios";
 
-const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY || "<fallback-your-key>"; // optional fallback for dev
+const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY || "<fallback-your-key>";
 
 function Countdown({ targetDate }) {
-  const [timeLeft, setTimeLeft] = useState({});
+  const [timeLeft, setTimeLeft] = useState(null);
 
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date();
-      const diff = new Date(targetDate) - now;
+      const target = new Date(targetDate);
+      const diff = target - now;
 
       if (diff <= 0) {
         setTimeLeft(null);
@@ -46,9 +47,8 @@ export default function WatchTowerPage() {
   const [westList, setWestList] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch anime
   useEffect(() => {
-    async function fetchAnime() {
+    const fetchAnime = async () => {
       const query = `
         query {
           Page(perPage: 10) {
@@ -75,38 +75,41 @@ export default function WatchTowerPage() {
           image: item.coverImage.large,
           genres: item.genres,
         }));
+        console.log("✅ Anime fetched:", list);
         setEastList(list);
       } catch (error) {
         console.error("❌ Failed to fetch anime:", error);
       }
-    }
+    };
+
     fetchAnime();
   }, []);
 
-  // Fetch movies
   useEffect(() => {
-    async function fetchMovies() {
+    const fetchMovies = async () => {
       try {
-        const res = await axios.get(
+        const { data } = await axios.get(
           `https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`
         );
-        const list = res.data.results.slice(0, 10).map((movie) => ({
+        const list = data.results.slice(0, 10).map((movie) => ({
           title: movie.title,
           date: movie.release_date + "T00:00:00Z",
           image: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
-          genres: [], // Optional: map genre_ids if needed
+          genres: [], // You can map genre_ids if needed
         }));
+        console.log("✅ Movies fetched:", list);
         setWestList(list);
       } catch (error) {
         console.error("❌ Failed to fetch movies:", error);
       } finally {
         setLoading(false);
       }
-    }
+    };
+
     fetchMovies();
   }, []);
 
-  const list = isEast ? eastList : westList;
+  const displayedList = isEast ? eastList : westList;
 
   return (
     <div className="min-h-screen bg-black text-white px-6 py-10 font-sans">
@@ -116,7 +119,10 @@ export default function WatchTowerPage() {
         </h1>
         <Switch
           checked={!isEast}
-          onChange={() => setIsEast(!isEast)}
+          onChange={() => {
+            setIsEast((prev) => !prev);
+            console.log("🌀 Toggled to:", !isEast ? "Anime" : "Movies");
+          }}
           className={`${
             isEast ? "bg-red-600" : "bg-blue-600"
           } relative inline-flex h-6 w-14 items-center rounded-full transition duration-300`}
@@ -131,7 +137,9 @@ export default function WatchTowerPage() {
       </div>
 
       {loading ? (
-        <div className="text-center text-zinc-400 text-sm animate-pulse">Loading upcoming titles...</div>
+        <div className="text-center text-zinc-400 text-sm animate-pulse">
+          Loading upcoming titles...
+        </div>
       ) : (
         <AnimatePresence mode="wait">
           <motion.div
@@ -142,7 +150,7 @@ export default function WatchTowerPage() {
             transition={{ duration: 0.4 }}
             className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
           >
-            {list.map((item, index) => (
+            {displayedList.map((item, index) => (
               <div
                 key={index}
                 className="bg-zinc-900/70 border border-zinc-700 backdrop-blur-md p-4 rounded-2xl shadow-xl hover:shadow-glow transition duration-300"
