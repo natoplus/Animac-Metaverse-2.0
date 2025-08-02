@@ -197,7 +197,7 @@ const ArticlePage = () => {
               <h3 className="text-white text-2xl mb-4">Related Articles</h3>
               <div className="grid gap-6 sm:grid-cols-2">
                 {related.map(rel => (
-                  <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border border-gray-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
+                  <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border border-white-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
                     {rel.featured_image && (
                       <div className="h-40 bg-cover bg-center rounded-md mb-3" style={{ backgroundImage: `url(${rel.featured_image})` }} />
                     )}
