@@ -154,13 +154,11 @@ const ArticlePage = () => {
         
           <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
 
-              <div className="top-4 left-6 bottom-3 z-30 transition-transform duration-300" id="back-home-btn">
-                <Link to="/" className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
-                  <ArrowLeft size={18} className="mr-2"/> Back to Home
-                </Link>
-              </div>
 
               <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
+                <Link to="/" className="inline-block items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
+                  <ArrowLeft size={18} className="mr-2"/> Back to Home
+                </Link>
                {article.category?.toUpperCase() || 'FEATURED'}
               </span>
 
