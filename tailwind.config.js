@@ -70,6 +70,17 @@ module.exports = {
       },
     },
   },
+  theme: {
+  extend: {
+    boxShadow: {
+      neon: "0 0 10px rgba(255, 0, 100, 0.8)",
+    },
+    fontFamily: {
+      inter: ['Inter', 'sans-serif'],
+    },
+  },
+},
+
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
