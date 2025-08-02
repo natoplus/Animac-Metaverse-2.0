@@ -1,3 +1,4 @@
+// Import statements remain unchanged
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
@@ -165,28 +166,30 @@ const ArticlePage = () => {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
       className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}
     >
+
       {/* Hero Section */}
-      <div className="relative h-[380px] sm:h-[460px] w-full overflow-hidden">
+      <div className="relative h-[400px] sm:h-[460px] w-full overflow-hidden">
         {article.featured_image && (
           <motion.div
-            initial={{ opacity: 0, scale: 1.1 }}
+            initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6 }}
             className="absolute inset-0 bg-cover bg-center"
             style={{ backgroundImage: `url(${article.featured_image})` }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent z-10" />
 
-        <div className="absolute top-5 left-5 z-20">
+        {/* Back button with spacing */}
+        <div className="absolute top-8 left-6 z-20">
           <Link
             to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'}
-            className="inline-flex items-center text-white bg-black/60 hover:bg-black/80 px-4 py-2 rounded-full text-sm transition"
+            className="inline-flex items-center text-white bg-black/60 hover:bg-black/80 px-4 py-2 rounded-full text-sm transition backdrop-blur-md"
           >
             <ArrowLeft size={18} className="mr-2" />
             Back to {article.category?.toUpperCase() || 'Home'}
@@ -203,51 +206,63 @@ const ArticlePage = () => {
         </div>
       </div>
 
-      {/* Body Section */}
-      <div className="container mx-auto px-4 py-10 max-w-4xl">
-        <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
-          {article.category?.toUpperCase() || 'FEATURED'}
-        </span>
+      {/* Neon Divider */}
+      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
 
-        <div className="text-sm text-gray-400 flex gap-4 items-center mb-6">
-          <span><User size={14} className="inline mr-1" /> {article.author}</span>
-          <span><Calendar size={14} className="inline mr-1" /> {new Date(article.created_at).toLocaleDateString()}</span>
-          <span><Clock size={14} className="inline mr-1" /> {estimatedReadTime} min read</span>
-        </div>
+      {/* Article Body Section */}
+      <div className="bg-black relative z-10">
+        <div className="container mx-auto px-4 py-14 max-w-4xl">
 
-        <div className="flex flex-wrap items-center gap-4 text-gray-300 mb-10">
-          <button onClick={handleLike} disabled={likeProcessing} className="hover:text-pink-500 transition flex items-center gap-1">
-            <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
-          </button>
-          <button onClick={handleBookmark} disabled={bookmarkProcessing} className="hover:text-yellow-400 transition flex items-center gap-1">
-            <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
-          </button>
-          <button onClick={handleCopyLink} className="hover:text-blue-400 transition flex items-center gap-1">
-            <Share2 size={18} /> {copied ? 'Copied!' : 'Share'} ({shareCount})
-          </button>
-        </div>
+          {/* Category Badge */}
+          <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
+            {article.category?.toUpperCase() || 'FEATURED'}
+          </span>
 
-        <div className="prose prose-invert max-w-none text-gray-300 text-lg space-y-6 font-inter">
-          {(article.content || '').split('\n').map((para, idx) => (
-            <p key={idx}>{para.trim()}</p>
-          ))}
-        </div>
-
-        {article.tags?.length > 0 && (
-          <div className="mt-12 pt-8 border-t border-gray-800">
-            <h3 className="text-white font-montserrat font-semibold mb-4">Tags</h3>
-            <div className="flex flex-wrap gap-3">
-              {article.tags.map((tag, i) => (
-                <span key={i} className={`px-3 py-2 rounded-lg font-inter text-sm border ${theme.badge}`}>
-                  #{tag}
-                </span>
-              ))}
-            </div>
+          {/* Meta Info */}
+          <div className="text-sm text-gray-400 flex gap-4 items-center mb-6">
+            <span><User size={14} className="inline mr-1" /> {article.author}</span>
+            <span><Calendar size={14} className="inline mr-1" /> {new Date(article.created_at).toLocaleDateString()}</span>
+            <span><Clock size={14} className="inline mr-1" /> {estimatedReadTime} min read</span>
           </div>
-        )}
 
-        <div className="mt-12">
-          <CommentSection articleId={article.id} />
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-4 text-gray-300 mb-10">
+            <button onClick={handleLike} disabled={likeProcessing} className="hover:text-pink-500 transition flex items-center gap-1">
+              <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
+            </button>
+            <button onClick={handleBookmark} disabled={bookmarkProcessing} className="hover:text-yellow-400 transition flex items-center gap-1">
+              <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
+            </button>
+            <button onClick={handleCopyLink} className="hover:text-blue-400 transition flex items-center gap-1">
+              <Share2 size={18} /> {copied ? 'Copied!' : 'Share'} ({shareCount})
+            </button>
+          </div>
+
+          {/* Article Content */}
+          <div className="prose prose-invert max-w-none text-gray-300 text-lg space-y-6 font-inter">
+            {(article.content || '').split('\n').map((para, idx) => (
+              <p key={idx}>{para.trim()}</p>
+            ))}
+          </div>
+
+          {/* Tags */}
+          {article.tags?.length > 0 && (
+            <div className="mt-12 pt-8 border-t border-gray-800">
+              <h3 className="text-white font-montserrat font-semibold mb-4">Tags</h3>
+              <div className="flex flex-wrap gap-3">
+                {article.tags.map((tag, i) => (
+                  <span key={i} className={`px-3 py-2 rounded-lg font-inter text-sm border ${theme.badge}`}>
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Comments */}
+          <div className="mt-12">
+            <CommentSection articleId={article.id} />
+          </div>
         </div>
       </div>
     </motion.div>
