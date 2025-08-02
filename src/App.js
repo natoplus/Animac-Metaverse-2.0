@@ -3,7 +3,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
-// Components
+// Layout
 import Header from './components/Header';
 import Footer from './components/Footer';
 
@@ -13,7 +13,7 @@ import BuzzfeedHub from './pages/BuzzfeedHub';
 import EastPortal from './pages/EastPortal';
 import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
-
+import WatchTowerPage from './pages/WatchTower/WatchTowerPage'; // ✅ Ensure this file exists
 
 // Supabase
 import { supabase } from './utils/supabaseClient';
@@ -21,7 +21,7 @@ import { supabase } from './utils/supabaseClient';
 // Styles
 import './App.css';
 
-// Wrapper for AnimatePresence with route transitions
+// Animated route transitions
 const AnimatedRoutes = () => {
   const location = useLocation();
 
@@ -33,7 +33,7 @@ const AnimatedRoutes = () => {
         <Route path="/buzzfeed/east" element={<EastPortal />} />
         <Route path="/buzzfeed/west" element={<WestPortal />} />
         <Route path="/article/:id" element={<ArticlePage />} />
-
+        <Route path="/watchtower" element={<WatchTowerPage />} /> {/* ✅ MATCHES HEADER */}
       </Routes>
     </AnimatePresence>
   );
@@ -53,15 +53,13 @@ function App() {
   }, []);
 
   return (
-    <React.StrictMode>
-      <Router>
-        <div className="min-h-screen bg-netflix-black text-white">
-          <Header />
-          <AnimatedRoutes />
-          <Footer />
-        </div>
-      </Router>
-    </React.StrictMode>
+    <Router>
+      <div className="min-h-screen bg-netflix-black text-white">
+        <Header />
+        <AnimatedRoutes />
+        <Footer />
+      </div>
+    </Router>
   );
 }
 
