@@ -2,7 +2,6 @@
 
 import axios from 'axios';
 
-// ---------- Base Config ----------
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
 const api = axios.create({
@@ -12,7 +11,7 @@ const api = axios.create({
   },
 });
 
-// ---------- Dev Logging ----------
+// ---------- Interceptors ----------
 api.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
@@ -26,13 +25,15 @@ api.interceptors.response.use(
   }
 );
 
-// ---------- Helper ----------
 const handleApiError = (err, context = 'API') => {
   console.error(`❌ ${context} error:`, err?.response?.data?.message || err.message);
   return null;
 };
 
-// ---------- Article Endpoints ----------
+//
+// ─── ARTICLE ENDPOINTS ──────────────────────────────────────────────────────────
+//
+
 export const fetchArticles = async (params = {}) => {
   try {
     const res = await api.get('/api/articles', { params });
@@ -118,13 +119,16 @@ export const healthCheck = async () => {
   }
 };
 
-// ---------- Article Like/Bookmark Toggles ----------
+//
+// ─── ARTICLE ACTIONS ────────────────────────────────────────────────────────────
+//
+
 export const toggleLikeArticle = async (articleId, sessionId) => {
   try {
     const res = await api.post(`/api/articles/${articleId}/like`, { session_id: sessionId });
     return res.data;
   } catch (err) {
-    return handleApiError(err, `Liking/unliking article ID: ${articleId}`);
+    return handleApiError(err, `Toggling like on article ID: ${articleId}`);
   }
 };
 
@@ -133,17 +137,18 @@ export const toggleBookmarkArticle = async (articleId, sessionId) => {
     const res = await api.post(`/api/articles/${articleId}/bookmark`, { session_id: sessionId });
     return res.data;
   } catch (err) {
-    return handleApiError(err, `Bookmarking/unbookmarking article ID: ${articleId}`);
+    return handleApiError(err, `Toggling bookmark on article ID: ${articleId}`);
   }
 };
 
-// ---------- Comment Endpoints ----------
+//
+// ─── COMMENTS ───────────────────────────────────────────────────────────────────
+//
+
 export const fetchComments = async (articleId) => {
   if (!articleId) return [];
   try {
-    const res = await api.get('/api/comments', {
-      params: { article_id: articleId },
-    });
+    const res = await api.get('/api/comments', { params: { article_id: articleId } });
     return res.data || [];
   } catch (err) {
     return handleApiError(err, `Fetching comments for article ID: ${articleId}`);
@@ -188,7 +193,42 @@ export const toggleLikeComment = async (commentId, sessionId, isLiked) => {
     : await likeComment(commentId, sessionId);
 };
 
-// ---------- Export Group ----------
+//
+// ─── WATCH TOWER ────────────────────────────────────────────────────────────────
+//
+
+export const fetchWatchTowerContent = async () => {
+  try {
+    const res = await api.get('/api/watch-tower');
+    return res.data || [];
+  } catch (err) {
+    return handleApiError(err, 'Fetching Watch Tower content');
+  }
+};
+
+export const createWatchTowerEntry = async (data) => {
+  try {
+    const res = await api.post('/api/watch-tower', data);
+    return res.data;
+  } catch (err) {
+    return handleApiError(err, 'Creating Watch Tower entry');
+  }
+};
+
+export const deleteWatchTowerEntry = async (id) => {
+  if (!id) return null;
+  try {
+    const res = await api.delete(`/api/watch-tower/${id}`);
+    return res.data;
+  } catch (err) {
+    return handleApiError(err, `Deleting Watch Tower entry ID: ${id}`);
+  }
+};
+
+//
+// ─── EXPORT GROUPED API ─────────────────────────────────────────────────────────
+//
+
 export const apiEndpoints = {
   // Articles
   getArticles: fetchArticles,
@@ -209,6 +249,11 @@ export const apiEndpoints = {
   likeComment,
   unlikeComment,
   toggleLikeComment,
+
+  // Watch Tower
+  getWatchTower: fetchWatchTowerContent,
+  createWatchTower: createWatchTowerEntry,
+  deleteWatchTower: deleteWatchTowerEntry,
 };
 
 export default apiEndpoints;

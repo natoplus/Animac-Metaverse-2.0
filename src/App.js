@@ -1,5 +1,5 @@
 // App.js
-import React, { useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
@@ -13,11 +13,11 @@ import BuzzfeedHub from './pages/BuzzfeedHub';
 import EastPortal from './pages/EastPortal';
 import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
-import WatchTowerPage from './pages/WatchTower/WatchTowerPage'; // ✅ Confirm correct path
-import AdminDashboard from './pages/Admin'; // ✅ Adjust path if moved
+import WatchTowerPage from './pages/WatchTower/WatchTowerPage';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 
-// Supabase
-import { supabase } from './utils/supabaseClient';
+// Hooks
+import useSupabaseAuth from './hooks/useSupabaseAuth'; // Custom hook to handle auth
 
 // Styles
 import './App.css';
@@ -33,37 +33,34 @@ const AnimatedRoutes = () => {
         <Route path="/buzzfeed/east" element={<EastPortal />} />
         <Route path="/buzzfeed/west" element={<WestPortal />} />
         <Route path="/article/:id" element={<ArticlePage />} />
-        <Route path="/watch-tower" element={<WatchTowerPage />} /> {/* ✅ Route must match the URL exactly */}
-        <Route path="/admin/*" element={<AdminDashboard />} /> {/* ✅ Adjust path if moved */}
+        <Route path="/watch-tower" element={<WatchTowerPage />} />
+        <Route path="/admin/*" element={<AdminDashboard />} />
       </Routes>
     </AnimatePresence>
   );
 };
 
-function App() {
-  useEffect(() => {
-    async function testSupabaseAuth() {
-      try {
-        const result = await supabase.auth.getUser();
-        console.log('✅ Supabase Auth Test:', result);
-      } catch (error) {
-        console.error('❌ Supabase Auth Error:', error);
-      }
-    }
-    testSupabaseAuth();
-  }, []);
+const AppContent = () => {
+  useSupabaseAuth(); // Run auth effect once
+
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
 
   return (
-    <React.StrictMode>
-      <Router>
-        <div className="min-h-screen bg-netflix-black text-white">
-          <Header />
-          <AnimatedRoutes />
-          <Footer />
-        </div>
-      </Router>
-    </React.StrictMode>
+    <div className="min-h-screen bg-netflix-black text-white">
+      {!isAdminRoute && <Header />}
+      <AnimatedRoutes />
+      {!isAdminRoute && <Footer />}
+    </div>
   );
-}
+};
+
+const App = () => (
+  <React.StrictMode>
+    <Router>
+      <AppContent />
+    </Router>
+  </React.StrictMode>
+);
 
 export default App;
