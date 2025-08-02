@@ -6,228 +6,119 @@ const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metave
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// ---------- Interceptors ----------
+// ─── Interceptors ──────────────────────────────────────────────────────────────
 api.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[✅ API] ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+      console.log(`[✅ API ${response.config.method?.toUpperCase()}] ${response.config.url}`, response.data);
     }
     return response;
   },
   (error) => {
-    console.error('[❌ API ERROR]', error?.response?.data || error.message);
+    console.error(`[❌ API ERROR] ${error?.config?.url || 'Unknown URL'}:`, error?.response?.data || error.message);
     return Promise.reject(error);
   }
 );
 
 const handleApiError = (err, context = 'API') => {
-  console.error(`❌ ${context} error:`, err?.response?.data?.message || err.message);
+  const message = err?.response?.data?.message || err.message || 'Unknown error';
+  console.error(`❌ ${context} failed:`, message);
   return null;
 };
 
-//
-// ─── ARTICLE ENDPOINTS ──────────────────────────────────────────────────────────
-//
-
-export const fetchArticles = async (params = {}) => {
+const safeGet = async (path, context, params = {}) => {
   try {
-    const res = await api.get('/api/articles', { params });
-    return res.data || [];
+    const res = await api.get(path, { params });
+    return res.data ?? [];
   } catch (err) {
-    return handleApiError(err, 'Fetching articles');
+    return handleApiError(err, context);
   }
 };
 
-export const getArticle = async (id) => {
-  if (!id) return null;
+const safePost = async (path, data, context) => {
   try {
-    const res = await api.get(`/api/articles/by-id/${id}`);
-    return res.data || null;
-  } catch (err) {
-    return handleApiError(err, `Fetching article ID: ${id}`);
-  }
-};
-
-export const getArticleBySlug = async (slug) => {
-  if (!slug) return null;
-  try {
-    const res = await api.get(`/api/articles/${slug}`);
-    return res.data || null;
-  } catch (err) {
-    return handleApiError(err, `Fetching article slug: ${slug}`);
-  }
-};
-
-export const createArticle = async (data) => {
-  try {
-    const res = await api.post('/api/articles', data);
+    const res = await api.post(path, data);
     return res.data;
   } catch (err) {
-    return handleApiError(err, 'Creating article');
+    return handleApiError(err, context);
   }
 };
 
-export const updateArticle = async (id, data) => {
-  if (!id) return null;
+const safePatch = async (path, data, context) => {
   try {
-    const res = await api.patch(`/api/articles/${id}`, data);
+    const res = await api.patch(path, data);
     return res.data;
   } catch (err) {
-    return handleApiError(err, `Updating article ID: ${id}`);
+    return handleApiError(err, context);
   }
 };
 
-export const deleteArticle = async (id) => {
-  if (!id) return null;
+const safeDelete = async (path, context) => {
   try {
-    const res = await api.delete(`/api/articles/${id}`);
+    const res = await api.delete(path);
     return res.data;
   } catch (err) {
-    return handleApiError(err, `Deleting article ID: ${id}`);
+    return handleApiError(err, context);
   }
 };
 
-export const fetchCategoryStats = async () => {
-  try {
-    const res = await api.get('/api/categories/stats');
-    return res.data || [];
-  } catch (err) {
-    return handleApiError(err, 'Fetching category stats');
-  }
-};
+// ─── Articles ──────────────────────────────────────────────────────────────────
 
-export const fetchFeaturedContent = async () => {
-  try {
-    const res = await api.get('/api/featured-content');
-    return res.data || null;
-  } catch (err) {
-    return handleApiError(err, 'Fetching featured content');
-  }
-};
+export const fetchArticles = (params = {}) => safeGet('/api/articles', 'Fetching articles', params);
 
-export const healthCheck = async () => {
-  try {
-    const res = await api.get('/api/health');
-    return res.data;
-  } catch (err) {
-    return handleApiError(err, 'Health check');
-  }
-};
+export const getArticle = (id) => id ? safeGet(`/api/articles/by-id/${id}`, `Get article by ID: ${id}`) : null;
 
-//
-// ─── ARTICLE ACTIONS ────────────────────────────────────────────────────────────
-//
+export const getArticleBySlug = (slug) => slug ? safeGet(`/api/articles/${slug}`, `Get article by slug: ${slug}`) : null;
 
-export const toggleLikeArticle = async (articleId, sessionId) => {
-  try {
-    const res = await api.post(`/api/articles/${articleId}/like`, { session_id: sessionId });
-    return res.data;
-  } catch (err) {
-    return handleApiError(err, `Toggling like on article ID: ${articleId}`);
-  }
-};
+export const createArticle = (data) => safePost('/api/articles', data, 'Creating article');
 
-export const toggleBookmarkArticle = async (articleId, sessionId) => {
-  try {
-    const res = await api.post(`/api/articles/${articleId}/bookmark`, { session_id: sessionId });
-    return res.data;
-  } catch (err) {
-    return handleApiError(err, `Toggling bookmark on article ID: ${articleId}`);
-  }
-};
+export const updateArticle = (id, data) => id ? safePatch(`/api/articles/${id}`, data, `Updating article ID: ${id}`) : null;
 
-//
-// ─── COMMENTS ───────────────────────────────────────────────────────────────────
-//
+export const deleteArticle = (id) => id ? safeDelete(`/api/articles/${id}`, `Deleting article ID: ${id}`) : null;
 
-export const fetchComments = async (articleId) => {
-  if (!articleId) return [];
-  try {
-    const res = await api.get('/api/comments', { params: { article_id: articleId } });
-    return res.data || [];
-  } catch (err) {
-    return handleApiError(err, `Fetching comments for article ID: ${articleId}`);
-  }
-};
+export const fetchCategoryStats = () => safeGet('/api/categories/stats', 'Fetching category stats');
 
-export const postComment = async ({ article_id, name, message, parent_id = null }) => {
-  try {
-    const res = await api.post('/api/comments', {
-      article_id,
-      name,
-      message,
-      ...(parent_id && { parent_id }),
-    });
-    return res.data;
-  } catch (err) {
-    return handleApiError(err, 'Posting comment');
-  }
-};
+export const fetchFeaturedContent = () => safeGet('/api/featured-content', 'Fetching featured content');
 
-export const likeComment = async (commentId, sessionId) => {
-  try {
-    const res = await api.post(`/api/comments/${commentId}/like`, { session_id: sessionId });
-    return res.data;
-  } catch (err) {
-    return handleApiError(err, `Liking comment ID: ${commentId}`);
-  }
-};
+export const healthCheck = () => safeGet('/api/health', 'Health check');
 
-export const unlikeComment = async (commentId, sessionId) => {
-  try {
-    const res = await api.post(`/api/comments/${commentId}/unlike`, { session_id: sessionId });
-    return res.data;
-  } catch (err) {
-    return handleApiError(err, `Unliking comment ID: ${commentId}`);
-  }
-};
+// ─── Article Actions ───────────────────────────────────────────────────────────
 
-export const toggleLikeComment = async (commentId, sessionId, isLiked) => {
-  return isLiked
-    ? await unlikeComment(commentId, sessionId)
-    : await likeComment(commentId, sessionId);
-};
+export const toggleLikeArticle = (articleId, sessionId) =>
+  (articleId && sessionId) ? safePost(`/api/articles/${articleId}/like`, { session_id: sessionId }, `Like article ID: ${articleId}`) : null;
 
-//
-// ─── WATCH TOWER ────────────────────────────────────────────────────────────────
-//
+export const toggleBookmarkArticle = (articleId, sessionId) =>
+  (articleId && sessionId) ? safePost(`/api/articles/${articleId}/bookmark`, { session_id: sessionId }, `Bookmark article ID: ${articleId}`) : null;
 
-export const fetchWatchTowerContent = async () => {
-  try {
-    const res = await api.get('/api/watch-tower');
-    return res.data || [];
-  } catch (err) {
-    return handleApiError(err, 'Fetching Watch Tower content');
-  }
-};
+// ─── Comments ──────────────────────────────────────────────────────────────────
 
-export const createWatchTowerEntry = async (data) => {
-  try {
-    const res = await api.post('/api/watch-tower', data);
-    return res.data;
-  } catch (err) {
-    return handleApiError(err, 'Creating Watch Tower entry');
-  }
-};
+export const fetchComments = (articleId) =>
+  articleId ? safeGet('/api/comments', `Fetch comments for article ID: ${articleId}`, { article_id: articleId }) : [];
 
-export const deleteWatchTowerEntry = async (id) => {
-  if (!id) return null;
-  try {
-    const res = await api.delete(`/api/watch-tower/${id}`);
-    return res.data;
-  } catch (err) {
-    return handleApiError(err, `Deleting Watch Tower entry ID: ${id}`);
-  }
-};
+export const postComment = ({ article_id, name, message, parent_id = null }) =>
+  safePost('/api/comments', { article_id, name, message, ...(parent_id && { parent_id }) }, 'Posting comment');
 
-//
-// ─── EXPORT GROUPED API ─────────────────────────────────────────────────────────
-//
+export const likeComment = (commentId, sessionId) =>
+  (commentId && sessionId) ? safePost(`/api/comments/${commentId}/like`, { session_id: sessionId }, `Like comment ID: ${commentId}`) : null;
+
+export const unlikeComment = (commentId, sessionId) =>
+  (commentId && sessionId) ? safePost(`/api/comments/${commentId}/unlike`, { session_id: sessionId }, `Unlike comment ID: ${commentId}`) : null;
+
+export const toggleLikeComment = (commentId, sessionId, isLiked) =>
+  isLiked ? unlikeComment(commentId, sessionId) : likeComment(commentId, sessionId);
+
+// ─── Watch Tower ───────────────────────────────────────────────────────────────
+
+export const fetchWatchTowerContent = () => safeGet('/api/watch-tower', 'Fetching Watch Tower content');
+
+export const createWatchTowerEntry = (data) => safePost('/api/watch-tower', data, 'Creating Watch Tower entry');
+
+export const deleteWatchTowerEntry = (id) => id ? safeDelete(`/api/watch-tower/${id}`, `Deleting Watch Tower entry ID: ${id}`) : null;
+
+// ─── Grouped Export ────────────────────────────────────────────────────────────
 
 export const apiEndpoints = {
   // Articles

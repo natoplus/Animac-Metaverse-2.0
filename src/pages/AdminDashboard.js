@@ -6,10 +6,10 @@ import {
   deleteArticle,
 } from '../../utils/api';
 
-import { Input } from '../../components/ui/input';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent } from '../../components/ui/card';
-import { Textarea } from '../../components/ui/textarea';
+import { Input } from '../components/ui/input';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Textarea } from '../components/ui/textarea';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 
@@ -36,14 +36,19 @@ export default function AdminDashboard() {
   const [editingId, setEditingId] = useState(null);
 
   const loadArticles = async () => {
+    console.log('📥 Loading articles...');
     try {
       const data = await fetchArticles();
       if (Array.isArray(data)) {
         const uniqueMap = new Map();
-        data.forEach(article => uniqueMap.set(article.id, article));
+        data.forEach((article) => {
+          if (article?.id) uniqueMap.set(article.id, article);
+        });
         setArticles([...uniqueMap.values()]);
+        console.log(`✅ Loaded ${uniqueMap.size} articles.`);
       } else {
         setArticles([]);
+        console.warn('⚠️ Articles fetched are not an array.');
       }
     } catch (err) {
       console.error('❌ Failed to load articles:', err);
@@ -71,32 +76,33 @@ export default function AdminDashboard() {
     e.preventDefault();
     const payload = {
       ...formData,
-      tags: formData.tags.split(',').map((t) => t.trim()),
+      tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
     };
 
     try {
       if (isEditing) {
+        console.log(`✏️ Updating article ID: ${editingId}`);
         await updateArticle(editingId, payload);
         alert('✅ Article updated!');
       } else {
+        console.log('📝 Creating new article...');
         await createArticle(payload);
         alert('✅ Article posted!');
       }
 
-      setFormData(initialFormState());
-      setIsEditing(false);
-      setEditingId(null);
-      loadArticles();
+      resetForm();
+      await loadArticles();
     } catch (err) {
       alert('❌ Operation failed.');
-      console.error(err);
+      console.error('⚠️ Error during submit:', err);
     }
   };
 
   const handleEdit = (article) => {
+    console.log('✏️ Editing article:', article);
     setFormData({
       ...article,
-      tags: article.tags?.join(', ') || '',
+      tags: Array.isArray(article.tags) ? article.tags.join(', ') : '',
     });
     setEditingId(article.id);
     setIsEditing(true);
@@ -104,15 +110,23 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this article?')) {
-      try {
-        await deleteArticle(id);
-        loadArticles();
-      } catch (err) {
-        console.error('❌ Failed to delete article:', err);
-        alert('Failed to delete article.');
-      }
+    const confirm = window.confirm('Are you sure you want to delete this article?');
+    if (!confirm) return;
+
+    try {
+      console.log(`🗑️ Deleting article ID: ${id}`);
+      await deleteArticle(id);
+      await loadArticles();
+    } catch (err) {
+      console.error('❌ Failed to delete article:', err);
+      alert('Failed to delete article.');
     }
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormState());
+    setIsEditing(false);
+    setEditingId(null);
   };
 
   return (
@@ -124,7 +138,7 @@ export default function AdminDashboard() {
     >
       <h1 className="font-ackno text-3xl font-bold text-white">ANIMAC Admin Panel</h1>
 
-      {/* Form */}
+      {/* Article Form */}
       <motion.div
         initial={{ opacity: 0, x: -50 }}
         animate={{ opacity: 1, x: 0 }}
@@ -190,12 +204,8 @@ export default function AdminDashboard() {
                         {article.is_published ? '✅ Published' : '❌ Draft'}
                       </div>
                       <div className="space-x-2">
-                        <Button size="sm" onClick={() => handleEdit(article)}>
-                          Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(article.id)}>
-                          Delete
-                        </Button>
+                        <Button size="sm" onClick={() => handleEdit(article)}>Edit</Button>
+                        <Button variant="destructive" size="sm" onClick={() => handleDelete(article.id)}>Delete</Button>
                       </div>
                     </div>
                   </li>
