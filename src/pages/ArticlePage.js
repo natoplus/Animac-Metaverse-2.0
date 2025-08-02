@@ -50,7 +50,6 @@ const ArticlePage = () => {
       setLiked(Boolean(data.likedByCurrentUser));
       setBookmarked(Boolean(data.bookmarkedByCurrentUser));
 
-      // Fetch related articles (e.g., same category)
       const rel = await axios.get(`${API_URL}/api/articles`, {
         params: { category: data.category, limit: 3, is_published: true }
       });
@@ -117,20 +116,23 @@ const ArticlePage = () => {
   const readTime = article.read_time || Math.ceil((article.content || '').split(' ').length / 200);
 
   return (
-    <motion.div initial={{ opacity:0,y:20 }} animate={{opacity:1,y:0}} transition={{ duration: 0.6 }} className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}>
-      {/* Hero */}
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}>
+      
+      {/* Hero Section */}
       <div className="relative h-[420px] sm:h-[500px] overflow-hidden">
         {article.featured_image && (
-          <motion.div initial={{ opacity:0,scale:1.05 }} animate={{opacity:1,scale:1}} transition={{duration:0.6}} className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${article.featured_image})` }}/>
+          <motion.div initial={{ opacity: 0, scale: 1.05 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }} className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${article.featured_image})` }} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent z-10" />
-        <div className="absolute top-20 left-6 z-20">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-10" />
+
+        <div className="absolute top-24 left-6 z-20">
           <Link to="/" className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
             <ArrowLeft size={18} className="mr-2"/> Back to Home
           </Link>
         </div>
+
         <div className="absolute inset-0 z-20 flex items-end justify-center text-center px-6 pb-10">
-          <div className="bg-black/30 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
+          <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
             <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-2">{article.title}</h1>
             {article.excerpt && <p className="text-lg text-gray-300 italic">{article.excerpt}</p>}
           </div>
@@ -138,13 +140,14 @@ const ArticlePage = () => {
       </div>
 
       {/* Neon divider */}
-      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-md"/>
+      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
 
       {/* Body */}
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
+
           <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
-            {article.category?.toUpperCase()||'FEATURED'}
+            {article.category?.toUpperCase() || 'FEATURED'}
           </span>
 
           <div className="text-sm text-gray-400 flex gap-4 mb-6">
@@ -154,13 +157,13 @@ const ArticlePage = () => {
           </div>
 
           <div className="flex flex-wrap gap-4 mb-10 text-gray-300">
-            <button onClick={handleLike} disabled={likeProcessing} className="flex items-center gap-1 hover:text-pink-500"><Heart size={18}/>{liked?'Liked':'Like'} ({likeCount})</button>
-            <button onClick={handleBookmark} disabled={bookmarkProcessing} className="flex items-center gap-1 hover:text-yellow-400"><Bookmark size={18}/>{bookmarked?'Bookmarked':'Bookmark'} ({bookmarkCount})</button>
-            <button onClick={handleCopyLink} className="flex items-center gap-1 hover:text-blue-400"><Share2 size={18}/>{copied?'Copied':'Share'} ({shareCount})</button>
+            <button onClick={handleLike} disabled={likeProcessing} className="flex items-center gap-1 hover:text-pink-500"><Heart size={18}/>{liked ? 'Liked' : 'Like'} ({likeCount})</button>
+            <button onClick={handleBookmark} disabled={bookmarkProcessing} className="flex items-center gap-1 hover:text-yellow-400"><Bookmark size={18}/>{bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})</button>
+            <button onClick={handleCopyLink} className="flex items-center gap-1 hover:text-blue-400"><Share2 size={18}/>{copied ? 'Copied' : 'Share'} ({shareCount})</button>
           </div>
 
           <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
-            {article.content.split('\n').map((p,i)=><p key={i}>{p.trim()}</p>)}
+            {article.content.split('\n').map((p, i) => <p key={i}>{p.trim()}</p>)}
           </div>
 
           {related.length > 0 && (
@@ -168,7 +171,10 @@ const ArticlePage = () => {
               <h3 className="text-white text-2xl mb-4">Related Articles</h3>
               <div className="grid gap-6 sm:grid-cols-2">
                 {related.map(rel => (
-                  <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border p-4 rounded-lg hover:bg-gray-800 transition">
+                  <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border border-gray-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
+                    {rel.featured_image && (
+                      <div className="h-40 bg-cover bg-center rounded-md mb-3" style={{ backgroundImage: `url(${rel.featured_image})` }} />
+                    )}
                     <h4 className="text-lg font-semibold text-white">{rel.title}</h4>
                     <p className="text-gray-400 truncate">{rel.excerpt}</p>
                   </Link>
@@ -177,12 +183,11 @@ const ArticlePage = () => {
             </div>
           )}
 
-          {/* Tags */}
           {article.tags?.length > 0 && (
             <div className="mt-12">
               <h3 className="text-white mb-4">Tags</h3>
               <div className="flex flex-wrap gap-3">
-                {article.tags.map((tag,i)=>(
+                {article.tags.map((tag, i) => (
                   <span key={i} className={`px-3 py-2 rounded-lg text-sm border ${theme.badge}`}>#{tag}</span>
                 ))}
               </div>
