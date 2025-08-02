@@ -186,7 +186,7 @@ const ArticlePage = () => {
 
         <div className="absolute top-20 left-6 z-20">
           <Link
-            to="/"
+            to="/home"
             className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm transition hover:bg-black/70 backdrop-blur-md"
           >
             <ArrowLeft size={18} className="mr-2" />
@@ -195,7 +195,7 @@ const ArticlePage = () => {
         </div>
 
         <div className="relative z-20 h-full flex items-end justify-center text-center px-6 pb-10">
-          <div className="bg-black/50 backdrop-blur-sm p-4 rounded-xl max-w-3xl">
+          <div className="bg-black/20 backdrop-blur-sm p-8 rounded-xl max-w-3xl">
             <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-2">{article.title}</h1>
             {article.excerpt && (
               <p className="text-md sm:text-lg font-medium text-gray-300 italic">{article.excerpt}</p>
