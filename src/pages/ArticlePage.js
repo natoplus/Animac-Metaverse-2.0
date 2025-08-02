@@ -127,7 +127,6 @@ const ArticlePage = () => {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}>
-      <div className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse z-50" />
 
       {/* Hero Section */}
       <div className="relative h-[420px] sm:h-[500px] overflow-hidden">
@@ -144,7 +143,7 @@ const ArticlePage = () => {
 
         <div className="absolute inset-0 z-20 flex items-end justify-center text-center px-6 pb-10">
           <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white neon-glow mb-2">{article.title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">{article.title}</h1>
             {article.excerpt && <p className="text-lg text-gray-300 italic">{article.excerpt}</p>}
           </div>
         </div>
@@ -156,21 +155,24 @@ const ArticlePage = () => {
       {/* Body */}
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
+        
+          <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
+              <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
+               {article.category?.toUpperCase() || 'FEATURED'}
+              </span>
 
-          <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
-            {article.category?.toUpperCase() || 'FEATURED'}
-          </span>
+             <div className="text-sm text-gray-400 flex gap-4 mb-6">
+                <span><User size={14}/> {article.author}</span>
+                <span><Calendar size={14}/> {new Date(article.created_at).toLocaleDateString()}</span>
+                <span><Clock size={14}/> {readTime} min read</span>
+             </div>
 
-          <div className="text-sm text-gray-400 flex gap-4 mb-6">
-            <span><User size={14}/> {article.author}</span>
-            <span><Calendar size={14}/> {new Date(article.created_at).toLocaleDateString()}</span>
-            <span><Clock size={14}/> {readTime} min read</span>
-          </div>
+             <div className="flex flex-wrap gap-4 mb-10 text-gray-300">
+                <button onClick={handleLike} disabled={likeProcessing} className="flex items-center gap-1 hover:text-pink-500"><Heart size={18}/>{liked ? 'Liked' : 'Like'} ({likeCount})</button>
+                <button onClick={handleBookmark} disabled={bookmarkProcessing} className="flex items-center gap-1 hover:text-yellow-400"><Bookmark size={18}/>{bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})</button>
+                <button onClick={handleCopyLink} className="flex items-center gap-1 hover:text-blue-400"><Share2 size={18}/>{copied ? 'Copied' : 'Share'} ({shareCount})</button>
+             </div>
 
-          <div className="flex flex-wrap gap-4 mb-10 text-gray-300">
-            <button onClick={handleLike} disabled={likeProcessing} className="flex items-center gap-1 hover:text-pink-500"><Heart size={18}/>{liked ? 'Liked' : 'Like'} ({likeCount})</button>
-            <button onClick={handleBookmark} disabled={bookmarkProcessing} className="flex items-center gap-1 hover:text-yellow-400"><Bookmark size={18}/>{bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})</button>
-            <button onClick={handleCopyLink} className="flex items-center gap-1 hover:text-blue-400"><Share2 size={18}/>{copied ? 'Copied' : 'Share'} ({shareCount})</button>
           </div>
 
           <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
