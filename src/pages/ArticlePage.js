@@ -125,10 +125,15 @@ const ArticlePage = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-10" />
 
+        <div className="absolute top-24 left-6 z-20">
+          <Link to="/" className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
+            <ArrowLeft size={18} className="mr-2"/> Back to Home
+          </Link>
+        </div>
 
         <div className="absolute inset-0 z-20 flex items-end justify-center text-center px-6 pb-10">
           <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-2">{article.title}</h1>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">{article.title}</h1>
             {article.excerpt && <p className="text-lg text-gray-300 italic">{article.excerpt}</p>}
           </div>
         </div>
@@ -140,12 +145,6 @@ const ArticlePage = () => {
       {/* Body */}
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
-
-          <div className="absolute top-24 left-6 z-20">
-          <Link to="/" className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm hover:bg-black/70 backdrop-blur-md">
-            <ArrowLeft size={18} className="mr-2"/> Back to Home
-          </Link>
-        </div>
 
           <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
             {article.category?.toUpperCase() || 'FEATURED'}
@@ -166,10 +165,6 @@ const ArticlePage = () => {
           <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
             {article.content.split('\n').map((p, i) => <p key={i}>{p.trim()}</p>)}
           </div>
-
-          {/* Neon divider */}
-      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
-
 
           {related.length > 0 && (
             <div className="mt-16">
