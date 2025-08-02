@@ -13,8 +13,8 @@ import BuzzfeedHub from './pages/BuzzfeedHub';
 import EastPortal from './pages/EastPortal';
 import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
-import WatchTowerPage from './pages/WatchTower/WatchTowerPage';
-import AdminDashboard from './pages/Admin/Admin';
+import WatchTowerPage from './pages/WatchTowerPage';
+import AdminDashboard from './pages/AdminDashboard';
 
 // Hooks
 import useSupabaseAuth from './hooks/useSupabaseAuth'; // Custom hook to handle auth
