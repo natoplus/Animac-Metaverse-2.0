@@ -1,4 +1,3 @@
-// Import statements remain unchanged
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
@@ -119,19 +118,19 @@ const ArticlePage = () => {
         return {
           gradient: 'from-east-900/50 via-netflix-dark to-netflix-black',
           accent: 'text-east-400',
-          badge: 'border-east-400 text-east-300 bg-east-800/20',
+          badge: 'border-east-400 text-east-300 bg-east-800/20 neon-glow',
         };
       case 'west':
         return {
           gradient: 'from-west-900/50 via-netflix-dark to-netflix-black',
           accent: 'text-west-400',
-          badge: 'border-west-400 text-west-300 bg-west-800/20',
+          badge: 'border-west-400 text-west-300 bg-west-800/20 neon-glow',
         };
       default:
         return {
           gradient: 'from-gray-900 via-netflix-dark to-netflix-black',
           accent: 'text-gray-300',
-          badge: 'border-gray-500 text-gray-300 bg-gray-800/20',
+          badge: 'border-gray-500 text-gray-300 bg-gray-800/20 neon-glow',
         };
     }
   };
@@ -173,7 +172,7 @@ const ArticlePage = () => {
     >
 
       {/* Hero Section */}
-      <div className="relative h-[400px] sm:h-[460px] w-full overflow-hidden">
+      <div className="relative h-[420px] sm:h-[500px] w-full overflow-hidden">
         {article.featured_image && (
           <motion.div
             initial={{ opacity: 0, scale: 1.05 }}
@@ -183,21 +182,20 @@ const ArticlePage = () => {
             style={{ backgroundImage: `url(${article.featured_image})` }}
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent z-10" />
 
-        {/* Back button with spacing */}
-        <div className="absolute top-16 left-6 z-20">
+        <div className="absolute top-20 left-6 z-20">
           <Link
-            to={article.category === 'east' ? '/buzzfeed/east' : article.category === 'west' ? '/buzzfeed/west' : '/'}
-            className="inline-flex items-center text-white bg-black/60 hover:bg-black/80 px-4 py-2 rounded-full text-sm transition backdrop-blur-md"
+            to="/"
+            className="inline-flex items-center neon-glow text-white bg-black/50 px-4 py-2 rounded-full text-sm transition hover:bg-black/70 backdrop-blur-md"
           >
             <ArrowLeft size={18} className="mr-2" />
-            Back to {article.category?.toUpperCase() || 'Home'}
+            Back to Home
           </Link>
         </div>
 
         <div className="relative z-20 h-full flex items-end justify-center text-center px-6 pb-10">
-          <div className="max-w-3xl">
+          <div className="bg-black/50 backdrop-blur-sm p-4 rounded-xl max-w-3xl">
             <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-2">{article.title}</h1>
             {article.excerpt && (
               <p className="text-md sm:text-lg font-medium text-gray-300 italic">{article.excerpt}</p>
@@ -207,25 +205,22 @@ const ArticlePage = () => {
       </div>
 
       {/* Neon Divider */}
-      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
+      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-md" />
 
       {/* Article Body Section */}
-      <div className="bg-black relative z-10">
+      <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black relative z-10">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
 
-          {/* Category Badge */}
           <span className={`inline-block px-4 py-2 rounded-full text-sm font-inter border ${theme.badge} mb-6`}>
             {article.category?.toUpperCase() || 'FEATURED'}
           </span>
 
-          {/* Meta Info */}
           <div className="text-sm text-gray-400 flex gap-4 items-center mb-6">
             <span><User size={14} className="inline mr-1" /> {article.author}</span>
             <span><Calendar size={14} className="inline mr-1" /> {new Date(article.created_at).toLocaleDateString()}</span>
             <span><Clock size={14} className="inline mr-1" /> {estimatedReadTime} min read</span>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-4 text-gray-300 mb-10">
             <button onClick={handleLike} disabled={likeProcessing} className="hover:text-pink-500 transition flex items-center gap-1">
               <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
@@ -238,14 +233,12 @@ const ArticlePage = () => {
             </button>
           </div>
 
-          {/* Article Content */}
           <div className="prose prose-invert max-w-none text-gray-300 text-lg space-y-6 font-inter">
             {(article.content || '').split('\n').map((para, idx) => (
               <p key={idx}>{para.trim()}</p>
             ))}
           </div>
 
-          {/* Tags */}
           {article.tags?.length > 0 && (
             <div className="mt-12 pt-8 border-t border-gray-800">
               <h3 className="text-white font-montserrat font-semibold mb-4">Tags</h3>
@@ -259,7 +252,6 @@ const ArticlePage = () => {
             </div>
           )}
 
-          {/* Comments */}
           <div className="mt-12">
             <CommentSection articleId={article.id} />
           </div>
