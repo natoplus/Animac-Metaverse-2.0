@@ -129,6 +129,23 @@ async def unlike_comment(comment_id: str, request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/api/articles")
+async def get_articles(limit: int = 20, skip: int = 0, category: str = None, is_published: bool = True):
+    try:
+        query = supabase.table("articles").select("*")
+        
+        if category:
+            query = query.eq("category", category)
+        if is_published is not None:
+            query = query.eq("is_published", is_published)
+
+        query = query.range(skip, skip + limit - 1).order("created_at", desc=True)
+        result = query.execute()
+        return result.data or []
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 
 # Mount the API router
 app.include_router(router)
