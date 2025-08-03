@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Comment = ({
   comment,
@@ -8,8 +9,8 @@ const Comment = ({
   upvotedComments,
   downvotedComments,
   repliesCount,
-  toggleState,
-  onToggle,
+  toggleReplies,
+  isExpanded,
 }) => {
   const isUpvoted = upvotedComments.includes(comment.id);
   const isDownvoted = downvotedComments.includes(comment.id);
@@ -29,9 +30,7 @@ const Comment = ({
         <span>
           by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}
           {repliesCount > 0 && (
-            <span className="ml-2 text-blue-400">
-              • {repliesCount} repl{repliesCount === 1 ? 'y' : 'ies'}
-            </span>
+            <span className="ml-2 text-blue-400">• {repliesCount} repl{repliesCount === 1 ? 'y' : 'ies'}</span>
           )}
         </span>
         <div className="flex gap-3 items-center">
@@ -41,7 +40,11 @@ const Comment = ({
               className={`hover:text-green-500 ${isUpvoted ? 'text-green-400' : 'text-gray-400'}`}
               aria-label="Upvote"
             >
-              <ThumbsUp size={16} fill={isUpvoted ? 'currentColor' : 'none'} stroke="currentColor" />
+              <ThumbsUp
+                size={16}
+                fill={isUpvoted ? 'currentColor' : 'none'}
+                stroke="currentColor"
+              />
             </button>
             <span className="text-gray-400 font-semibold">{voteScore}</span>
             <button
@@ -49,7 +52,11 @@ const Comment = ({
               className={`hover:text-red-500 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
               aria-label="Downvote"
             >
-              <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} stroke="currentColor" />
+              <ThumbsDown
+                size={16}
+                fill={isDownvoted ? 'currentColor' : 'none'}
+                stroke="currentColor"
+              />
             </button>
           </div>
           <button
@@ -59,17 +66,14 @@ const Comment = ({
           >
             <MessageCircle size={14} />
             <span>Reply</span>
-            {repliesCount > 0 && (
-              <span className="ml-1 text-blue-400">({repliesCount})</span>
-            )}
           </button>
           {repliesCount > 0 && (
             <button
-              onClick={() => onToggle(comment.id)}
+              onClick={() => toggleReplies(comment.id)}
               className="text-blue-400 hover:text-white ml-2"
               aria-label="Toggle replies"
             >
-              {toggleState === 'expanded' ? 'Hide Replies' : 'View Replies'}
+              {isExpanded ? 'Hide Replies' : 'View Replies'}
             </button>
           )}
         </div>
@@ -79,30 +83,85 @@ const Comment = ({
 };
 
 const CommentSection = ({
-  comments,
+  comments = [],
   onReply,
   onVote,
-  upvotedComments,
-  downvotedComments,
-  repliesCountMap,
-  toggleStates,
-  onToggle,
+  upvotedComments = [],
+  downvotedComments = [],
+  repliesMap = {},
+  loadMoreComments,
+  hasMore,
 }) => {
+  const [visibleComments, setVisibleComments] = useState(5);
+  const [expandedReplies, setExpandedReplies] = useState({});
+
+  const handleToggleReplies = (commentId) => {
+    setExpandedReplies((prev) => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
+  };
+
+  const handleLoadMore = () => {
+    setVisibleComments((prev) => prev + 5);
+    if (loadMoreComments) loadMoreComments();
+  };
+
+  const parentComments = comments.filter((c) => !c.parent_id);
+
   return (
-    <div>
-      {comments.map(comment => (
-        <Comment
-          key={comment.id}
-          comment={comment}
-          onReply={onReply}
-          onVote={onVote}
-          upvotedComments={upvotedComments}
-          downvotedComments={downvotedComments}
-          repliesCount={repliesCountMap[comment.id] || 0}
-          toggleState={toggleStates[comment.id] || 'collapsed'}
-          onToggle={onToggle}
-        />
-      ))}
+    <div className="mt-6 space-y-3">
+      <AnimatePresence>
+        {parentComments.slice(0, visibleComments).map((comment) => (
+          <div key={comment.id}>
+            <Comment
+              comment={comment}
+              onReply={onReply}
+              onVote={onVote}
+              upvotedComments={upvotedComments}
+              downvotedComments={downvotedComments}
+              repliesCount={(repliesMap[comment.id] || []).length}
+              toggleReplies={handleToggleReplies}
+              isExpanded={expandedReplies[comment.id]}
+            />
+            <AnimatePresence>
+              {expandedReplies[comment.id] &&
+                (repliesMap[comment.id] || []).map((reply) => (
+                  <motion.div
+                    key={reply.id}
+                    className="ml-6 border-l border-gray-700 pl-4"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Comment
+                      comment={reply}
+                      onReply={onReply}
+                      onVote={onVote}
+                      upvotedComments={upvotedComments}
+                      downvotedComments={downvotedComments}
+                      repliesCount={(repliesMap[reply.id] || []).length}
+                      toggleReplies={handleToggleReplies}
+                      isExpanded={expandedReplies[reply.id]}
+                    />
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+          </div>
+        ))}
+      </AnimatePresence>
+
+      {hasMore && (
+        <div className="text-center mt-4">
+          <button
+            onClick={handleLoadMore}
+            className="text-blue-400 hover:text-white px-4 py-2 rounded border border-blue-500 hover:bg-blue-500 transition"
+          >
+            Load More Comments
+          </button>
+        </div>
+      )}
     </div>
   );
 };
