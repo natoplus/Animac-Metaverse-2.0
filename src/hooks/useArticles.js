@@ -1,7 +1,7 @@
 // src/hooks/useArticles.js
 
 import { useState, useEffect } from 'react';
-import { apiEndpoints } from '../utils/api';
+import { apiEndpoints, getFeaturedContent } from '../utils/api';
 
 /**
  * Hook to fetch articles based on filters such as:
@@ -80,4 +80,59 @@ export const useFeaturedContent = () => {
   }, []);
 
   return { featuredContent, loading, error };
+};
+
+/**
+ * Hook to fetch featured articles and group them by region: east, west, all
+ */
+export const useRegionArticles = () => {
+  const [eastArticles, setEastArticles] = useState([]);
+  const [westArticles, setWestArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      setLoading(true);
+      try {
+        const data = await getFeaturedContent();
+
+        if (data?.error) {
+          console.error("❌ Failed to fetch featured content:", data.message);
+          setLoading(false);
+          return;
+        }
+
+        const validArticles = Array.isArray(data)
+          ? data.filter((article) => article && typeof article === "object")
+          : [];
+
+        const east = validArticles.filter(
+          (article) => article.region?.toLowerCase() === "east"
+        );
+        const west = validArticles.filter(
+          (article) => article.region?.toLowerCase() === "west"
+        );
+
+        setEastArticles(east);
+        setWestArticles(west);
+        setAllArticles(validArticles);
+
+        console.log("🌟 Featured content received:", validArticles);
+      } catch (err) {
+        console.error("🚨 Error loading articles:", err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchArticles();
+  }, []);
+
+  return {
+    eastArticles,
+    westArticles,
+    allArticles,
+    loading,
+  };
 };
