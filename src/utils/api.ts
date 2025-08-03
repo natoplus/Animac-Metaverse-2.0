@@ -96,7 +96,7 @@ export async function createArticle(article: Partial<Article>, token?: string): 
 
 export async function updateArticle(id: string, article: Partial<Article>, token?: string): Promise<Article> {
   return fetchFromAPI<Article>(`/api/articles/${id}`, {
-    method: "PATCH",
+    method: "PUT",
     body: JSON.stringify(article),
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
