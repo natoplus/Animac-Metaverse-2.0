@@ -121,7 +121,7 @@ export const apiEndpoints = {
   updateArticle,
   deleteArticle,
   fetchCategoryStats,
-  fetchFeaturedContent,
+  getFeaturedContent: fetchFeaturedContent,
   toggleLikeArticle,
   toggleBookmarkArticle,
   healthCheck,
