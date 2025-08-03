@@ -1,6 +1,6 @@
 // src/hooks/useArticles.js
 import { useEffect, useState } from "react";
-import { fetchArticles, fetchFeaturedContent } from "../utils/api";
+import { getFeaturedContent } from "../utils/api";
 
 /**
  * Generic hook to fetch articles with filters
@@ -63,7 +63,7 @@ export const useFeaturedContent = () => {
     const fetchFeatured = async () => {
       setLoading(true);
       try {
-        const response = await fetchFeaturedContent();
+        const response = await getFeaturedContent(); // ✅ FIXED
 
         if (response?.error) {
           console.error("❌ Error fetching featured content:", response.message);
