@@ -1,4 +1,6 @@
+import React from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Comment = ({
   comment,
@@ -82,3 +84,5 @@ const Comment = ({
     </motion.div>
   );
 };
+
+export default Comment;
