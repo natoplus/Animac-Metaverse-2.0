@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metave
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000, // Prevent indefinite hangs with a 10s timeout
+  timeout: 10000,
 });
 
 // ─── Interceptors ──────────────────────────────────────────────────────────────
@@ -38,50 +38,49 @@ const safeRequest = async (method, path, context, data = {}, params = {}) => {
   }
 };
 
-// ─── Article APIs ──────────────────────────────────────────────────────────────
-export const fetchArticles = (params = {}) =>
+// ─── API Functions ─────────────────────────────────────────────────────────────
+const fetchArticles = (params = {}) =>
   safeRequest('get', '/api/articles', 'Fetching articles', {}, params);
 
-export const getArticle = (id) =>
+const getArticle = (id) =>
   id ? safeRequest('get', `/api/articles/by-id/${id}`, `Get article by ID: ${id}`) : null;
 
-export const getArticleBySlug = (slug) =>
+const getArticleBySlug = (slug) =>
   slug ? safeRequest('get', `/api/articles/${slug}`, `Get article by slug: ${slug}`) : null;
 
-export const createArticle = (data) =>
+const createArticle = (data) =>
   safeRequest('post', '/api/articles', 'Creating article', data);
 
-export const updateArticle = (id, data) =>
+const updateArticle = (id, data) =>
   id ? safeRequest('patch', `/api/articles/${id}`, `Updating article ID: ${id}`, data) : null;
 
-export const deleteArticle = (id) =>
+const deleteArticle = (id) =>
   id ? safeRequest('delete', `/api/articles/${id}`, `Deleting article ID: ${id}`) : null;
 
-export const fetchCategoryStats = () =>
+const fetchCategoryStats = () =>
   safeRequest('get', '/api/categories/stats', 'Fetching category stats');
 
-export const fetchFeaturedContent = () =>
+const fetchFeaturedContent = () =>
   safeRequest('get', '/api/featured-content', 'Fetching featured content');
 
-export const healthCheck = () =>
+const healthCheck = () =>
   safeRequest('get', '/api/health', 'Health check');
 
-// ─── Article Actions ───────────────────────────────────────────────────────────
-export const toggleLikeArticle = (articleId, sessionId) =>
+const toggleLikeArticle = (articleId, sessionId) =>
   articleId && sessionId
     ? safeRequest('post', `/api/articles/${articleId}/like`, `Toggle like article ID: ${articleId}`, { session_id: sessionId })
     : null;
 
-export const toggleBookmarkArticle = (articleId, sessionId) =>
+const toggleBookmarkArticle = (articleId, sessionId) =>
   articleId && sessionId
     ? safeRequest('post', `/api/articles/${articleId}/bookmark`, `Toggle bookmark article ID: ${articleId}`, { session_id: sessionId })
     : null;
 
-// ─── Comment APIs ──────────────────────────────────────────────────────────────
-export const fetchComments = (articleId) =>
+// ─── Comments ──────────────────────────────────────────────────────────────────
+const fetchComments = (articleId) =>
   articleId ? safeRequest('get', '/api/comments', `Fetch comments for article ID: ${articleId}`, {}, { article_id: articleId }) : [];
 
-export const postComment = ({ article_id, name, message, parent_id = null }) =>
+const postComment = ({ article_id, name, message, parent_id = null }) =>
   safeRequest('post', '/api/comments', 'Posting comment', {
     article_id,
     name,
@@ -89,31 +88,31 @@ export const postComment = ({ article_id, name, message, parent_id = null }) =>
     ...(parent_id && { parent_id }),
   });
 
-export const likeComment = (commentId, sessionId) =>
+const likeComment = (commentId, sessionId) =>
   commentId && sessionId
     ? safeRequest('post', `/api/comments/${commentId}/like`, `Like comment ID: ${commentId}`, { session_id: sessionId })
     : null;
 
-export const unlikeComment = (commentId, sessionId) =>
+const unlikeComment = (commentId, sessionId) =>
   commentId && sessionId
     ? safeRequest('post', `/api/comments/${commentId}/unlike`, `Unlike comment ID: ${commentId}`, { session_id: sessionId })
     : null;
 
-export const toggleLikeComment = (commentId, sessionId, isLiked) =>
+const toggleLikeComment = (commentId, sessionId, isLiked) =>
   isLiked ? unlikeComment(commentId, sessionId) : likeComment(commentId, sessionId);
 
-// ─── Watch Tower APIs ──────────────────────────────────────────────────────────
-export const fetchWatchTowerContent = () =>
+// ─── Watch Tower ───────────────────────────────────────────────────────────────
+const fetchWatchTowerContent = () =>
   safeRequest('get', '/api/watch-tower', 'Fetching Watch Tower content');
 
-export const createWatchTowerEntry = (data) =>
+const createWatchTowerEntry = (data) =>
   safeRequest('post', '/api/watch-tower', 'Creating Watch Tower entry', data);
 
-export const deleteWatchTowerEntry = (id) =>
+const deleteWatchTowerEntry = (id) =>
   id ? safeRequest('delete', `/api/watch-tower/${id}`, `Deleting Watch Tower entry ID: ${id}`) : null;
 
-// ─── Grouped Export ────────────────────────────────────────────────────────────
-const apiEndpoints = {
+// ─── Named Export ──────────────────────────────────────────────────────────────
+export const apiEndpoints = {
   fetchArticles,
   getArticle,
   getArticleBySlug,
@@ -136,5 +135,3 @@ const apiEndpoints = {
   createWatchTowerEntry,
   deleteWatchTowerEntry,
 };
-
-export default apiEndpoints;
