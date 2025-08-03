@@ -1,12 +1,13 @@
 # routes/admin.py
 from fastapi import APIRouter, HTTPException, Depends, Request
-from models import Article
+from models import Article, ArticleUpdate
 from utils import admin_auth
 from supabase_client import supabase
 from uuid import uuid4
 from datetime import datetime
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
 
 @router.post("/articles")
 async def create_article(article: Article, request: Request, token=Depends(admin_auth)):
@@ -26,13 +27,28 @@ async def create_article(article: Article, request: Request, token=Depends(admin
 
 
 @router.put("/articles/{article_id}")
-async def update_article(article_id: str, article: Article, token=Depends(admin_auth)):
+async def full_update_article(article_id: str, article: Article, token=Depends(admin_auth)):
     article_data = article.dict()
     article_data["updated_at"] = datetime.utcnow().isoformat()
     res = supabase.table("articles").update(article_data).eq("id", article_id).execute()
     if res.get("status_code") != 200:
         raise HTTPException(status_code=404, detail="Article not found")
-    return {"message": "Article updated"}
+    return {"message": "Article fully updated"}
+
+
+@router.patch("/articles/{article_id}")
+async def partial_update_article(article_id: str, article: ArticleUpdate, token=Depends(admin_auth)):
+    try:
+        update_data = article.dict(exclude_unset=True)
+        update_data["updated_at"] = datetime.utcnow().isoformat()
+
+        res = supabase.table("articles").update(update_data).eq("id", article_id).execute()
+        if len(res.data) == 0:
+            raise HTTPException(status_code=404, detail="Article not found")
+
+        return {"message": "Article partially updated", "article": res.data[0]}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating article: {e}")
 
 
 @router.delete("/articles/{article_id}")

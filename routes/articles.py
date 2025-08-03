@@ -6,7 +6,10 @@ import logging
 
 router = APIRouter()
 
-# Pydantic model for article input/output
+# ------------------------------
+# Models
+# ------------------------------
+
 class Article(BaseModel):
     id: Optional[UUID] = None
     title: str
@@ -17,6 +20,20 @@ class Article(BaseModel):
     tags: Optional[List[str]] = None
     is_featured: Optional[bool] = False
     author: Optional[str] = None
+
+class ArticleUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    excerpt: Optional[str] = None
+    image: Optional[str] = None
+    category: Optional[str] = None
+    tags: Optional[List[str]] = None
+    is_featured: Optional[bool] = None
+    author: Optional[str] = None
+
+# ------------------------------
+# Routes
+# ------------------------------
 
 # Get all articles
 @router.get("/articles", response_model=List[dict])
@@ -48,15 +65,28 @@ def create_article(article: Article, request: Request):
         raise HTTPException(status_code=400, detail="Failed to create article")
     return {"message": "✅ Article created", "data": response.data[0]}
 
-# Update an article
+# Full update (PUT)
 @router.put("/articles/{article_id}", response_model=dict)
-def update_article(article_id: UUID, article: Article, request: Request):
+def update_article_put(article_id: UUID, article: Article, request: Request):
     supabase = request.app.state.supabase
     response = supabase.table("articles").update(article.dict(exclude_unset=True)).eq("id", str(article_id)).execute()
     if response.error:
         logging.error("Failed to update article %s: %s", article_id, response.error.message)
         raise HTTPException(status_code=400, detail="Failed to update article")
     return {"message": "✅ Article updated", "data": response.data[0] if response.data else {}}
+
+# Partial update (PATCH)
+@router.patch("/articles/{article_id}", response_model=dict)
+def update_article_patch(article_id: UUID, article: ArticleUpdate, request: Request):
+    supabase = request.app.state.supabase
+    try:
+        response = supabase.table("articles").update(article.dict(exclude_unset=True)).eq("id", str(article_id)).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Article not found")
+        return {"message": "✅ Article patched", "data": response.data[0]}
+    except Exception as e:
+        logging.error("Error patching article %s: %s", article_id, str(e))
+        raise HTTPException(status_code=500, detail="Error patching article")
 
 # Delete an article
 @router.delete("/articles/{article_id}", response_model=dict)

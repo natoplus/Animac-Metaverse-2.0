@@ -190,6 +190,7 @@ async def create_article(request: Request, x_admin_token: str = Header(...)):
     except Exception as e:
         logger.error("Failed to create article: %s", e)
         raise HTTPException(status_code=500, detail="Failed to create article")
+    
 
 @router.put("/api/articles/{article_id}")
 async def update_article(article_id: str, request: Request, x_admin_token: str = Header(...)):
