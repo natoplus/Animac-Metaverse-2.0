@@ -60,7 +60,7 @@ export const deleteArticle = (id) =>
 export const fetchCategoryStats = () =>
   safeRequest('get', '/api/categories/stats', 'Fetching category stats');
 
-export const fetchFeaturedContent = () =>
+export const getFeaturedContent = () =>
   safeRequest('get', '/api/featured-content', 'Fetching featured content');
 
 export const healthCheck = () =>
@@ -112,7 +112,7 @@ export const createWatchTowerEntry = (data) =>
 export const deleteWatchTowerEntry = (id) =>
   id ? safeRequest('delete', `/api/watch-tower/${id}`, `Deleting Watch Tower entry ID: ${id}`) : null;
 
-// ─── Grouped Named Export (Optional) ───────────────────────────────────────────
+// ─── Grouped Export (Optional) ─────────────────────────────────────────────────
 export const apiEndpoints = {
   fetchArticles,
   getArticle,
@@ -121,17 +121,15 @@ export const apiEndpoints = {
   updateArticle,
   deleteArticle,
   fetchCategoryStats,
-  getFeaturedContent: fetchFeaturedContent,
+  getFeaturedContent,
   toggleLikeArticle,
   toggleBookmarkArticle,
   healthCheck,
-
   fetchComments,
   postComment,
   likeComment,
   unlikeComment,
   toggleLikeComment,
-
   fetchWatchTowerContent,
   createWatchTowerEntry,
   deleteWatchTowerEntry,
