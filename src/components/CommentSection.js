@@ -1,25 +1,17 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Bookmark } from 'lucide-react';
-
-const API_URL = 'https://animac-metaverse.onrender.com';
+import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 
 const Comment = ({
   comment,
   onReply,
   onVote,
-  onBookmark,
   upvotedComments,
   downvotedComments,
-  bookmarkedComments,
   repliesCount,
   toggleState,
   onToggle,
 }) => {
   const isUpvoted = upvotedComments.includes(comment.id);
   const isDownvoted = downvotedComments.includes(comment.id);
-  const isBookmarked = bookmarkedComments.includes(comment.id);
   const voteScore = comment.score ?? ((comment.likes || 0) - (comment.dislikes || 0));
 
   return (
@@ -43,27 +35,38 @@ const Comment = ({
           <div className="flex gap-2 items-center">
             <button
               onClick={() => onVote(comment.id, 'up')}
-              className={`hover:text-white ${isUpvoted ? 'text-green-400' : ''}`}
+              className={`hover:text-green-500 ${isUpvoted ? 'text-green-400' : 'text-gray-400'}`}
               aria-label="Upvote"
             >
-              👍
+              <ThumbsUp
+                size={16}
+                fill={isUpvoted ? 'currentColor' : 'none'}
+                stroke="currentColor"
+              />
             </button>
             <span className="text-gray-400 font-semibold">{voteScore}</span>
             <button
               onClick={() => onVote(comment.id, 'down')}
-              className={`hover:text-white ${isDownvoted ? 'text-red-400' : ''}`}
+              className={`hover:text-red-500 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
               aria-label="Downvote"
             >
-              👎
+              <ThumbsDown
+                size={16}
+                fill={isDownvoted ? 'currentColor' : 'none'}
+                stroke="currentColor"
+              />
             </button>
           </div>
-          <button onClick={() => onReply(comment.id)} className="hover:text-white" aria-label="Reply">Reply</button>
           <button
-            onClick={() => onBookmark(comment.id)}
-            className={`hover:text-white flex items-center gap-1 ${isBookmarked ? 'text-yellow-400' : ''}`}
-            aria-label="Bookmark"
+            onClick={() => onReply(comment.id)}
+            className="hover:text-white flex items-center gap-1 text-gray-400"
+            aria-label="Reply"
           >
-            <Bookmark size={14} />
+            <MessageCircle size={14} />
+            <span>Reply</span>
+            {repliesCount > 0 && (
+              <span className="ml-1 text-blue-400">({repliesCount})</span>
+            )}
           </button>
           {repliesCount > 0 && (
             <button
@@ -79,271 +82,3 @@ const Comment = ({
     </motion.div>
   );
 };
-
-const CommentSection = ({ articleId }) => {
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
-  const [guestName, setGuestName] = useState('');
-  const [parentId, setParentId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(false);
-  const [expandedThreads, setExpandedThreads] = useState({});
-  const [visibleCount, setVisibleCount] = useState(5);
-  const [upvotedComments, setUpvotedComments] = useState([]);
-  const [downvotedComments, setDownvotedComments] = useState([]);
-  const [bookmarkedComments, setBookmarkedComments] = useState([]);
-  const [sessionId, setSessionId] = useState('');
-  const commentBoxRef = useRef(null);
-
-  useEffect(() => {
-    let existing = sessionStorage.getItem('session_id');
-    if (!existing) {
-      existing = Math.random().toString(36).substring(2, 15);
-      sessionStorage.setItem('session_id', existing);
-    }
-    setSessionId(existing);
-
-    setUpvotedComments(JSON.parse(sessionStorage.getItem('upvoted_comments') || '[]'));
-    setDownvotedComments(JSON.parse(sessionStorage.getItem('downvoted_comments') || '[]'));
-    setBookmarkedComments(JSON.parse(sessionStorage.getItem('bookmarked_comments') || '[]'));
-
-    const savedReplyId = sessionStorage.getItem('pending_reply');
-    if (savedReplyId) setParentId(savedReplyId);
-  }, []);
-
-  useEffect(() => {
-    if (!articleId) return;
-    fetchComments();
-  }, [articleId]);
-
-  useEffect(() => {
-    if (parentId) sessionStorage.setItem('pending_reply', parentId);
-    else sessionStorage.removeItem('pending_reply');
-  }, [parentId]);
-
-  const fetchComments = async () => {
-    try {
-      setFetching(true);
-      const res = await axios.get(`${API_URL}/api/comments/${articleId}`);
-      setComments(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error('❌ Error fetching comments:', err.response?.data || err.message);
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  const handlePost = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
-
-    setLoading(true);
-    try {
-      await axios.post(`${API_URL}/api/comments`, {
-        article_id: articleId,
-        content: newComment,
-        author: guestName || 'Guest',
-        parent_id: parentId,
-      });
-      setNewComment('');
-      setGuestName('');
-      setParentId(null);
-      await fetchComments();
-      commentBoxRef.current?.scrollIntoView({ behavior: 'smooth' });
-    } catch (err) {
-      console.error('❌ Post failed:', err.response?.data || err.message);
-      alert('Failed to post comment. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVote = async (commentId, direction) => {
-    const upvoted = upvotedComments.includes(commentId);
-    const downvoted = downvotedComments.includes(commentId);
-    let action = '';
-
-    if (direction === 'up') action = upvoted ? 'unvote' : 'upvote';
-    if (direction === 'down') action = downvoted ? 'unvote' : 'downvote';
-
-    try {
-      await axios.post(`${API_URL}/api/comments/${commentId}/${action}`, {}, {
-        headers: { 'X-Session-ID': sessionId },
-      });
-
-      const newUp = action === 'upvote'
-        ? [...new Set([...upvotedComments, commentId])]
-        : upvotedComments.filter(id => id !== commentId);
-
-      const newDown = action === 'downvote'
-        ? [...new Set([...downvotedComments, commentId])]
-        : downvotedComments.filter(id => id !== commentId);
-
-      setUpvotedComments(newUp);
-      setDownvotedComments(newDown);
-      sessionStorage.setItem('upvoted_comments', JSON.stringify(newUp));
-      sessionStorage.setItem('downvoted_comments', JSON.stringify(newDown));
-
-      fetchComments();
-    } catch (err) {
-      console.error(`❌ ${action} failed:`, err.response?.data || err.message);
-    }
-  };
-
-  const handleBookmark = async (commentId) => {
-    const isBookmarked = bookmarkedComments.includes(commentId);
-    const endpoint = isBookmarked ? 'unbookmark' : 'bookmark';
-
-    try {
-      await axios.post(`${API_URL}/api/comments/${commentId}/${endpoint}`, {}, {
-        headers: { 'X-Session-ID': sessionId },
-      });
-
-      const updated = isBookmarked
-        ? bookmarkedComments.filter(id => id !== commentId)
-        : [...new Set([...bookmarkedComments, commentId])];
-
-      setBookmarkedComments(updated);
-      sessionStorage.setItem('bookmarked_comments', JSON.stringify(updated));
-      fetchComments();
-    } catch (err) {
-      console.error(`❌ ${endpoint} failed:`, err.response?.data || err.message);
-    }
-  };
-
-  const toggleReplies = (commentId) => {
-    setExpandedThreads(prev => ({
-      ...prev,
-      [commentId]: !prev[commentId],
-    }));
-  };
-
-  const renderReplies = (parentId) => {
-    const replies = comments.filter(c => c.parent_id === parentId);
-    const expanded = expandedThreads[parentId];
-
-    return (
-      <AnimatePresence>
-        {expanded && replies.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            transition={{ duration: 0.2 }}
-            className="ml-6 mt-2"
-          >
-            {replies.map(reply => (
-              <div key={reply.id}>
-                <Comment
-                  comment={reply}
-                  onReply={setParentId}
-                  onVote={handleVote}
-                  onBookmark={handleBookmark}
-                  upvotedComments={upvotedComments}
-                  downvotedComments={downvotedComments}
-                  bookmarkedComments={bookmarkedComments}
-                  repliesCount={comments.filter(c => c.parent_id === reply.id).length}
-                  toggleState={expandedThreads[reply.id] ? 'expanded' : 'collapsed'}
-                  onToggle={toggleReplies}
-                />
-                {renderReplies(reply.id)}
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    );
-  };
-
-  const topLevelComments = useMemo(() => (
-    comments.filter(c => !c.parent_id).slice(0, visibleCount)
-  ), [comments, visibleCount]);
-
-  const moreCommentsExist = useMemo(() => (
-    comments.filter(c => !c.parent_id).length > visibleCount
-  ), [comments, visibleCount]);
-
-  return (
-    <div className="container mx-auto px-4 py-12 max-w-4xl border-t border-gray-800" ref={commentBoxRef}>
-      <h3 className="text-white text-xl font-bold mb-4">Comments</h3>
-
-      <form onSubmit={handlePost} className="mb-6">
-        <input
-          type="text"
-          placeholder="Your name (optional)"
-          value={guestName}
-          onChange={(e) => setGuestName(e.target.value)}
-          className="w-full mb-2 p-2 rounded bg-gray-800 text-gray-100 text-sm"
-        />
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder={parentId ? "Write a reply..." : "Write a comment..."}
-          className="w-full p-3 rounded-lg bg-gray-800 text-gray-100 resize-none text-sm"
-          rows={4}
-        />
-        <div className="flex items-center gap-3 mt-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm"
-          >
-            {loading ? 'Posting...' : parentId ? 'Reply' : 'Post Comment'}
-          </button>
-          {parentId && (
-            <button
-              type="button"
-              onClick={() => setParentId(null)}
-              className="text-sm text-gray-400 underline hover:text-white"
-            >
-              Cancel reply
-            </button>
-          )}
-        </div>
-      </form>
-
-      <div className="relative max-h-[600px] overflow-hidden group">
-        <div className="overflow-y-auto pr-2">
-          {fetching ? (
-            <p className="text-gray-400 text-sm">Loading comments...</p>
-          ) : topLevelComments.length ? (
-            <AnimatePresence>
-              {topLevelComments.map(comment => (
-                <div key={comment.id}>
-                  <Comment
-                    comment={comment}
-                    onReply={setParentId}
-                    onVote={handleVote}
-                    onBookmark={handleBookmark}
-                    upvotedComments={upvotedComments}
-                    downvotedComments={downvotedComments}
-                    bookmarkedComments={bookmarkedComments}
-                    repliesCount={comments.filter(c => c.parent_id === comment.id).length}
-                    toggleState={expandedThreads[comment.id] ? 'expanded' : 'collapsed'}
-                    onToggle={toggleReplies}
-                  />
-                  {renderReplies(comment.id)}
-                </div>
-              ))}
-            </AnimatePresence>
-          ) : (
-            <p className="text-gray-500 text-sm">No comments yet.</p>
-          )}
-        </div>
-
-        {moreCommentsExist && (
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center">
-            <button
-              onClick={() => setVisibleCount(prev => prev + 5)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 text-xs rounded mb-4"
-            >
-              Load more comments
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default CommentSection;
