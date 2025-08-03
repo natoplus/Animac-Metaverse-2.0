@@ -1,6 +1,6 @@
 import React from 'react';
-import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 
 const Comment = ({
   comment,
@@ -30,7 +30,9 @@ const Comment = ({
         <span>
           by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}
           {repliesCount > 0 && (
-            <span className="ml-2 text-blue-400">• {repliesCount} repl{repliesCount === 1 ? 'y' : 'ies'}</span>
+            <span className="ml-2 text-blue-400">
+              • {repliesCount} repl{repliesCount === 1 ? 'y' : 'ies'}
+            </span>
           )}
         </span>
         <div className="flex gap-3 items-center">
@@ -40,11 +42,7 @@ const Comment = ({
               className={`hover:text-green-500 ${isUpvoted ? 'text-green-400' : 'text-gray-400'}`}
               aria-label="Upvote"
             >
-              <ThumbsUp
-                size={16}
-                fill={isUpvoted ? 'currentColor' : 'none'}
-                stroke="currentColor"
-              />
+              <ThumbsUp size={16} fill={isUpvoted ? 'currentColor' : 'none'} stroke="currentColor" />
             </button>
             <span className="text-gray-400 font-semibold">{voteScore}</span>
             <button
@@ -52,11 +50,7 @@ const Comment = ({
               className={`hover:text-red-500 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
               aria-label="Downvote"
             >
-              <ThumbsDown
-                size={16}
-                fill={isDownvoted ? 'currentColor' : 'none'}
-                stroke="currentColor"
-              />
+              <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} stroke="currentColor" />
             </button>
           </div>
           <button
@@ -85,4 +79,20 @@ const Comment = ({
   );
 };
 
-export default Comment;
+const CommentSection = ({ comments, ...handlers }) => {
+  return (
+    <div className="space-y-4">
+      {comments.map((comment) => (
+        <Comment
+          key={comment.id}
+          comment={comment}
+          {...handlers}
+          repliesCount={comment.repliesCount || 0}
+          toggleState={comment.toggleState || 'collapsed'}
+        />
+      ))}
+    </div>
+  );
+};
+
+export default CommentSection;
