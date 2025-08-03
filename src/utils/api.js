@@ -38,49 +38,50 @@ const safeRequest = async (method, path, context, data = {}, params = {}) => {
   }
 };
 
-// ─── API Functions ─────────────────────────────────────────────────────────────
-const fetchArticles = (params = {}) =>
+// ─── Article APIs ──────────────────────────────────────────────────────────────
+export const fetchArticles = (params = {}) =>
   safeRequest('get', '/api/articles', 'Fetching articles', {}, params);
 
-const getArticle = (id) =>
+export const getArticle = (id) =>
   id ? safeRequest('get', `/api/articles/by-id/${id}`, `Get article by ID: ${id}`) : null;
 
-const getArticleBySlug = (slug) =>
+export const getArticleBySlug = (slug) =>
   slug ? safeRequest('get', `/api/articles/${slug}`, `Get article by slug: ${slug}`) : null;
 
-const createArticle = (data) =>
+export const createArticle = (data) =>
   safeRequest('post', '/api/articles', 'Creating article', data);
 
-const updateArticle = (id, data) =>
+export const updateArticle = (id, data) =>
   id ? safeRequest('patch', `/api/articles/${id}`, `Updating article ID: ${id}`, data) : null;
 
-const deleteArticle = (id) =>
+export const deleteArticle = (id) =>
   id ? safeRequest('delete', `/api/articles/${id}`, `Deleting article ID: ${id}`) : null;
 
-const fetchCategoryStats = () =>
+export const fetchCategoryStats = () =>
   safeRequest('get', '/api/categories/stats', 'Fetching category stats');
 
-const fetchFeaturedContent = () =>
+export const fetchFeaturedContent = () =>
   safeRequest('get', '/api/featured-content', 'Fetching featured content');
 
-const healthCheck = () =>
+export const healthCheck = () =>
   safeRequest('get', '/api/health', 'Health check');
 
-const toggleLikeArticle = (articleId, sessionId) =>
+// ─── Article Actions ───────────────────────────────────────────────────────────
+export const toggleLikeArticle = (articleId, sessionId) =>
   articleId && sessionId
     ? safeRequest('post', `/api/articles/${articleId}/like`, `Toggle like article ID: ${articleId}`, { session_id: sessionId })
     : null;
 
-const toggleBookmarkArticle = (articleId, sessionId) =>
+export const toggleBookmarkArticle = (articleId, sessionId) =>
   articleId && sessionId
     ? safeRequest('post', `/api/articles/${articleId}/bookmark`, `Toggle bookmark article ID: ${articleId}`, { session_id: sessionId })
     : null;
 
-// ─── Comments ──────────────────────────────────────────────────────────────────
-const fetchComments = (articleId) =>
+// ─── Comment APIs ──────────────────────────────────────────────────────────────
+export const fetchComments = (articleId) =>
   articleId ? safeRequest('get', '/api/comments', `Fetch comments for article ID: ${articleId}`, {}, { article_id: articleId }) : [];
 
-const postComment = ({ article_id, name, message, parent_id = null }) =>
+export const postComment = ({ article_id, name, message, parent_id = null }) =>
   safeRequest('post', '/api/comments', 'Posting comment', {
     article_id,
     name,
@@ -88,30 +89,30 @@ const postComment = ({ article_id, name, message, parent_id = null }) =>
     ...(parent_id && { parent_id }),
   });
 
-const likeComment = (commentId, sessionId) =>
+export const likeComment = (commentId, sessionId) =>
   commentId && sessionId
     ? safeRequest('post', `/api/comments/${commentId}/like`, `Like comment ID: ${commentId}`, { session_id: sessionId })
     : null;
 
-const unlikeComment = (commentId, sessionId) =>
+export const unlikeComment = (commentId, sessionId) =>
   commentId && sessionId
     ? safeRequest('post', `/api/comments/${commentId}/unlike`, `Unlike comment ID: ${commentId}`, { session_id: sessionId })
     : null;
 
-const toggleLikeComment = (commentId, sessionId, isLiked) =>
+export const toggleLikeComment = (commentId, sessionId, isLiked) =>
   isLiked ? unlikeComment(commentId, sessionId) : likeComment(commentId, sessionId);
 
-// ─── Watch Tower ───────────────────────────────────────────────────────────────
-const fetchWatchTowerContent = () =>
+// ─── Watch Tower APIs ──────────────────────────────────────────────────────────
+export const fetchWatchTowerContent = () =>
   safeRequest('get', '/api/watch-tower', 'Fetching Watch Tower content');
 
-const createWatchTowerEntry = (data) =>
+export const createWatchTowerEntry = (data) =>
   safeRequest('post', '/api/watch-tower', 'Creating Watch Tower entry', data);
 
-const deleteWatchTowerEntry = (id) =>
+export const deleteWatchTowerEntry = (id) =>
   id ? safeRequest('delete', `/api/watch-tower/${id}`, `Deleting Watch Tower entry ID: ${id}`) : null;
 
-// ─── Named Export ──────────────────────────────────────────────────────────────
+// ─── Grouped Named Export (Optional) ───────────────────────────────────────────
 export const apiEndpoints = {
   fetchArticles,
   getArticle,
