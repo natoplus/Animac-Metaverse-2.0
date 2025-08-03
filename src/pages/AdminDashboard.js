@@ -19,7 +19,7 @@ import '../styles/admin.css';
 
 const MdEditor = lazy(() => import('react-markdown-editor-lite'));
 
-const initialFormState = () => ({
+const getInitialForm = () => ({
   title: '',
   content: '',
   excerpt: '',
@@ -32,7 +32,7 @@ const initialFormState = () => ({
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
-  const [formData, setFormData] = useState(initialFormState());
+  const [formData, setFormData] = useState(getInitialForm());
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
@@ -41,12 +41,16 @@ export default function AdminDashboard() {
   }, []);
 
   const loadArticles = async () => {
-    const data = await fetchArticles();
-    if (Array.isArray(data)) {
-      const unique = Array.from(new Map(data.map(item => [item.id, item])).values());
-      setArticles(unique);
-    } else {
-      setArticles([]);
+    try {
+      const data = await fetchArticles();
+      if (Array.isArray(data)) {
+        const unique = Array.from(new Map(data.map(a => [a.id, a])).values());
+        setArticles(unique);
+      } else {
+        setArticles([]);
+      }
+    } catch (err) {
+      console.error("Failed to load articles", err);
     }
   };
 
@@ -64,21 +68,27 @@ export default function AdminDashboard() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     const payload = {
       ...formData,
-      tags: formData.tags.split(',').map((t) => t.trim()).filter(Boolean),
+      tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
     };
 
     try {
-      isEditing
-        ? await updateArticle(editingId, payload)
-        : await createArticle(payload);
+      if (isEditing) {
+        await updateArticle(editingId, payload);
+        // Optional: Add publish toggle/update API call
+      } else {
+        await createArticle(payload);
+      }
 
+      // TODO: Replace alert with a toast/snackbar
       alert(isEditing ? '✅ Article updated!' : '✅ Article posted!');
       resetForm();
       await loadArticles();
     } catch (err) {
-      alert('❌ Operation failed.');
+      console.error(err);
+      alert('❌ Operation failed. Check console.');
     }
   };
 
@@ -93,17 +103,20 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this article?')) return;
+    const confirmed = window.confirm('Are you sure you want to delete this article?');
+    if (!confirmed) return;
+
     try {
       await deleteArticle(id);
       await loadArticles();
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert('❌ Failed to delete article.');
     }
   };
 
   const resetForm = () => {
-    setFormData(initialFormState());
+    setFormData(getInitialForm());
     setIsEditing(false);
     setEditingId(null);
   };
@@ -119,18 +132,15 @@ export default function AdminDashboard() {
       >
         <h1 className="font-ackno text-4xl font-bold text-white text-center">ANIMAC Admin Panel</h1>
 
-        {/* Article Form */}
-        <motion.div
-          initial={{ opacity: 0, x: -60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
+        {/* Form */}
+        <motion.div initial={{ opacity: 0, x: -60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
           <Card className="neon-red bg-black border border-red-700 shadow-xl">
             <CardContent className="space-y-4 p-5">
               <h2 className="font-japanese text-2xl font-semibold text-white">
                 {isEditing ? 'Edit Article' : 'Post New Article'}
               </h2>
-              <form className="space-y-4" onSubmit={handleSubmit}>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <Input name="title" placeholder="Title" value={formData.title} onChange={handleChange} required />
                 <Textarea name="excerpt" placeholder="Excerpt" value={formData.excerpt} onChange={handleChange} />
 
@@ -150,17 +160,16 @@ export default function AdminDashboard() {
 
                 <div className="flex gap-6 text-white">
                   <label>
-                    <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} /> Featured
+                    <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} />
+                    {' '}Featured
                   </label>
                   <label>
-                    <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} /> Published
+                    <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} />
+                    {' '}Published
                   </label>
                 </div>
 
-                <Button
-                  type="submit"
-                  className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
-                >
+                <Button type="submit" className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg">
                   {isEditing ? 'Update Article' : 'Submit Article'}
                 </Button>
               </form>
@@ -168,12 +177,8 @@ export default function AdminDashboard() {
           </Card>
         </motion.div>
 
-        {/* Article List */}
-        <motion.div
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-        >
+        {/* Articles List */}
+        <motion.div initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
           <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
             <CardContent className="space-y-4 p-5">
               <h2 className="font-japanese text-2xl font-semibold text-white">Existing Articles</h2>
@@ -189,19 +194,10 @@ export default function AdminDashboard() {
                           {article.is_published ? '✅' : '❌'}
                         </div>
                         <div className="space-x-3">
-                          <Button
-                            size="sm"
-                            onClick={() => handleEdit(article)}
-                            className=".neon-btn-sm-purple"
-                          >
+                          <Button size="sm" onClick={() => handleEdit(article)} className=".neon-btn-sm-purple">
                             ✒️
                           </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(article.id)}
-                            className="neon-btn-sm-red"
-                          >
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete(article.id)} className="neon-btn-sm-red">
                             🗑️
                           </Button>
                         </div>
