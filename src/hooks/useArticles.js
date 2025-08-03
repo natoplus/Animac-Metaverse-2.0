@@ -1,7 +1,7 @@
 // src/hooks/useArticles.js
 
 import { useState, useEffect } from 'react';
-import { apiEndpoints, getFeaturedContent } from '../utils/api';
+import { apiEndpoints } from '../utils/api';
 
 /**
  * Hook to fetch articles based on filters such as:
@@ -31,7 +31,7 @@ export const useArticles = (
         if (featured !== null) params.featured = featured;
         if (is_published !== null) params.is_published = is_published;
 
-        const res = await apiEndpoints?.getArticles?.(params);
+        const res = await apiEndpoints.getArticles(params);
         setArticles(res || []);
         setError(null);
       } catch (err) {
@@ -52,10 +52,12 @@ export const useArticles = (
 /**
  * Hook to fetch the homepage featured content:
  * - Main hero article
- * - Top recent articles per category
+ * - Top recent articles per region/category
  */
 export const useFeaturedContent = () => {
-  const [featuredContent, setFeaturedContent] = useState(null);
+  const [eastArticles, setEastArticles] = useState([]);
+  const [westArticles, setWestArticles] = useState([]);
+  const [allArticles, setAllArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -63,48 +65,11 @@ export const useFeaturedContent = () => {
     const fetchFeatured = async () => {
       setLoading(true);
       try {
-        const response = await apiEndpoints?.getFeaturedContent?.();
+        const response = await apiEndpoints.getFeaturedContent();
         console.log("🌟 Featured content received:", response);
-        setFeaturedContent(response || {});
-        setError(null);
-      } catch (err) {
-        console.error("❌ Error fetching featured content:", err);
-        setError(err.message || 'Failed to fetch featured content.');
-        setFeaturedContent(null);
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchFeatured();
-  }, []);
-
-  return { featuredContent, loading, error };
-};
-
-/**
- * Hook to fetch featured articles and group them by region: east, west, all
- */
-export const useRegionArticles = () => {
-  const [eastArticles, setEastArticles] = useState([]);
-  const [westArticles, setWestArticles] = useState([]);
-  const [allArticles, setAllArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchArticles = async () => {
-      setLoading(true);
-      try {
-        const data = await getFeaturedContent();
-
-        if (data?.error) {
-          console.error("❌ Failed to fetch featured content:", data.message);
-          setLoading(false);
-          return;
-        }
-
-        const validArticles = Array.isArray(data)
-          ? data.filter((article) => article && typeof article === "object")
+        const validArticles = Array.isArray(response)
+          ? response.filter((article) => article && typeof article === "object")
           : [];
 
         const east = validArticles.filter(
@@ -117,22 +82,20 @@ export const useRegionArticles = () => {
         setEastArticles(east);
         setWestArticles(west);
         setAllArticles(validArticles);
-
-        console.log("🌟 Featured content received:", validArticles);
+        setError(null);
       } catch (err) {
-        console.error("🚨 Error loading articles:", err.message);
+        console.error("❌ Error fetching featured content:", err);
+        setError('Failed to fetch featured content.');
+        setEastArticles([]);
+        setWestArticles([]);
+        setAllArticles([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchArticles();
+    fetchFeatured();
   }, []);
 
-  return {
-    eastArticles,
-    westArticles,
-    allArticles,
-    loading,
-  };
+  return { eastArticles, westArticles, allArticles, loading, error };
 };
