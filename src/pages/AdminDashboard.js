@@ -159,7 +159,7 @@ export default function AdminDashboard() {
 
                 <Button
                   type="submit"
-                  className="w-full neon-btn animate-pulse-glow font-bold tracking-wider text-lg"
+                  className="w-full neon-btn font-azonix font-bold tracking-wider text-lg"
                 >
                   {isEditing ? 'Update Article' : 'Submit Article'}
                 </Button>
@@ -188,11 +188,11 @@ export default function AdminDashboard() {
                           <strong>{article.title}</strong> — {article.category} —{' '}
                           {article.is_published ? '✅ Published' : '❌ Draft'}
                         </div>
-                        <div className="space-x-2">
+                        <div className="space-x-3">
                           <Button
                             size="sm"
                             onClick={() => handleEdit(article)}
-                            className=".neon-btn-sm-purple animate-pulse-glow"
+                            className=".neon-btn-sm-purple"
                           >
                             ✒️
                           </Button>
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDelete(article.id)}
-                            className="neon-btn-sm-red animate-pulse-glow"
+                            className="neon-btn-sm-red"
                           >
                             🗑️
                           </Button>

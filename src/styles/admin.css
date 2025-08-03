@@ -79,6 +79,7 @@
 
 .neon-btn {
   background: transparent;
+  border-color: #e0e0e0;
   color: #f00;
   border: 2px solid #f00;
   transition: all 0.3s ease;
@@ -93,14 +94,14 @@
 
 .neon-btn-sm, .neon-btn-sm-red {
   padding: 0.25rem 0.5rem;
+  border-color: #e0e0e0;
   font-size: 0.875rem;
   font-weight: 600;
 }
 
 .neon-btn-sm-purple {
-  border-color: rgb(174, 0, 255);
   border-color: #e0e0e0;
-  color: rgba(255, 0, 0, 0);
+  color: rgb(174, 0, 255);
 }
 
 .neon-btn-sm-red {
