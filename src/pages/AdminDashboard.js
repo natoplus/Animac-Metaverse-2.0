@@ -67,30 +67,43 @@ export default function AdminDashboard() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const payload = {
-      ...formData,
-      tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-    };
-
-    try {
-      if (isEditing) {
-        await updateArticle(editingId, payload);
-        // Optional: Add publish toggle/update API call
-      } else {
-        await createArticle(payload);
-      }
-
-      // TODO: Replace alert with a toast/snackbar
-      alert(isEditing ? '✅ Article updated!' : '✅ Article posted!');
-      resetForm();
-      await loadArticles();
-    } catch (err) {
-      console.error(err);
-      alert('❌ Operation failed. Check console.');
-    }
+  const payload = {
+    ...formData,
+    tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
   };
+
+  try {
+    let article;
+
+    if (isEditing) {
+      article = await updateArticle(editingId, payload);
+    } else {
+      article = await createArticle(payload);
+    }
+
+    // Make sure article is published if the checkbox is checked
+    const articleId = isEditing ? editingId : article?.id || article?.data?.id;
+
+    if (formData.is_published && articleId) {
+      await fetch(`/api/articles/${articleId}/publish`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    }
+
+    alert(isEditing ? '✅ Article updated!' : '✅ Article posted!');
+    resetForm();
+    await loadArticles();
+  } catch (err) {
+    console.error(err);
+    alert('❌ Operation failed. Check console.');
+  }
+};
+
 
   const handleEdit = (article) => {
     setFormData({
