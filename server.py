@@ -146,6 +146,23 @@ async def update_article(article_id: str, article_update: ArticleUpdate):
     except Exception:
         logger.error("❌ Error updating article", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to update article")
+    
+@app.patch("/api/articles/{article_id}/publish")
+async def publish_article(article_id: str):
+    logger.info("🚀 Publishing article ID: %s", article_id)
+    try:
+        res = supabase.table("articles") \
+            .update({"is_published": True, "updated_at": datetime.utcnow().isoformat()}) \
+            .eq("id", article_id) \
+            .execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Article not found")
+        logger.info("✅ Article published: %s", article_id)
+        return {"message": "Article published"}
+    except Exception:
+        logger.error("❌ Failed to publish article", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to publish article")
+
 
 @app.get("/api/articles", response_model=List[ArticleResponse])
 async def get_articles(category: Optional[str] = None, featured: Optional[bool] = None, is_published: Optional[bool] = True, limit: int = 20, skip: int = 0):
