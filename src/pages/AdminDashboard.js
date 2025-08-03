@@ -75,11 +75,12 @@ export default function AdminDashboard() {
       .split(',')
       .map(tag => tag.trim())
       .filter(Boolean)
-      .slice(0, 10); // Limit to 10 tags
+      .slice(0, 10);
 
     const payload = {
       ...formData,
       tags: tagsArray,
+      published: formData.is_published, // Send both for redundancy
     };
 
     console.log('📦 Payload to API:', payload);
