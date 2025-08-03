@@ -210,29 +210,20 @@ async def like_comment(comment_id: str, request: Request):
     try:
         existing = supabase.table("comment_likes").select("id").eq("comment_id", comment_id).eq("session_id", session_id).execute()
         if existing.data:
-            # UNLIKE logic
-            supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
-            comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-            if not comment_res.data:
-                raise HTTPException(status_code=404, detail="Comment not found")
-            current_likes = max(comment_res.data[0].get("likes", 0) - 1, 0)
-            updated = supabase.table("comments").update({"likes": current_likes}).eq("id", comment_id).execute()
-            return {"message": "Comment unliked", "likes": updated.data[0]["likes"]}
-        else:
-            # LIKE logic
-            supabase.table("comment_likes").insert({
-                "comment_id": comment_id,
-                "session_id": session_id
-            }).execute()
-            comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-            if not comment_res.data:
-                raise HTTPException(status_code=404, detail="Comment not found")
-            current_likes = comment_res.data[0].get("likes", 0)
-            updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
-            return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
+            raise HTTPException(status_code=403, detail="Already liked by this session")
+        supabase.table("comment_likes").insert({
+            "comment_id": comment_id,
+            "session_id": session_id
+        }).execute()
+        res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
+        current_likes = res.data[0].get("likes", 0)
+        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+        return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
     except Exception as e:
-        logging.error(f"❌ Error toggling like: {str(e)}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to toggle like: {str(e)}")
+        logging.error(f"❌ Error liking comment: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to like comment: {str(e)}")
 
 # ---------- Run ----------
 if __name__ == "__main__":
