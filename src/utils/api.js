@@ -52,7 +52,7 @@ export const createArticle = (data) =>
   safeRequest('post', '/api/articles', 'Creating article', data);
 
 export const updateArticle = (id, data) =>
-  id ? safeRequest('patch', `/api/articles/${id}`, `Updating article ID: ${id}`, data) : null;
+  id ? safeRequest('put', `/api/articles/${id}`, `Updating article ID: ${id}`, data) : null;
 
 export const deleteArticle = (id) =>
   id ? safeRequest('delete', `/api/articles/${id}`, `Deleting article ID: ${id}`) : null;
