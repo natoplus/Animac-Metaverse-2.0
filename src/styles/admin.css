@@ -75,3 +75,39 @@
   outline: none;
   box-shadow: 0 0 8px #ff0040, 0 0 16px #00f0ff;
 }
+
+
+.neon-btn {
+  background: transparent;
+  color: #f00;
+  border: 2px solid #f00;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px #f00, 0 0 20px #f00;
+}
+
+.neon-btn:hover {
+  background: #f00;
+  color: black;
+  box-shadow: 0 0 20px #f00, 0 0 40px #f00;
+}
+
+.neon-btn-sm, .neon-btn-sm-red {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.neon-btn-sm-red {
+  border-color: #f00;
+  color: #f00;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s infinite;
+}
+
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 5px #f00; }
+  50% { box-shadow: 0 0 20px #f00, 0 0 40px #f00; }
+  100% { box-shadow: 0 0 5px #f00; }
+}
