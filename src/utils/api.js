@@ -1,138 +1,157 @@
 import axios from 'axios';
 
+// ---------- Base Config ----------
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 70000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// ─── Interceptors ──────────────────────────────────────────────────────────────
+// ---------- Dev Logging ----------
 api.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[✅ ${response.config.method?.toUpperCase()}] ${response.config.url}`, response.data);
+      console.log(`[✅ API] ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
     }
     return response;
   },
   (error) => {
-    console.error(`[❌ ERROR] ${error?.config?.url || 'Unknown URL'}:`, error?.response?.data || error.message);
+    console.error('[❌ API ERROR]', error?.response?.data || error.message);
     return Promise.reject(error);
   }
 );
 
-// ─── Helpers ───────────────────────────────────────────────────────────────────
-const handleApiError = (err, context = 'API') => {
-  const message = err?.response?.data?.message || err.message || 'Unknown error';
-  console.error(`❌ ${context} failed:`, message);
-};
-
-const safeRequest = async (method, path, context, data = {}, params = {}) => {
+// ---------- Article Endpoints ----------
+export const fetchArticles = async (params = {}) => {
   try {
-    const res = await api.request({ method, url: path, data, params });
-    return res.data ?? [];
+    const res = await api.get('/api/articles', { params });
+    return res.data || [];
   } catch (err) {
-    handleApiError(err, context);
-    return { error: true, message: err?.response?.data?.message || err.message || 'Request failed' };
+    console.error('❌ Error fetching articles:', err.message);
+    return [];
   }
 };
 
-// ─── Article APIs ──────────────────────────────────────────────────────────────
-export const fetchArticles = (params = {}) =>
-  safeRequest('get', '/api/articles', 'Fetching articles', {}, params);
+export const getArticle = async (id) => {
+  try {
+    const res = await api.get(`/api/articles/by-id/${id}`);
+    return res.data || null;
+  } catch (err) {
+    console.error(`❌ Error fetching article [${id}]:`, err.message);
+    return null;
+  }
+};
 
-export const getArticle = (id) =>
-  id ? safeRequest('get', `/api/articles/by-id/${id}`, `Get article by ID: ${id}`) : null;
+export const getArticleBySlug = async (slug) => {
+  try {
+    const res = await api.get(`/api/articles/${slug}`);
+    return res.data || null;
+  } catch (err) {
+    console.error(`❌ Error fetching article [slug: ${slug}]:`, err.message);
+    return null;
+  }
+};
 
-export const getArticleBySlug = (slug) =>
-  slug ? safeRequest('get', `/api/articles/${slug}`, `Get article by slug: ${slug}`) : null;
+export const createArticle = async (data) => {
+  try {
+    const res = await api.post('/api/articles', data);
+    return res.data;
+  } catch (err) {
+    console.error('❌ Error creating article:', err.message);
+    return null;
+  }
+};
 
-export const createArticle = (data) =>
-  safeRequest('post', '/api/articles', 'Creating article', data);
+export const updateArticle = async (id, data) => {
+  try {
+    const res = await api.patch(`/api/articles/${id}`, data);
+    return res.data;
+  } catch (err) {
+    console.error(`❌ Error updating article [${id}]:`, err.message);
+    return null;
+  }
+};
 
-export const updateArticle = (id, data) =>
-  id ? safeRequest('put', `/api/articles/${id}`, `Updating article ID: ${id}`, data) : null;
+export const deleteArticle = async (id) => {
+  try {
+    const res = await api.delete(`/api/articles/${id}`);
+    return res.data;
+  } catch (err) {
+    console.error(`❌ Error deleting article [${id}]:`, err.message);
+    return null;
+  }
+};
 
-export const deleteArticle = (id) =>
-  id ? safeRequest('delete', `/api/articles/${id}`, `Deleting article ID: ${id}`) : null;
+export const fetchCategoryStats = async () => {
+  try {
+    const res = await api.get('/api/categories/stats');
+    return res.data || [];
+  } catch (err) {
+    console.error('❌ Error fetching category stats:', err.message);
+    return [];
+  }
+};
 
-export const fetchCategoryStats = () =>
-  safeRequest('get', '/api/categories/stats', 'Fetching category stats');
+export const fetchFeaturedContent = async () => {
+  try {
+    const res = await api.get('/api/featured-content');
+    return res.data || null;
+  } catch (err) {
+    console.error('❌ Error fetching featured content:', err.message);
+    return null;
+  }
+};
 
-export const fetchFeaturedContent = () =>
-  safeRequest('get', '/api/featured-content', 'Fetching featured content');
+export const healthCheck = async () => {
+  try {
+    const res = await api.get('/api/health');
+    return res.data;
+  } catch (err) {
+    console.error('❌ Health check failed:', err.message);
+    return null;
+  }
+};
 
-export const healthCheck = () =>
-  safeRequest('get', '/api/health', 'Health check');
+// ---------- Comment Endpoints ----------
+export const fetchComments = async (articleId) => {
+  try {
+    const res = await api.get(`/api/comments`, { params: { article_id: articleId } });
+    return res.data || [];
+  } catch (err) {
+    console.error(`❌ Error fetching comments for article [${articleId}]:`, err.message);
+    return [];
+  }
+};
 
-// ─── Article Actions ───────────────────────────────────────────────────────────
-export const toggleLikeArticle = (articleId, sessionId) =>
-  articleId && sessionId
-    ? safeRequest('post', `/api/articles/${articleId}/like`, `Toggle like article ID: ${articleId}`, { session_id: sessionId })
-    : null;
+export const postComment = async ({ article_id, name, message }) => {
+  try {
+    const res = await api.post('/api/comments', { article_id, name, message });
+    return res.data;
+  } catch (err) {
+    console.error('❌ Error posting comment:', err.message);
+    return null;
+  }
+};
 
-export const toggleBookmarkArticle = (articleId, sessionId) =>
-  articleId && sessionId
-    ? safeRequest('post', `/api/articles/${articleId}/bookmark`, `Toggle bookmark article ID: ${articleId}`, { session_id: sessionId })
-    : null;
-
-// ─── Comment APIs ──────────────────────────────────────────────────────────────
-export const fetchComments = (articleId) =>
-  articleId ? safeRequest('get', '/api/comments', `Fetch comments for article ID: ${articleId}`, {}, { article_id: articleId }) : [];
-
-export const postComment = ({ article_id, name, message, parent_id = null }) =>
-  safeRequest('post', '/api/comments', 'Posting comment', {
-    article_id,
-    name,
-    message,
-    ...(parent_id && { parent_id }),
-  });
-
-export const likeComment = (commentId, sessionId) =>
-  commentId && sessionId
-    ? safeRequest('post', `/api/comments/${commentId}/like`, `Like comment ID: ${commentId}`, { session_id: sessionId })
-    : null;
-
-export const unlikeComment = (commentId, sessionId) =>
-  commentId && sessionId
-    ? safeRequest('post', `/api/comments/${commentId}/unlike`, `Unlike comment ID: ${commentId}`, { session_id: sessionId })
-    : null;
-
-export const toggleLikeComment = (commentId, sessionId, isLiked) =>
-  isLiked ? unlikeComment(commentId, sessionId) : likeComment(commentId, sessionId);
-
-// ─── Watch Tower APIs ──────────────────────────────────────────────────────────
-export const fetchWatchTowerContent = () =>
-  safeRequest('get', '/api/watch-tower', 'Fetching Watch Tower content');
-
-export const createWatchTowerEntry = (data) =>
-  safeRequest('post', '/api/watch-tower', 'Creating Watch Tower entry', data);
-
-export const deleteWatchTowerEntry = (id) =>
-  id ? safeRequest('delete', `/api/watch-tower/${id}`, `Deleting Watch Tower entry ID: ${id}`) : null;
-
-// ─── Grouped Named Export (Optional) ───────────────────────────────────────────
+// ---------- Export Group ----------
 export const apiEndpoints = {
-  fetchArticles,
+  // Articles
+  getArticles: fetchArticles,
   getArticle,
   getArticleBySlug,
   createArticle,
   updateArticle,
   deleteArticle,
-  fetchCategoryStats,
   getFeaturedContent: fetchFeaturedContent,
-  toggleLikeArticle,
-  toggleBookmarkArticle,
+  getCategoryStats: fetchCategoryStats,
   healthCheck,
 
-  fetchComments,
-  postComment,
-  likeComment,
-  unlikeComment,
-  toggleLikeComment,
-
-  fetchWatchTowerContent,
-  createWatchTowerEntry,
-  deleteWatchTowerEntry,
+  // Comments
+  getComments: fetchComments,
+  postComment: postComment,
 };
+
+export default apiEndpoints;
