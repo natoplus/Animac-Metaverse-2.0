@@ -5,7 +5,7 @@ const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metave
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
+  timeout: 70000,
 });
 
 // ─── Interceptors ──────────────────────────────────────────────────────────────
