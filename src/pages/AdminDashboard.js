@@ -6,13 +6,14 @@ import {
   deleteArticle,
 } from '../utils/api';
 
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import { Input } from '../components/ui/input';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Textarea } from '../components/ui/textarea';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-
 import 'react-markdown-editor-lite/lib/index.css';
 import '../styles/admin.css';
 
@@ -35,30 +36,19 @@ export default function AdminDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  const loadArticles = async () => {
-    console.log('📥 Loading articles...');
-    try {
-      const data = await fetchArticles();
-      if (Array.isArray(data)) {
-        const uniqueMap = new Map();
-        data.forEach((article) => {
-          if (article?.id) uniqueMap.set(article.id, article);
-        });
-        setArticles([...uniqueMap.values()]);
-        console.log(`✅ Loaded ${uniqueMap.size} articles.`);
-      } else {
-        setArticles([]);
-        console.warn('⚠️ Articles fetched are not an array.');
-      }
-    } catch (err) {
-      console.error('❌ Failed to load articles:', err);
-      setArticles([]);
-    }
-  };
-
   useEffect(() => {
     loadArticles();
   }, []);
+
+  const loadArticles = async () => {
+    const data = await fetchArticles();
+    if (Array.isArray(data)) {
+      const unique = Array.from(new Map(data.map(item => [item.id, item])).values());
+      setArticles(unique);
+    } else {
+      setArticles([]);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -80,26 +70,19 @@ export default function AdminDashboard() {
     };
 
     try {
-      if (isEditing) {
-        console.log(`✏️ Updating article ID: ${editingId}`);
-        await updateArticle(editingId, payload);
-        alert('✅ Article updated!');
-      } else {
-        console.log('📝 Creating new article...');
-        await createArticle(payload);
-        alert('✅ Article posted!');
-      }
+      isEditing
+        ? await updateArticle(editingId, payload)
+        : await createArticle(payload);
 
+      alert(isEditing ? '✅ Article updated!' : '✅ Article posted!');
       resetForm();
       await loadArticles();
     } catch (err) {
       alert('❌ Operation failed.');
-      console.error('⚠️ Error during submit:', err);
     }
   };
 
   const handleEdit = (article) => {
-    console.log('✏️ Editing article:', article);
     setFormData({
       ...article,
       tags: Array.isArray(article.tags) ? article.tags.join(', ') : '',
@@ -110,16 +93,12 @@ export default function AdminDashboard() {
   };
 
   const handleDelete = async (id) => {
-    const confirm = window.confirm('Are you sure you want to delete this article?');
-    if (!confirm) return;
-
+    if (!window.confirm('Are you sure you want to delete this article?')) return;
     try {
-      console.log(`🗑️ Deleting article ID: ${id}`);
       await deleteArticle(id);
       await loadArticles();
-    } catch (err) {
-      console.error('❌ Failed to delete article:', err);
-      alert('Failed to delete article.');
+    } catch {
+      alert('❌ Failed to delete article.');
     }
   };
 
@@ -130,91 +109,112 @@ export default function AdminDashboard() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7 }}
-      className="admin-panel space-y-10 max-w-4xl mx-auto mt-10"
-    >
-      <h1 className="font-ackno text-3xl font-bold text-white">ANIMAC Admin Panel</h1>
-
-      {/* Article Form */}
+    <>
+      <Header />
       <motion.div
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="admin-panel space-y-10 max-w-4xl mx-auto py-10"
       >
-        <Card className="neon-red bg-black border border-red-700">
-          <CardContent className="space-y-4 p-5">
-            <h2 className="font-japanese text-3xl font-semibold text-white">
-              {isEditing ? 'Edit Article' : 'Post New Article'}
-            </h2>
-            <form className="space-y-4" onSubmit={handleSubmit}>
-              <Input name="title" placeholder="Title" value={formData.title} onChange={handleChange} required />
-              <Textarea name="excerpt" placeholder="Excerpt" value={formData.excerpt} onChange={handleChange} />
+        <h1 className="font-ackno text-4xl font-bold text-white text-center">ANIMAC Admin Panel</h1>
 
-              <Suspense fallback={<div className="text-white">Loading editor...</div>}>
-                <MdEditor
-                  value={formData.content}
-                  style={{ height: '300px', backgroundColor: '#111' }}
-                  renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
-                  onChange={handleEditorChange}
-                  className="dark-mode"
-                />
-              </Suspense>
+        {/* Article Form */}
+        <motion.div
+          initial={{ opacity: 0, x: -60 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <Card className="neon-red bg-black border border-red-700 shadow-xl">
+            <CardContent className="space-y-4 p-5">
+              <h2 className="font-japanese text-2xl font-semibold text-white">
+                {isEditing ? 'Edit Article' : 'Post New Article'}
+              </h2>
+              <form className="space-y-4" onSubmit={handleSubmit}>
+                <Input name="title" placeholder="Title" value={formData.title} onChange={handleChange} required />
+                <Textarea name="excerpt" placeholder="Excerpt" value={formData.excerpt} onChange={handleChange} />
 
-              <Input name="category" placeholder="Category (east/west)" value={formData.category} onChange={handleChange} required />
-              <Input name="tags" placeholder="Tags (comma-separated)" value={formData.tags} onChange={handleChange} />
-              <Input name="featured_image" placeholder="Featured Image URL" value={formData.featured_image} onChange={handleChange} />
+                <Suspense fallback={<div className="text-white">Loading editor...</div>}>
+                  <MdEditor
+                    value={formData.content}
+                    style={{ height: '300px', backgroundColor: '#111' }}
+                    renderHTML={(text) => <ReactMarkdown>{text}</ReactMarkdown>}
+                    onChange={handleEditorChange}
+                    className="dark-mode"
+                  />
+                </Suspense>
 
-              <div className="flex gap-6 text-white">
-                <label>
-                  <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} /> Featured
-                </label>
-                <label>
-                  <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} /> Published
-                </label>
-              </div>
-              <Button type="submit" className="w-full">
-                {isEditing ? 'Update Article' : 'Submit Article'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </motion.div>
+                <Input name="category" placeholder="Category (east/west)" value={formData.category} onChange={handleChange} />
+                <Input name="tags" placeholder="Tags (comma-separated)" value={formData.tags} onChange={handleChange} />
+                <Input name="featured_image" placeholder="Featured Image URL" value={formData.featured_image} onChange={handleChange} />
 
-      {/* Articles List */}
-      <motion.div
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-      >
-        <Card className="neon-blue bg-black border border-blue-700">
-          <CardContent className="space-y-4 p-5">
-            <h2 className="font-japanese text-3xl font-semibold text-white">Existing Articles</h2>
-            {articles.length === 0 ? (
-              <p className="text-gray-400">No articles found.</p>
-            ) : (
-              <ul className="space-y-4">
-                {articles.map((article) => (
-                  <li key={article.id} className="border-b border-gray-700 pb-2 text-white">
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <strong>{article.title}</strong> — {article.category} —{' '}
-                        {article.is_published ? '✅ Published' : '❌ Draft'}
+                <div className="flex gap-6 text-white">
+                  <label>
+                    <input type="checkbox" name="is_featured" checked={formData.is_featured} onChange={handleChange} /> Featured
+                  </label>
+                  <label>
+                    <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} /> Published
+                  </label>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full neon-btn animate-pulse-glow font-bold tracking-wider text-lg"
+                >
+                  {isEditing ? 'Update Article' : 'Submit Article'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Article List */}
+        <motion.div
+          initial={{ opacity: 0, x: 60 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
+            <CardContent className="space-y-4 p-5">
+              <h2 className="font-japanese text-2xl font-semibold text-white">Existing Articles</h2>
+              {articles.length === 0 ? (
+                <p className="text-gray-400">No articles found.</p>
+              ) : (
+                <ul className="space-y-4">
+                  {articles.map((article) => (
+                    <li key={article.id} className="border-b border-gray-700 pb-2 text-white">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <strong>{article.title}</strong> — {article.category} —{' '}
+                          {article.is_published ? '✅ Published' : '❌ Draft'}
+                        </div>
+                        <div className="space-x-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleEdit(article)}
+                            className="neon-btn-sm animate-pulse-glow"
+                          >
+                            Edit
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(article.id)}
+                            className="neon-btn-sm-red animate-pulse-glow"
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </div>
-                      <div className="space-x-2">
-                        <Button size="sm" onClick={() => handleEdit(article)}>Edit</Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDelete(article.id)}>Delete</Button>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
-    </motion.div>
+      <Footer />
+    </>
   );
 }
