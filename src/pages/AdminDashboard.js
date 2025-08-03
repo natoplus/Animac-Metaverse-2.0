@@ -14,6 +14,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Textarea } from '../components/ui/textarea';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import { Toaster, toast } from 'react-hot-toast';
 import 'react-markdown-editor-lite/lib/index.css';
 import '../styles/admin.css';
 
@@ -27,9 +28,8 @@ const getInitialForm = () => ({
   tags: '',
   featured_image: '',
   is_featured: true,
-  is_published: true, // ✅ rename from is_published
+  is_published: true,
 });
-
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
@@ -52,6 +52,7 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       console.error("Failed to load articles", err);
+      toast.error("❌ Failed to load articles");
     }
   };
 
@@ -68,41 +69,38 @@ export default function AdminDashboard() {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  console.log('📦 Payload to API:', payload);
+    e.preventDefault();
 
-  
-  alert (articles.is_published ? '✅' : '❌')
+    const tagsArray = formData.tags
+      .split(',')
+      .map(tag => tag.trim())
+      .filter(Boolean)
+      .slice(0, 10); // Limit to 10 tags
 
-  const payload = {
-    ...formData,
-    tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-  };
+    const payload = {
+      ...formData,
+      tags: tagsArray,
+    };
 
-  try {
-    let article;
+    console.log('📦 Payload to API:', payload);
 
-    if (isEditing) {
-      article = await updateArticle(editingId, payload);
-    } else {
-      article = await createArticle(payload);
+    try {
+      let article;
+      if (isEditing) {
+        article = await updateArticle(editingId, payload);
+        toast.success('✅ Article updated!');
+      } else {
+        article = await createArticle(payload);
+        toast.success('✅ Article posted!');
+      }
+
+      resetForm();
+      await loadArticles();
+    } catch (err) {
+      console.error(err);
+      toast.error('❌ Operation failed. Check console.');
     }
-
-    // Make sure article is published if the checkbox is checked
-    const articleId = isEditing ? editingId : article?.id || article?.data?.id;
-
-    // No need to separately publish if already setting is_published in formData
-
-
-    alert(isEditing ? '✅ Article updated!' : '✅ Article posted!');
-    resetForm();
-    await loadArticles();
-  } catch (err) {
-    console.error(err);
-    alert('❌ Operation failed. Check console.');
-  }
-};
-
+  };
 
   const handleEdit = (article) => {
     setFormData({
@@ -120,10 +118,11 @@ export default function AdminDashboard() {
 
     try {
       await deleteArticle(id);
+      toast.success('🗑️ Article deleted');
       await loadArticles();
     } catch (err) {
       console.error(err);
-      alert('❌ Failed to delete article.');
+      toast.error('❌ Failed to delete article.');
     }
   };
 
@@ -135,6 +134,7 @@ export default function AdminDashboard() {
 
   return (
     <>
+      <Toaster position="top-center" />
       <Header />
       <motion.div
         initial={{ opacity: 0, y: 40 }}
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
         transition={{ duration: 0.6 }}
         className="admin-panel space-y-10 max-w-4xl mx-auto py-10"
       >
-        <h1 className="font-ackno text-4xl font-bold text-white text-center">ANIMAC Admin Panel</h1>
+        <h1 className="font-azonix text-4xl font-bold text-white text-center">ANIMAC Admin Panel</h1>
 
         {/* Form */}
         <motion.div initial={{ opacity: 0, x: -60 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.1 }}>
@@ -178,13 +178,12 @@ export default function AdminDashboard() {
                   <label>
                     <input
                       type="checkbox"
-                      name="published" // ✅
-                      checked={formData.published}
+                      name="is_published"
+                      checked={formData.is_published}
                       onChange={handleChange}
                     />
                     {' '}Published
                   </label>
-
                 </div>
 
                 <Button type="submit" className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg">
