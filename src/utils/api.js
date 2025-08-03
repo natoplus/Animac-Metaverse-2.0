@@ -81,9 +81,15 @@ export const fetchCategoryStats = () =>
   safeRequest('get', '/categories/stats', 'Fetching category stats');
 
 // ─── Featured / Home Content ───────────────────────────────────────────────────
-export const getFeaturedContent = () =>
-  safeRequest('get', '/articles/featured', 'Fetching featured content');
-
+export const fetchFeaturedContent = async () => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/articles/featured`);
+    return response.data;
+  } catch (error) {
+    console.error('❌ Failed to fetch featured content:', error);
+    return [];
+  }
+};
 // ─── Health ────────────────────────────────────────────────────────────────────
 export const healthCheck = () =>
   safeRequest('get', '/health', 'Health check');
