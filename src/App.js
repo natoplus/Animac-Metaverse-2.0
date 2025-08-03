@@ -1,11 +1,12 @@
 // App.js
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
 // Layout Components
 import Header from './components/Header';
 import Footer from './components/Footer';
+import LoadingScreen from './components/LoadingScreen';
 
 // Pages
 import Home from './pages/Home';
@@ -17,13 +18,19 @@ import WatchTowerPage from './pages/WatchTowerPage';
 import AdminDashboard from './pages/AdminDashboard';
 
 // Hooks
-import useSupabaseAuth from './hooks/useSupabaseAuth'; // Custom hook to handle auth
+import useSupabaseAuth from './hooks/useSupabaseAuth';
 
 // Styles
 import './App.css';
 
-const AnimatedRoutes = () => {
+const AnimatedRoutes = ({ setIsLoading }) => {
   const location = useLocation();
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timeout = setTimeout(() => setIsLoading(false), 500); // simulate page load delay
+    return () => clearTimeout(timeout);
+  }, [location.pathname]);
 
   return (
     <AnimatePresence mode="wait" initial={false}>
@@ -41,15 +48,20 @@ const AnimatedRoutes = () => {
 };
 
 const AppContent = () => {
-  useSupabaseAuth(); // Run auth effect once
-
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    useSupabaseAuth();
+    console.log('[Auth] Supabase auth initialized');
+  }, []);
 
   return (
-    <div className="min-h-screen bg-netflix-black text-white">
+    <div className="min-h-screen bg-netflix-black text-white relative">
       {!isAdminRoute && <Header />}
-      <AnimatedRoutes />
+      {isLoading && <LoadingScreen />}
+      <AnimatedRoutes setIsLoading={setIsLoading} />
       {!isAdminRoute && <Footer />}
     </div>
   );
