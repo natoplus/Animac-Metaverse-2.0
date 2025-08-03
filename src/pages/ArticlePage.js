@@ -177,6 +177,9 @@ const ArticlePage = () => {
         </div>
       </div>
 
+      {/* Divider */}
+      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
+
       {/* Content */}
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
@@ -219,6 +222,9 @@ const ArticlePage = () => {
             {article.content?.split('\n').map((p, i) => <p key={i}>{p.trim()}</p>)}
           </div>
 
+          {/* Divider */}
+      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
+         
           {/* Related Articles */}
           {related.length > 0 && (
             <div className="mt-16">
