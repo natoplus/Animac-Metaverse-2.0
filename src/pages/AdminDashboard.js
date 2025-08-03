@@ -86,14 +86,8 @@ export default function AdminDashboard() {
     // Make sure article is published if the checkbox is checked
     const articleId = isEditing ? editingId : article?.id || article?.data?.id;
 
-    if (formData.is_published && articleId) {
-      await fetch(`/api/articles/${articleId}/publish`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    }
+    // No need to separately publish if already setting is_published in formData
+
 
     alert(isEditing ? '✅ Article updated!' : '✅ Article posted!');
     resetForm();
