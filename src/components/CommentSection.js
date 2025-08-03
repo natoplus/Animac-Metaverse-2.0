@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Comment = ({
   comment,
+  replies,
   onReply,
   onVote,
   upvotedComments,
   downvotedComments,
-  repliesCount,
   toggleReplies,
-  isExpanded,
+  showReplies,
 }) => {
   const isUpvoted = upvotedComments.includes(comment.id);
   const isDownvoted = downvotedComments.includes(comment.id);
@@ -28,9 +28,12 @@ const Comment = ({
       <p className="mb-2">{comment.content || '[Deleted]'}</p>
       <div className="flex justify-between items-center text-xs text-gray-500">
         <span>
-          by {comment.author || 'Anonymous'} • {new Date(comment.created_at).toLocaleString()}
-          {repliesCount > 0 && (
-            <span className="ml-2 text-blue-400">• {repliesCount} repl{repliesCount === 1 ? 'y' : 'ies'}</span>
+          by {comment.author || 'Anonymous'} •{' '}
+          {new Date(comment.created_at).toLocaleString()}
+          {replies.length > 0 && (
+            <span className="ml-2 text-blue-400">
+              • {replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
+            </span>
           )}
         </span>
         <div className="flex gap-3 items-center">
@@ -67,100 +70,153 @@ const Comment = ({
             <MessageCircle size={14} />
             <span>Reply</span>
           </button>
-          {repliesCount > 0 && (
+          {replies.length > 0 && (
             <button
               onClick={() => toggleReplies(comment.id)}
               className="text-blue-400 hover:text-white ml-2"
               aria-label="Toggle replies"
             >
-              {isExpanded ? 'Hide Replies' : 'View Replies'}
+              {showReplies[comment.id] ? 'Hide Replies' : 'View Replies'}
             </button>
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {showReplies[comment.id] &&
+          replies.map((reply) => (
+            <motion.div
+              key={reply.id}
+              className="ml-4 mt-3 border-l-2 border-gray-700 pl-4"
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Comment
+                comment={reply}
+                replies={[]}
+                onReply={onReply}
+                onVote={onVote}
+                upvotedComments={upvotedComments}
+                downvotedComments={downvotedComments}
+                toggleReplies={toggleReplies}
+                showReplies={showReplies}
+              />
+            </motion.div>
+          ))}
+      </AnimatePresence>
     </motion.div>
   );
 };
 
-const CommentSection = ({
-  comments = [],
-  onReply,
-  onVote,
-  upvotedComments = [],
-  downvotedComments = [],
-  repliesMap = {},
-  loadMoreComments,
-  hasMore,
-}) => {
-  const [visibleComments, setVisibleComments] = useState(5);
-  const [expandedReplies, setExpandedReplies] = useState({});
+const CommentSection = ({ articleId }) => {
+  const [comments, setComments] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(5);
+  const [upvotedComments, setUpvotedComments] = useState([]);
+  const [downvotedComments, setDownvotedComments] = useState([]);
+  const [showReplies, setShowReplies] = useState({});
 
-  const handleToggleReplies = (commentId) => {
-    setExpandedReplies((prev) => ({
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const res = await fetch(`/api/articles/${articleId}/comments`);
+        const data = await res.json();
+        setComments(data.comments || []);
+      } catch (err) {
+        console.error('Error loading comments:', err);
+      }
+    };
+    fetchComments();
+  }, [articleId]);
+
+  const handleVote = async (commentId, type) => {
+    try {
+      await fetch(`/api/comments/${commentId}/like`, {
+        method: 'POST',
+        body: JSON.stringify({ type }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      setUpvotedComments((prev) =>
+        type === 'up'
+          ? prev.includes(commentId)
+            ? prev.filter((id) => id !== commentId)
+            : [...prev, commentId]
+          : prev
+      );
+      setDownvotedComments((prev) =>
+        type === 'down'
+          ? prev.includes(commentId)
+            ? prev.filter((id) => id !== commentId)
+            : [...prev, commentId]
+          : prev
+      );
+
+      // Refresh comment score
+      const res = await fetch(`/api/articles/${articleId}/comments`);
+      const data = await res.json();
+      setComments(data.comments || []);
+    } catch (err) {
+      console.error('Voting error:', err);
+    }
+  };
+
+  const handleReply = async (parentId) => {
+    const content = prompt('Enter your reply:');
+    if (!content) return;
+
+    try {
+      await fetch(`/api/comments/${parentId}/reply`, {
+        method: 'POST',
+        body: JSON.stringify({ content }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const res = await fetch(`/api/articles/${articleId}/comments`);
+      const data = await res.json();
+      setComments(data.comments || []);
+    } catch (err) {
+      console.error('Reply error:', err);
+    }
+  };
+
+  const toggleReplies = (commentId) => {
+    setShowReplies((prev) => ({
       ...prev,
       [commentId]: !prev[commentId],
     }));
   };
 
-  const handleLoadMore = () => {
-    setVisibleComments((prev) => prev + 5);
-    if (loadMoreComments) loadMoreComments();
-  };
+  const groupReplies = (parentId) =>
+    comments.filter((c) => c.parent_id === parentId);
 
-  const parentComments = comments.filter((c) => !c.parent_id);
+  const topLevelComments = comments.filter((c) => !c.parent_id);
 
   return (
-    <div className="mt-6 space-y-3">
+    <div className="mt-8">
+      <h3 className="text-xl font-semibold text-white mb-4">Comments</h3>
       <AnimatePresence>
-        {parentComments.slice(0, visibleComments).map((comment) => (
-          <div key={comment.id}>
-            <Comment
-              comment={comment}
-              onReply={onReply}
-              onVote={onVote}
-              upvotedComments={upvotedComments}
-              downvotedComments={downvotedComments}
-              repliesCount={(repliesMap[comment.id] || []).length}
-              toggleReplies={handleToggleReplies}
-              isExpanded={expandedReplies[comment.id]}
-            />
-            <AnimatePresence>
-              {expandedReplies[comment.id] &&
-                (repliesMap[comment.id] || []).map((reply) => (
-                  <motion.div
-                    key={reply.id}
-                    className="ml-6 border-l border-gray-700 pl-4"
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Comment
-                      comment={reply}
-                      onReply={onReply}
-                      onVote={onVote}
-                      upvotedComments={upvotedComments}
-                      downvotedComments={downvotedComments}
-                      repliesCount={(repliesMap[reply.id] || []).length}
-                      toggleReplies={handleToggleReplies}
-                      isExpanded={expandedReplies[reply.id]}
-                    />
-                  </motion.div>
-                ))}
-            </AnimatePresence>
-          </div>
+        {topLevelComments.slice(0, visibleCount).map((comment) => (
+          <Comment
+            key={comment.id}
+            comment={comment}
+            replies={groupReplies(comment.id)}
+            onReply={handleReply}
+            onVote={handleVote}
+            upvotedComments={upvotedComments}
+            downvotedComments={downvotedComments}
+            toggleReplies={toggleReplies}
+            showReplies={showReplies}
+          />
         ))}
       </AnimatePresence>
-
-      {hasMore && (
-        <div className="text-center mt-4">
-          <button
-            onClick={handleLoadMore}
-            className="text-blue-400 hover:text-white px-4 py-2 rounded border border-blue-500 hover:bg-blue-500 transition"
-          >
-            Load More Comments
-          </button>
-        </div>
+      {visibleCount < topLevelComments.length && (
+        <button
+          onClick={() => setVisibleCount((prev) => prev + 5)}
+          className="text-blue-500 mt-4 hover:underline"
+        >
+          Load more comments
+        </button>
       )}
     </div>
   );
