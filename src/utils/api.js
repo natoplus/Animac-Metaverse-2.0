@@ -1,9 +1,6 @@
-// src/utils/api.js
-
 import axios from 'axios';
 
-const API_BASE_URL =
-  process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com/api';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -15,29 +12,19 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(
-        `[✅ ${response.config.method?.toUpperCase()}] ${response.config.url}`,
-        response.data
-      );
+      console.log(`[✅ ${response.config.method?.toUpperCase()}] ${response.config.url}`, response.data);
     }
     return response;
   },
   (error) => {
-    console.error(
-      `[❌ ERROR] ${error?.config?.url || 'Unknown URL'}:`,
-      error?.response?.data || error.message
-    );
+    console.error(`[❌ ERROR] ${error?.config?.url || 'Unknown URL'}:`, error?.response?.data || error.message);
     return Promise.reject(error);
   }
 );
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 const handleApiError = (err, context = 'API') => {
-  const message =
-    err?.response?.data?.message ||
-    err?.response?.data?.detail ||
-    err.message ||
-    'Unknown error';
+  const message = err?.response?.data?.message || err.message || 'Unknown error';
   console.error(`❌ ${context} failed:`, message);
 };
 
@@ -53,69 +40,49 @@ const safeRequest = async (method, path, context, data = {}, params = {}) => {
 
 // ─── Article APIs ──────────────────────────────────────────────────────────────
 export const fetchArticles = (params = {}) =>
-  safeRequest('get', '/articles', 'Fetching articles', {}, params);
+  safeRequest('get', '/api/articles', 'Fetching articles', {}, params);
 
 export const getArticle = (id) =>
-  safeRequest('get', `/articles/by-id/${id}`, `Get article by ID: ${id}`);
+  id ? safeRequest('get', `/api/articles/by-id/${id}`, `Get article by ID: ${id}`) : null;
 
 export const getArticleBySlug = (slug) =>
-  safeRequest('get', `/articles/${slug}`, `Get article by slug: ${slug}`);
+  slug ? safeRequest('get', `/api/articles/${slug}`, `Get article by slug: ${slug}`) : null;
 
 export const createArticle = (data) =>
-  safeRequest('post', '/admin/articles', 'Creating article', data);
+  safeRequest('post', '/api/articles', 'Creating article', data);
 
 export const updateArticle = (id, data) =>
-  safeRequest('patch', `/admin/articles/${id}`, `Updating article ID: ${id}`, data);
+  id ? safeRequest('patch', `/api/articles/${id}`, `Updating article ID: ${id}`, data) : null;
 
 export const deleteArticle = (id) =>
-  safeRequest('delete', `/admin/articles/${id}`, `Deleting article ID: ${id}`);
+  id ? safeRequest('delete', `/api/articles/${id}`, `Deleting article ID: ${id}`) : null;
 
-export const publishArticle = (id) =>
-  safeRequest('patch', `/admin/articles/${id}/publish`, `Publishing article ID: ${id}`);
-
-export const unpublishArticle = (id) =>
-  safeRequest('patch', `/admin/articles/${id}/unpublish`, `Unpublishing article ID: ${id}`);
-
-// ─── Category APIs ─────────────────────────────────────────────────────────────
 export const fetchCategoryStats = () =>
-  safeRequest('get', '/categories/stats', 'Fetching category stats');
+  safeRequest('get', '/api/categories/stats', 'Fetching category stats');
 
-// ─── Featured / Home Content ───────────────────────────────────────────────────
-export const fetchFeaturedContent = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/articles/featured`);
-    return response.data;
-  } catch (error) {
-    console.error('❌ Failed to fetch featured content:', error);
-    return [];
-  }
-};
-// ─── Health ────────────────────────────────────────────────────────────────────
+export const fetchFeaturedContent = () =>
+  safeRequest('get', '/api/featured-content', 'Fetching featured content');
+
 export const healthCheck = () =>
-  safeRequest('get', '/health', 'Health check');
+  safeRequest('get', '/api/health', 'Health check');
 
 // ─── Article Actions ───────────────────────────────────────────────────────────
 export const toggleLikeArticle = (articleId, sessionId) =>
-  safeRequest('post', `/articles/${articleId}/like`, `Toggle like article ID: ${articleId}`, {
-    session_id: sessionId,
-  });
+  articleId && sessionId
+    ? safeRequest('post', `/api/articles/${articleId}/like`, `Toggle like article ID: ${articleId}`, { session_id: sessionId })
+    : null;
 
 export const toggleBookmarkArticle = (articleId, sessionId) =>
-  safeRequest(
-    'post',
-    `/articles/${articleId}/bookmark`,
-    `Toggle bookmark article ID: ${articleId}`,
-    { session_id: sessionId }
-  );
+  articleId && sessionId
+    ? safeRequest('post', `/api/articles/${articleId}/bookmark`, `Toggle bookmark article ID: ${articleId}`, { session_id: sessionId })
+    : null;
 
-// ─── Comments ──────────────────────────────────────────────────────────────────
+// ─── Comment APIs ──────────────────────────────────────────────────────────────
 export const fetchComments = (articleId) =>
-  safeRequest('get', '/comments', `Fetch comments for article ID: ${articleId}`, {}, {
-    article_id: articleId,
-  });
+  articleId ? safeRequest('get', '/api/comments', `Fetch comments for article ID: ${articleId}`, {}, { article_id: articleId }) : [];
 
 export const postComment = ({ article_id, name, message, parent_id = null }) =>
-  safeRequest('post', '/comments', 'Posting comment', {
+  safeRequest('post', '/api/comments', 'Posting comment', {
     article_id,
     name,
     message,
@@ -123,29 +90,29 @@ export const postComment = ({ article_id, name, message, parent_id = null }) =>
   });
 
 export const likeComment = (commentId, sessionId) =>
-  safeRequest('post', `/comments/${commentId}/like`, `Like comment ID: ${commentId}`, {
-    session_id: sessionId,
-  });
+  commentId && sessionId
+    ? safeRequest('post', `/api/comments/${commentId}/like`, `Like comment ID: ${commentId}`, { session_id: sessionId })
+    : null;
 
 export const unlikeComment = (commentId, sessionId) =>
-  safeRequest('post', `/comments/${commentId}/unlike`, `Unlike comment ID: ${commentId}`, {
-    session_id: sessionId,
-  });
+  commentId && sessionId
+    ? safeRequest('post', `/api/comments/${commentId}/unlike`, `Unlike comment ID: ${commentId}`, { session_id: sessionId })
+    : null;
 
 export const toggleLikeComment = (commentId, sessionId, isLiked) =>
   isLiked ? unlikeComment(commentId, sessionId) : likeComment(commentId, sessionId);
 
-// ─── Watch Tower ───────────────────────────────────────────────────────────────
+// ─── Watch Tower APIs ──────────────────────────────────────────────────────────
 export const fetchWatchTowerContent = () =>
-  safeRequest('get', '/watch-tower', 'Fetching Watch Tower content');
+  safeRequest('get', '/api/watch-tower', 'Fetching Watch Tower content');
 
 export const createWatchTowerEntry = (data) =>
-  safeRequest('post', '/watch-tower', 'Creating Watch Tower entry', data);
+  safeRequest('post', '/api/watch-tower', 'Creating Watch Tower entry', data);
 
 export const deleteWatchTowerEntry = (id) =>
-  safeRequest('delete', `/watch-tower/${id}`, `Deleting Watch Tower entry ID: ${id}`);
+  id ? safeRequest('delete', `/api/watch-tower/${id}`, `Deleting Watch Tower entry ID: ${id}`) : null;
 
-// ─── Optional: Export All ──────────────────────────────────────────────────────
+// ─── Grouped Named Export (Optional) ───────────────────────────────────────────
 export const apiEndpoints = {
   fetchArticles,
   getArticle,
@@ -153,18 +120,18 @@ export const apiEndpoints = {
   createArticle,
   updateArticle,
   deleteArticle,
-  publishArticle,
-  unpublishArticle,
   fetchCategoryStats,
-  getFeaturedContent,
+  getFeaturedContent: fetchFeaturedContent,
   toggleLikeArticle,
   toggleBookmarkArticle,
   healthCheck,
+
   fetchComments,
   postComment,
   likeComment,
   unlikeComment,
   toggleLikeComment,
+
   fetchWatchTowerContent,
   createWatchTowerEntry,
   deleteWatchTowerEntry,
