@@ -48,7 +48,8 @@ const ArticlePage = () => {
   const fetchArticle = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/api/articles/by-id/${id}`);
+      // ✅ FIXED the route
+      const res = await axios.get(`${API_URL}/api/articles/${id}`);
       const data = res.data;
       setArticle(data);
       setLikeCount(data.likes ?? 0);
@@ -177,10 +178,10 @@ const ArticlePage = () => {
         </div>
       </div>
 
-      {/* Neon Divider */}
+      {/* Divider */}
       <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
 
-      {/* Body */}
+      {/* Content */}
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
           <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
@@ -216,12 +217,12 @@ const ArticlePage = () => {
             </div>
           </div>
 
-          {/* Article Body */}
+          {/* Body */}
           <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
             {article.content?.split('\n').map((p, i) => <p key={i}>{p.trim()}</p>)}
           </div>
 
-          {/* Related Articles */}
+          {/* Related */}
           {related.length > 0 && (
             <div className="mt-16">
               <h3 className="text-white text-2xl mb-4">Related Articles</h3>
