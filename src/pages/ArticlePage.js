@@ -177,8 +177,14 @@ const ArticlePage = () => {
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
+      
+      <div className="relative w-full flex items-center justify-between my-8">
+          {/* START Label */}
+        <span className="text-pink-400 font-bold text-sm md:text-base animate-pulse drop-shadow-md">
+          START
+        </span>
+      </div>
+
 
       {/* Content */}
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
@@ -222,9 +228,13 @@ const ArticlePage = () => {
             {article.content?.split('\n').map((p, i) => <p key={i}>{p.trim()}</p>)}
           </div>
 
-          {/* Divider */}
-      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
-         
+          
+          <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
+              <span className="top-6xl absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
+                END
+              </span>
+          </div>
+
           {/* Related Articles */}
           {related.length > 0 && (
             <div className="mt-16">
