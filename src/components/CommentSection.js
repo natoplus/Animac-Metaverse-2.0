@@ -1,6 +1,5 @@
-import React from 'react';
-import { motion } from 'framer-motion';
 import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Comment = ({
   comment,
@@ -79,16 +78,29 @@ const Comment = ({
   );
 };
 
-const CommentSection = ({ comments, ...handlers }) => {
+const CommentSection = ({
+  comments,
+  onReply,
+  onVote,
+  upvotedComments,
+  downvotedComments,
+  repliesCountMap,
+  toggleStates,
+  onToggle,
+}) => {
   return (
-    <div className="space-y-4">
-      {comments.map((comment) => (
+    <div>
+      {comments.map(comment => (
         <Comment
           key={comment.id}
           comment={comment}
-          {...handlers}
-          repliesCount={comment.repliesCount || 0}
-          toggleState={comment.toggleState || 'collapsed'}
+          onReply={onReply}
+          onVote={onVote}
+          upvotedComments={upvotedComments}
+          downvotedComments={downvotedComments}
+          repliesCount={repliesCountMap[comment.id] || 0}
+          toggleState={toggleStates[comment.id] || 'collapsed'}
+          onToggle={onToggle}
         />
       ))}
     </div>
