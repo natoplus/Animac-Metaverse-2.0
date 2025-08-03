@@ -22,9 +22,14 @@ const getSessionId = () => {
 
 const getTheme = (category) => {
   const cat = category?.toLowerCase();
-  if (cat === 'east') return { gradient: 'from-east-900/50 via-netflix-dark to-netflix-black', badge: 'neon-glow border-east-400 text-east-300 bg-east-800/20' };
-  if (cat === 'west') return { gradient: 'from-west-900/50 via-netflix-dark to-netflix-black', badge: 'neon-glow border-west-400 text-west-300 bg-west-800/20' };
-  return { gradient: 'from-gray-900 via-netflix-dark to-netflix-black', badge: 'neon-glow border-gray-500 text-gray-300 bg-gray-800/20' };
+  const map = {
+    east: ['from-east-900/50 via-netflix-dark to-netflix-black', 'neon-glow border-east-400 text-east-300 bg-east-800/20'],
+    west: ['from-west-900/50 via-netflix-dark to-netflix-black', 'neon-glow border-west-400 text-west-300 bg-west-800/20'],
+  };
+  return {
+    gradient: map[cat]?.[0] || 'from-gray-900 via-netflix-dark to-netflix-black',
+    badge: map[cat]?.[1] || 'neon-glow border-gray-500 text-gray-300 bg-gray-800/20',
+  };
 };
 
 const ArticlePage = () => {
@@ -33,23 +38,19 @@ const ArticlePage = () => {
   const [related, setRelated] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
-
   const [likeCount, setLikeCount] = useState(0);
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [shareCount, setShareCount] = useState(0);
-
   const [likeProcessing, setLikeProcessing] = useState(false);
   const [bookmarkProcessing, setBookmarkProcessing] = useState(false);
 
   const fetchArticle = useCallback(async () => {
     setLoading(true);
     try {
-      // ✅ FIXED the route
-      const res = await axios.get(`${API_URL}/api/articles/${id}`);
+      const res = await axios.get(`${API_URL}/api/articles/by-id/${id}`);
       const data = res.data;
       setArticle(data);
       setLikeCount(data.likes ?? 0);
@@ -59,7 +60,7 @@ const ArticlePage = () => {
       setBookmarked(!!data.bookmarkedByCurrentUser);
 
       const rel = await axios.get(`${API_URL}/api/articles`, {
-        params: { category: data.category, limit: 3, is_published: true }
+        params: { category: data.category, limit: 3, is_published: true },
       });
 
       setRelated(rel.data.filter(a => a.id !== id));
@@ -130,7 +131,7 @@ const ArticlePage = () => {
   const theme = useMemo(() => getTheme(article?.category), [article]);
   const readTime = useMemo(() => {
     if (!article?.content) return 1;
-    return Math.ceil(article.content.split(' ').length / 200);
+    return Math.ceil(article.content.split(/\s+/).length / 200);
   }, [article]);
 
   if (loading) {
@@ -156,17 +157,15 @@ const ArticlePage = () => {
       transition={{ duration: 0.6 }}
       className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}
     >
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="relative h-[420px] sm:h-[500px] overflow-hidden">
-        {article.featured_image && (
-          <motion.div
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6 }}
-            className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${article.featured_image})` }}
-          />
-        )}
+        <motion.div
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6 }}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${article.featured_image || '/default-cover.jpg'})` }}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-10" />
         <div className="absolute inset-0 z-20 flex items-end justify-center text-center px-6 pb-10">
           <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
@@ -178,12 +177,10 @@ const ArticlePage = () => {
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="w-full h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg" />
-
       {/* Content */}
       <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
         <div className="container mx-auto px-4 py-14 max-w-4xl">
+          {/* Meta + Actions */}
           <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <Link
@@ -222,7 +219,7 @@ const ArticlePage = () => {
             {article.content?.split('\n').map((p, i) => <p key={i}>{p.trim()}</p>)}
           </div>
 
-          {/* Related */}
+          {/* Related Articles */}
           {related.length > 0 && (
             <div className="mt-16">
               <h3 className="text-white text-2xl mb-4">Related Articles</h3>
