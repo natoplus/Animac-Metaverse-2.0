@@ -52,8 +52,10 @@ const AppContent = () => {
   const isAdminRoute = location.pathname.startsWith('/admin');
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ Must be called at the top level of the component
+  useSupabaseAuth();
+
   useEffect(() => {
-    useSupabaseAuth();
     console.log('[Auth] Supabase auth initialized');
   }, []);
 
