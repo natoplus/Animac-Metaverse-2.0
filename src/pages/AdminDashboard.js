@@ -27,8 +27,9 @@ const getInitialForm = () => ({
   tags: '',
   featured_image: '',
   is_featured: true,
-  is_published: true,
+  is_published: true, // ✅ rename from is_published
 });
+
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
@@ -68,6 +69,10 @@ export default function AdminDashboard() {
 
   const handleSubmit = async (e) => {
   e.preventDefault();
+  console.log('📦 Payload to API:', payload);
+
+  
+  alert (articles.is_published ? '✅' : '❌')
 
   const payload = {
     ...formData,
@@ -171,9 +176,15 @@ export default function AdminDashboard() {
                     {' '}Featured
                   </label>
                   <label>
-                    <input type="checkbox" name="is_published" checked={formData.is_published} onChange={handleChange} />
+                    <input
+                      type="checkbox"
+                      name="published" // ✅
+                      checked={formData.published}
+                      onChange={handleChange}
+                    />
                     {' '}Published
                   </label>
+
                 </div>
 
                 <Button type="submit" className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg">
