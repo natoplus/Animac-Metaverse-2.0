@@ -159,7 +159,7 @@ export default function AdminDashboard() {
 
                 <Button
                   type="submit"
-                  className="w-full neon-btn font-azonix font-bold tracking-wider text-lg"
+                  className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
                 >
                   {isEditing ? 'Update Article' : 'Submit Article'}
                 </Button>
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
                       <div className="flex justify-between items-center">
                         <div>
                           <strong>{article.title}</strong> — {article.category} —{' '}
-                          {article.is_published ? '✅ Published' : '❌ Draft'}
+                          {article.is_published ? '✅' : '❌'}
                         </div>
                         <div className="space-x-3">
                           <Button
