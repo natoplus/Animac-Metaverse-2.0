@@ -192,9 +192,9 @@ export default function AdminDashboard() {
                           <Button
                             size="sm"
                             onClick={() => handleEdit(article)}
-                            className="neon-btn-sm animate-pulse-glow"
+                            className=".neon-btn-sm-purple animate-pulse-glow"
                           >
-                            Edit
+                            ✒️
                           </Button>
                           <Button
                             variant="destructive"
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
                             onClick={() => handleDelete(article.id)}
                             className="neon-btn-sm-red animate-pulse-glow"
                           >
-                            Delete
+                            🗑️
                           </Button>
                         </div>
                       </div>

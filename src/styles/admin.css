@@ -97,13 +97,19 @@
   font-weight: 600;
 }
 
+.neon-btn-sm-purple {
+  border-color: rgb(174, 0, 255);
+  border-color: #e0e0e0;
+  color: rgba(255, 0, 0, 0);
+}
+
 .neon-btn-sm-red {
-  border-color: #f00;
+  border-color: rgb(255, 255, 255);
   color: #f00;
 }
 
 .animate-pulse-glow {
-  animation: pulseGlow 2s infinite;
+  animation: pulseGlow 4s infinite;
 }
 
 @keyframes pulseGlow {
