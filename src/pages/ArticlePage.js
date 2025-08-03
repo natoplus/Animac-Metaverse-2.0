@@ -6,7 +6,7 @@ import {
   ArrowLeft, User, Clock, Calendar, Share2, Bookmark, Heart, Loader,
 } from 'lucide-react';
 
-import CommentSection from '../components/CommentSection';
+import { CommentSection } from '../components/CommentSection';
 import { toggleLikeArticle, toggleBookmarkArticle } from '../services/articleService';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
