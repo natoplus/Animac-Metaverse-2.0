@@ -231,7 +231,6 @@ export async function toggleBookmarkComment(
 // ---------- Exports ----------
 export const apiEndpoints = {
   getArticles: fetchArticles,
-  getArticle: fetchArticleById,
   getArticleById: fetchArticleById,
   getFeaturedContent: fetchFeaturedContent,
   createArticle,
@@ -251,6 +250,13 @@ export const apiEndpoints = {
   bookmarkComment,
   unbookmarkComment,
   toggleBookmarkComment,
+};
+
+// ✅ Add missing named exports
+export {
+  fetchArticles as getArticles,
+  fetchArticleById as getArticle,
+  fetchFeaturedContent as getFeaturedContent,
 };
 
 export const api = {
