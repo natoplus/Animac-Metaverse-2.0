@@ -1,57 +1,63 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 from typing import List, Optional
 from uuid import UUID
-from supabase import create_client
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-SUPABASE_URL = os.getenv("SUPABASE_URL")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 router = APIRouter()
 
+# Pydantic model
 class Article(BaseModel):
-    id: Optional[UUID]
+    id: Optional[UUID] = None
     title: str
     content: str
     excerpt: Optional[str] = None
     image: Optional[str] = None
     category: Optional[str] = None
-    tags: Optional[List[str]] = []
+    tags: Optional[List[str]] = None
     is_featured: Optional[bool] = False
     author: Optional[str] = None
 
-@router.get("/api/articles")
-def get_articles():
-    response = supabase.table("articles").select("*").execute()
-    return response.data
+# Get all articles
+@router.get("/articles", response_model=List[dict])
+def get_articles(request: Request):
+    supabase = request.app.state.supabase
+    response = supabase.table("articles").select("*").order("created_at", desc=True).execute()
+    if response.error:
+        raise HTTPException(status_code=500, detail="Failed to fetch articles")
+    return response.data or []
 
-@router.get("/api/articles/{article_id}")
-def get_article(article_id: str):
+# Get a single article by ID
+@router.get("/articles/{article_id}", response_model=dict)
+def get_article(article_id: str, request: Request):
+    supabase = request.app.state.supabase
     response = supabase.table("articles").select("*").eq("id", article_id).single().execute()
-    if not response.data:
+    if response.error or not response.data:
         raise HTTPException(status_code=404, detail="Article not found")
     return response.data
 
-@router.post("/api/articles")
-def create_article(article: Article):
-    response = supabase.table("articles").insert(article.dict()).execute()
-    return {"message": "✅ Article created", "data": response.data}
+# Create an article
+@router.post("/articles", status_code=status.HTTP_201_CREATED)
+def create_article(article: Article, request: Request):
+    supabase = request.app.state.supabase
+    response = supabase.table("articles").insert(article.dict(exclude_unset=True)).execute()
+    if response.error or not response.data:
+        raise HTTPException(status_code=400, detail="Failed to create article")
+    return {"message": "✅ Article created", "data": response.data[0]}
 
-@router.put("/api/articles/{article_id}")
-def update_article(article_id: str, article: Article):
+# Update an article
+@router.put("/articles/{article_id}")
+def update_article(article_id: str, article: Article, request: Request):
+    supabase = request.app.state.supabase
     response = supabase.table("articles").update(article.dict(exclude_unset=True)).eq("id", article_id).execute()
-    if response.status_code != 200:
+    if response.error:
         raise HTTPException(status_code=400, detail="Failed to update article")
-    return {"message": "✅ Article updated", "data": response.data}
+    return {"message": "✅ Article updated", "data": response.data[0] if response.data else {}}
 
-@router.delete("/api/articles/{article_id}")
-def delete_article(article_id: str):
+# Delete an article
+@router.delete("/articles/{article_id}")
+def delete_article(article_id: str, request: Request):
+    supabase = request.app.state.supabase
     response = supabase.table("articles").delete().eq("id", article_id).execute()
-    if response.status_code != 200:
+    if response.error:
         raise HTTPException(status_code=400, detail="Failed to delete article")
-    return {"message": "🗑️ Article deleted"}
+    return {"message": "🗑️ Article deleted", "data": response.data[0] if response.data else {}}
