@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, Link } from 'react-router-dom';
+import LoadingScreen from '../components/LoadingScreen'; // ✅ adjust path if needed
 import axios from 'axios';
 import {
   ArrowLeft, User, Clock, Calendar, Share2, Bookmark, Heart, Loader,
@@ -135,11 +136,7 @@ const ArticlePage = () => {
   }, [article]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen pt-20 bg-netflix-black flex justify-center items-center">
-        <Loader className="animate-spin text-gray-400" size={24} /> Loading...
-      </div>
-    );
+      return <LoadingScreen />;
   }
 
   if (error || !article) {
