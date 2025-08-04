@@ -211,7 +211,7 @@ const CommentSection = ({ articleId }) => {
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 p-4 rounded-xl border border-purple-600 backdrop-blur bg-black/60 neon-glow"
+        className="mb-6 p-4 rounded-xl border-white border-purple-600 backdrop-blur bg-black/60 neon-glow"
       >
         {replyTo && (
           <div className="mb-2 flex items-center justify-between text-sm text-purple-400">
@@ -241,7 +241,7 @@ const CommentSection = ({ articleId }) => {
         />
         <button
           type="submit"
-          className="mt-3 px-4 py-2 rounded-full border border-purple-500 text-white hover:bg-purple-700/20 backdrop-blur neon-glow"
+          className="mt-3 px-4 py-2 rounded-full border-white border-purple-500 text-white hover:bg-purple-700/20 backdrop-blur neon-glow"
         >
           {replyTo ? 'Post Reply' : 'Post Comment'}
         </button>
