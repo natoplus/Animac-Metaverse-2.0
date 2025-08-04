@@ -122,7 +122,7 @@ const CommentSection = ({ articleId }) => {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/comments/${articleId}`);
+        const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
         const data = await res.json();
         setComments(data.comments || []);
       } catch (err) {
