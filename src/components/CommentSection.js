@@ -122,7 +122,8 @@ const CommentSection = ({ articleId }) => {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await fetch(`/api/articles/${articleId}/comments`);
+        const baseURL = 'https://animac-metaverse.onrender.com'; // Use .env if needed
+        const res = await fetch(`${baseURL}/api/comments/${articleId}`);
         const data = await res.json();
         setComments(data.comments || []);
       } catch (err) {
