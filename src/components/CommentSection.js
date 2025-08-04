@@ -125,7 +125,7 @@ const CommentSection = ({ articleId }) => {
   const handleVote = async (commentId, type) => {
     try {
       await fetch(`${API_URL}/api/comments/${commentId}/like`, {
-        method: 'GET',
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
 
