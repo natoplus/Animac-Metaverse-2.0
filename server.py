@@ -33,7 +33,7 @@ app.add_middleware(
         "http://localhost:3000",
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
@@ -279,6 +279,9 @@ async def get_comments_for_article(article_id: str):
         logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch comments")
 
+@app.get("/api/comments", response_model=List[CommentResponse])
+async def get_comments_by_query(article_id: str):
+    return await get_comments_for_article(article_id)
 
 @app.post("/api/comments/{comment_id}/like")
 async def like_comment(comment_id: str):
