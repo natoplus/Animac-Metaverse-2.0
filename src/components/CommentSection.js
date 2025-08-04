@@ -13,10 +13,14 @@ const Comment = ({
   downvotedComments,
   toggleReplies,
   showReplies,
+  replyCounts,
+  downvoteCounts,
 }) => {
   const isUpvoted = upvotedComments.includes(comment.id);
   const isDownvoted = downvotedComments.includes(comment.id);
-  const voteScore = comment.score ?? ((comment.likes || 0) - (comment.dislikes || 0));
+  const voteScore = (comment.likes || 0) - (comment.dislikes || 0);
+  const replyCount = replyCounts[comment.id] || 0;
+  const downvoteCount = downvoteCounts[comment.id] || 0;
 
   return (
     <motion.div
@@ -31,12 +35,7 @@ const Comment = ({
       <div className="flex justify-between items-center text-xs text-gray-500">
         <span>
           by <span className="text-blue-400">{comment.author || 'Anonymous'}</span> •{' '}
-          {new Date(comment.created_at).toLocaleString()}
-          {replies.length > 0 && (
-            <span className="ml-2 text-blue-400">
-              • {replies.length} repl{replies.length === 1 ? 'y' : 'ies'}
-            </span>
-          )}
+          {new Date(comment.created_at).toLocaleString()} • {replyCount} repl{replyCount === 1 ? 'y' : 'ies'}
         </span>
         <div className="flex gap-3 items-center">
           <button
@@ -52,6 +51,7 @@ const Comment = ({
           >
             <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
           </button>
+          <span className="text-red-400 font-semibold">{downvoteCount}</span>
           <button
             onClick={() => onReplyClick(comment)}
             className="hover:text-white flex items-center gap-1 text-gray-400"
@@ -59,7 +59,7 @@ const Comment = ({
             <MessageCircle size={14} />
             <span>Reply</span>
           </button>
-          {replies.length > 0 && (
+          {replyCount > 0 && (
             <button
               onClick={() => toggleReplies(comment.id)}
               className="text-blue-400 hover:text-white ml-2"
@@ -90,6 +90,8 @@ const Comment = ({
                 downvotedComments={downvotedComments}
                 toggleReplies={toggleReplies}
                 showReplies={showReplies}
+                replyCounts={replyCounts}
+                downvoteCounts={downvoteCounts}
               />
             </motion.div>
           ))}
@@ -108,12 +110,31 @@ const CommentSection = ({ articleId }) => {
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
 
+  const [replyCounts, setReplyCounts] = useState({});
+  const [downvoteCounts, setDownvoteCounts] = useState({});
+
   useEffect(() => {
     const fetchComments = async () => {
       try {
         const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
         const data = await res.json();
         setComments(data || []);
+
+        // Count replies and downvotes
+        const repliesMap = {};
+        const downvotesMap = {};
+
+        data.forEach((comment) => {
+          if (comment.parent_id) {
+            repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
+          }
+          if (comment.dislikes) {
+            downvotesMap[comment.id] = comment.dislikes;
+          }
+        });
+
+        setReplyCounts(repliesMap);
+        setDownvoteCounts(downvotesMap);
       } catch (err) {
         console.error('Error loading comments:', err);
       }
@@ -131,14 +152,19 @@ const CommentSection = ({ articleId }) => {
 
       if (type === 'up') {
         setUpvotedComments((prev) =>
-          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+          prev.includes(commentId)
+            ? prev.filter((id) => id !== commentId)
+            : [...prev, commentId]
         );
       } else {
         setDownvotedComments((prev) =>
-          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+          prev.includes(commentId)
+            ? prev.filter((id) => id !== commentId)
+            : [...prev, commentId]
         );
       }
 
+      // Refetch comments to get updated score
       const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
       const data = await res.json();
       setComments(data || []);
@@ -190,15 +216,23 @@ const CommentSection = ({ articleId }) => {
     <div className="mt-8">
       <h3 className="text-xl font-semibold text-white mb-4">Comments</h3>
 
-      {/* Comment/Reply Form */}
-      <form onSubmit={handleSubmit} className="mb-6 bg-gray-800 p-4 rounded-lg shadow-inner">
+      {/* Neon glowing form */}
+      <form
+        onSubmit={handleSubmit}
+        className={`mb-6 p-4 rounded-lg bg-white relative shadow-2xl
+        ${replyTo ? 'border-red-500' : 'border-blue-500'}
+        border-2 animate-pulse`}
+        style={{
+          boxShadow: `0 0 15px ${replyTo ? '#ff1a1a' : '#00bfff'}, 0 0 30px ${replyTo ? '#ff1a1a' : '#00bfff'}`,
+        }}
+      >
         {replyTo && (
-          <div className="mb-2 flex items-center justify-between text-sm text-blue-400">
+          <div className="mb-2 flex items-center justify-between text-sm text-blue-600">
             Replying to: {replyTo.author || 'Anonymous'}
             <button
               onClick={() => setReplyTo(null)}
               type="button"
-              className="text-red-400 hover:text-red-600"
+              className="text-red-600 hover:text-red-800"
             >
               <X size={16} />
             </button>
@@ -206,13 +240,13 @@ const CommentSection = ({ articleId }) => {
         )}
         <input
           type="text"
-          className="w-full mb-2 p-2 rounded-md bg-gray-700 text-white placeholder-gray-400"
+          className="w-full mb-2 p-2 rounded-md border bg-white text-black border-gray-300"
           placeholder="Your alias (optional)"
           value={alias}
           onChange={(e) => setAlias(e.target.value)}
         />
         <textarea
-          className="w-full p-3 rounded-md bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full p-3 rounded-md border bg-white text-black border-gray-300 focus:outline-none"
           rows="4"
           placeholder={replyTo ? 'Write your reply...' : 'Add a comment...'}
           value={newComment}
@@ -220,7 +254,7 @@ const CommentSection = ({ articleId }) => {
         />
         <button
           type="submit"
-          className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+          className={`mt-2 px-4 py-2 ${replyTo ? 'bg-red-600' : 'bg-blue-600'} hover:opacity-90 text-white rounded-md`}
         >
           {replyTo ? 'Post Reply' : 'Post Comment'}
         </button>
@@ -238,6 +272,8 @@ const CommentSection = ({ articleId }) => {
             downvotedComments={downvotedComments}
             toggleReplies={toggleReplies}
             showReplies={showReplies}
+            replyCounts={replyCounts}
+            downvoteCounts={downvoteCounts}
           />
         ))}
       </AnimatePresence>
