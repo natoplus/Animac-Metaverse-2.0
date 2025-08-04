@@ -246,7 +246,7 @@ async def create_comment(comment: CommentBase):
         logging.error("❌ Error creating comment", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
 
-@app.get("/api/comments", response_model=List[CommentResponse])
+@app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
 async def get_comments_for_article(article_id: str):
     try:
         res = (
