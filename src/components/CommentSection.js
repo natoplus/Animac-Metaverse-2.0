@@ -118,30 +118,26 @@ const CommentSection = ({ articleId }) => {
   const [upvotedComments, setUpvotedComments] = useState([]);
   const [downvotedComments, setDownvotedComments] = useState([]);
   const [showReplies, setShowReplies] = useState({});
+  const [newComment, setNewComment] = useState('');
 
- useEffect(() => {
-  const fetchComments = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
-      const data = await res.json();
-      console.log('Fetched comments:', data);
-      setComments(data || []);
-    } catch (err) {
-      console.error('Error loading comments:', err);
-    }
-  };
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
+        const data = await res.json();
+        setComments(data || []);
+      } catch (err) {
+        console.error('Error loading comments:', err);
+      }
+    };
 
-  if (articleId) {
-    fetchComments();
-  }
- }, [articleId]);
-
+    if (articleId) fetchComments();
+  }, [articleId]);
 
   const handleVote = async (commentId, type) => {
     try {
       await fetch(`${API_URL}/api/comments/${commentId}/like`, {
         method: 'GET',
-        body: JSON.stringify({ type }),
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -160,9 +156,9 @@ const CommentSection = ({ articleId }) => {
           : prev
       );
 
-      const res = await fetch(`${API_URL}/api/comments/${articleId}`);
+      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
       const data = await res.json();
-      setComments(data.comments || []);
+      setComments(data || []);
     } catch (err) {
       console.error('Voting error:', err);
     }
@@ -173,17 +169,36 @@ const CommentSection = ({ articleId }) => {
     if (!content) return;
 
     try {
-      await fetch(`${API_URL}/api/comments/${parentId}/reply`, {
-        method: 'GET',
-        body: JSON.stringify({ content }),
+      await fetch(`${API_URL}/api/comments`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content, article_id: articleId, parent_id: parentId }),
       });
 
-      const res = await fetch(`${API_URL}/api/comments/${articleId}`);
+      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
       const data = await res.json();
-      setComments(data.comments || []);
+      setComments(data || []);
     } catch (err) {
       console.error('Reply error:', err);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    try {
+      await fetch(`${API_URL}/api/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newComment, article_id: articleId }),
+      });
+      setNewComment('');
+      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
+      const data = await res.json();
+      setComments(data || []);
+    } catch (err) {
+      console.error('Submit error:', err);
     }
   };
 
@@ -195,12 +210,29 @@ const CommentSection = ({ articleId }) => {
   };
 
   const groupReplies = (parentId) => comments.filter((c) => c.parent_id === parentId);
-
   const topLevelComments = comments.filter((c) => !c.parent_id);
 
   return (
     <div className="mt-8">
       <h3 className="text-xl font-semibold text-white mb-4">Comments</h3>
+
+      {/* New comment form */}
+      <form onSubmit={handleSubmit} className="mb-6">
+        <textarea
+          className="w-full p-3 rounded-md bg-gray-800 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          rows="4"
+          placeholder="Add a comment..."
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+        />
+        <button
+          type="submit"
+          className="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+        >
+          Post Comment
+        </button>
+      </form>
+
       <AnimatePresence>
         {topLevelComments.slice(0, visibleCount).map((comment) => (
           <Comment
@@ -216,6 +248,7 @@ const CommentSection = ({ articleId }) => {
           />
         ))}
       </AnimatePresence>
+
       {visibleCount < topLevelComments.length && (
         <button
           onClick={() => setVisibleCount((prev) => prev + 5)}
