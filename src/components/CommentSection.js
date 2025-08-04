@@ -43,11 +43,7 @@ const Comment = ({
               className={`hover:text-green-500 ${isUpvoted ? 'text-green-400' : 'text-gray-400'}`}
               aria-label="Upvote"
             >
-              <ThumbsUp
-                size={16}
-                fill={isUpvoted ? 'currentColor' : 'none'}
-                stroke="currentColor"
-              />
+              <ThumbsUp size={16} fill={isUpvoted ? 'currentColor' : 'none'} stroke="currentColor" />
             </button>
             <span className="text-gray-400 font-semibold">{voteScore}</span>
             <button
@@ -55,11 +51,7 @@ const Comment = ({
               className={`hover:text-red-500 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
               aria-label="Downvote"
             >
-              <ThumbsDown
-                size={16}
-                fill={isDownvoted ? 'currentColor' : 'none'}
-                stroke="currentColor"
-              />
+              <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} stroke="currentColor" />
             </button>
           </div>
           <button
@@ -121,14 +113,16 @@ const CommentSection = ({ articleId }) => {
     const fetchComments = async () => {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/comments/${articleId}`);
-        const data = await res.json(); // 🔥 This line will throw if response isn't JSON
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await res.text();
+          throw new Error(`Invalid JSON response: ${text}`);
+        }
+        const data = await res.json();
         setComments(data);
-    } catch (err) {
-        console.error("❌ Error loading comments:", err);
-        const text = await res.text();
-        console.error("Server responded with:", text);
-    }
-
+      } catch (err) {
+        console.error("❌ Error loading comments:", err.message);
+      }
     };
     fetchComments();
   }, [articleId]);
@@ -156,7 +150,6 @@ const CommentSection = ({ articleId }) => {
           : prev
       );
 
-      // Refresh comment score
       const res = await fetch(`/api/articles/${articleId}/comments`);
       const data = await res.json();
       setComments(data.comments || []);
