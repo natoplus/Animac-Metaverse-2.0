@@ -228,7 +228,7 @@ const ArticlePage = () => {
           </div>
 
           
-          <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
+          <div className="relative flex-1 mt-8 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
               <span className="mt-5 top-6xl font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
                 END
               </span>
