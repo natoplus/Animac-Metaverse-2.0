@@ -121,11 +121,14 @@ const CommentSection = ({ articleId }) => {
     const fetchComments = async () => {
       try {
         const res = await fetch(`${process.env.REACT_APP_API_URL}/api/comments/${articleId}`);
-        const data = await res.json();
-        setComments(data.comments || []);
-      } catch (err) {
-        console.error('Error loading comments:', err);
-      }
+        const data = await res.json(); // 🔥 This line will throw if response isn't JSON
+        setComments(data);
+    } catch (err) {
+        console.error("❌ Error loading comments:", err);
+        const text = await res.text();
+        console.error("Server responded with:", text);
+    }
+
     };
     fetchComments();
   }, [articleId]);
