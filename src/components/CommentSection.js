@@ -119,18 +119,23 @@ const CommentSection = ({ articleId }) => {
   const [downvotedComments, setDownvotedComments] = useState([]);
   const [showReplies, setShowReplies] = useState({});
 
-  useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
-        const data = await res.json();
-        setComments(data.comments || []);
-      } catch (err) {
-        console.error('Error loading comments:', err);
-      }
-    };
+ useEffect(() => {
+  const fetchComments = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
+      const data = await res.json();
+      console.log('Fetched comments:', data);
+      setComments(data || []);
+    } catch (err) {
+      console.error('Error loading comments:', err);
+    }
+  };
+
+  if (articleId) {
     fetchComments();
-  }, [articleId]);
+  }
+ }, [articleId]);
+
 
   const handleVote = async (commentId, type) => {
     try {
