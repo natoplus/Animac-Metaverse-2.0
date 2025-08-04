@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
+
 const Comment = ({
   comment,
   replies,
@@ -43,7 +45,11 @@ const Comment = ({
               className={`hover:text-green-500 ${isUpvoted ? 'text-green-400' : 'text-gray-400'}`}
               aria-label="Upvote"
             >
-              <ThumbsUp size={16} fill={isUpvoted ? 'currentColor' : 'none'} stroke="currentColor" />
+              <ThumbsUp
+                size={16}
+                fill={isUpvoted ? 'currentColor' : 'none'}
+                stroke="currentColor"
+              />
             </button>
             <span className="text-gray-400 font-semibold">{voteScore}</span>
             <button
@@ -51,7 +57,11 @@ const Comment = ({
               className={`hover:text-red-500 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
               aria-label="Downvote"
             >
-              <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} stroke="currentColor" />
+              <ThumbsDown
+                size={16}
+                fill={isDownvoted ? 'currentColor' : 'none'}
+                stroke="currentColor"
+              />
             </button>
           </div>
           <button
@@ -112,16 +122,11 @@ const CommentSection = ({ articleId }) => {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/comments/${articleId}`);
-        const contentType = res.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await res.text();
-          throw new Error(`Invalid JSON response: ${text}`);
-        }
+        const res = await fetch(`/api/articles/${articleId}/comments`);
         const data = await res.json();
-        setComments(data);
+        setComments(data.comments || []);
       } catch (err) {
-        console.error("❌ Error loading comments:", err.message);
+        console.error('Error loading comments:', err);
       }
     };
     fetchComments();
@@ -150,6 +155,7 @@ const CommentSection = ({ articleId }) => {
           : prev
       );
 
+      // Refresh comment score
       const res = await fetch(`/api/articles/${articleId}/comments`);
       const data = await res.json();
       setComments(data.comments || []);
