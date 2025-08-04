@@ -29,25 +29,25 @@ const Comment = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      className="bg-gray-900 p-4 rounded-lg mb-3 text-gray-200 text-sm"
+      className="bg-[#111] p-4 rounded-xl mb-3 text-gray-200 border border-purple-500/20"
     >
       <p className="mb-2">{comment.content || '[Deleted]'}</p>
       <div className="flex justify-between items-center text-xs text-gray-500">
         <span>
-          by <span className="text-blue-400">{comment.author || 'Anonymous'}</span> •{' '}
+          by <span className="text-purple-400">{comment.author || 'Anonymous'}</span> •{' '}
           {new Date(comment.created_at).toLocaleString()} • {replyCount} repl{replyCount === 1 ? 'y' : 'ies'}
         </span>
         <div className="flex gap-3 items-center">
           <button
             onClick={() => onVote(comment.id, 'up')}
-            className={`hover:text-green-500 ${isUpvoted ? 'text-green-400' : 'text-gray-400'}`}
+            className={`hover:text-purple-400 ${isUpvoted ? 'text-purple-500' : 'text-gray-400'}`}
           >
             <ThumbsUp size={16} fill={isUpvoted ? 'currentColor' : 'none'} />
           </button>
-          <span className="text-gray-400 font-semibold">{voteScore}</span>
+          <span className="text-gray-300 font-semibold">{voteScore}</span>
           <button
             onClick={() => onVote(comment.id, 'down')}
-            className={`hover:text-red-500 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
+            className={`hover:text-red-400 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
           >
             <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
           </button>
@@ -75,7 +75,7 @@ const Comment = ({
           replies.map((reply) => (
             <motion.div
               key={reply.id}
-              className="ml-4 mt-3 border-l-2 border-gray-700 pl-4"
+              className="ml-4 mt-3 border-l border-purple-800/30 pl-4"
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -5 }}
@@ -109,37 +109,35 @@ const CommentSection = ({ articleId }) => {
   const [alias, setAlias] = useState('');
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState(null);
-
   const [replyCounts, setReplyCounts] = useState({});
   const [downvoteCounts, setDownvoteCounts] = useState({});
 
+  const fetchComments = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
+      const data = await res.json();
+      setComments(data || []);
+
+      const repliesMap = {};
+      const downvotesMap = {};
+
+      data.forEach((comment) => {
+        if (comment.parent_id) {
+          repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
+        }
+        if (comment.dislikes) {
+          downvotesMap[comment.id] = comment.dislikes;
+        }
+      });
+
+      setReplyCounts(repliesMap);
+      setDownvoteCounts(downvotesMap);
+    } catch (err) {
+      console.error('Error loading comments:', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchComments = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
-        const data = await res.json();
-        setComments(data || []);
-
-        // Count replies and downvotes
-        const repliesMap = {};
-        const downvotesMap = {};
-
-        data.forEach((comment) => {
-          if (comment.parent_id) {
-            repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
-          }
-          if (comment.dislikes) {
-            downvotesMap[comment.id] = comment.dislikes;
-          }
-        });
-
-        setReplyCounts(repliesMap);
-        setDownvoteCounts(downvotesMap);
-      } catch (err) {
-        console.error('Error loading comments:', err);
-      }
-    };
-
     if (articleId) fetchComments();
   }, [articleId]);
 
@@ -148,6 +146,7 @@ const CommentSection = ({ articleId }) => {
       await fetch(`${API_URL}/api/comments/${commentId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
       });
 
       if (type === 'up') {
@@ -164,10 +163,7 @@ const CommentSection = ({ articleId }) => {
         );
       }
 
-      // Refetch comments to get updated score
-      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
-      const data = await res.json();
-      setComments(data || []);
+      fetchComments();
     } catch (err) {
       console.error('Voting error:', err);
     }
@@ -193,10 +189,7 @@ const CommentSection = ({ articleId }) => {
 
       setNewComment('');
       setReplyTo(null);
-
-      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
-      const data = await res.json();
-      setComments(data || []);
+      fetchComments();
     } catch (err) {
       console.error('Submit error:', err);
     }
@@ -216,23 +209,17 @@ const CommentSection = ({ articleId }) => {
     <div className="mt-8">
       <h3 className="text-xl font-semibold text-white mb-4">Comments</h3>
 
-      {/* Neon glowing form */}
       <form
         onSubmit={handleSubmit}
-        className={`mb-6 p-4 rounded-lg bg-white relative shadow-2xl
-        ${replyTo ? 'border-red-500' : 'border-blue-500'}
-        border-2 animate-pulse`}
-        style={{
-          boxShadow: `0 0 15px ${replyTo ? '#ff1a1a' : '#00bfff'}, 0 0 30px ${replyTo ? '#ff1a1a' : '#00bfff'}`,
-        }}
+        className="mb-6 p-4 rounded-xl border border-purple-600 backdrop-blur bg-black/60 neon-glow"
       >
         {replyTo && (
-          <div className="mb-2 flex items-center justify-between text-sm text-blue-600">
+          <div className="mb-2 flex items-center justify-between text-sm text-purple-400">
             Replying to: {replyTo.author || 'Anonymous'}
             <button
               onClick={() => setReplyTo(null)}
               type="button"
-              className="text-red-600 hover:text-red-800"
+              className="text-red-500 hover:text-red-700"
             >
               <X size={16} />
             </button>
@@ -240,13 +227,13 @@ const CommentSection = ({ articleId }) => {
         )}
         <input
           type="text"
-          className="w-full mb-2 p-2 rounded-md border bg-white text-black border-gray-300"
+          className="w-full mb-2 p-2 rounded-md border border-gray-700 bg-black/80 text-white"
           placeholder="Your alias (optional)"
           value={alias}
           onChange={(e) => setAlias(e.target.value)}
         />
         <textarea
-          className="w-full p-3 rounded-md border bg-white text-black border-gray-300 focus:outline-none"
+          className="w-full p-3 rounded-md border border-gray-700 bg-black/80 text-white focus:outline-none"
           rows="4"
           placeholder={replyTo ? 'Write your reply...' : 'Add a comment...'}
           value={newComment}
@@ -254,7 +241,7 @@ const CommentSection = ({ articleId }) => {
         />
         <button
           type="submit"
-          className={`mt-2 px-4 py-2 ${replyTo ? 'bg-red-600' : 'bg-blue-600'} hover:opacity-90 text-white rounded-md`}
+          className="mt-3 px-4 py-2 rounded-full border border-purple-500 text-white hover:bg-purple-700/20 backdrop-blur neon-glow"
         >
           {replyTo ? 'Post Reply' : 'Post Comment'}
         </button>
@@ -281,7 +268,7 @@ const CommentSection = ({ articleId }) => {
       {visibleCount < topLevelComments.length && (
         <button
           onClick={() => setVisibleCount((prev) => prev + 5)}
-          className="text-blue-400 mt-4 hover:underline"
+          className="text-purple-400 mt-4 hover:underline"
         >
           Load more comments
         </button>
