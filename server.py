@@ -246,7 +246,7 @@ async def create_comment(comment: CommentBase):
         logging.error("❌ Error creating comment", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
 
-@app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
+@app.get("/api/comments", response_model=List[CommentResponse])
 async def get_comments_for_article(article_id: str):
     try:
         res = (
@@ -278,6 +278,7 @@ async def get_comments_for_article(article_id: str):
     except Exception as e:
         logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch comments")
+
 
 @app.post("/api/comments/{comment_id}/like")
 async def like_comment(comment_id: str):
