@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 import { useParams, Link } from 'react-router-dom';
 import LoadingScreen from '../components/LoadingScreen'; // ✅ adjust path if needed
 import axios from 'axios';
@@ -221,8 +222,9 @@ const ArticlePage = () => {
 
           {/* Body */}
           <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
-            {article.content?.split('\n').map((p, i) => <p key={i}>{p.trim()}</p>)}
+              <ReactMarkdown>{article.content}</ReactMarkdown>
           </div>
+
 
           
                  {/* END Divider */}
