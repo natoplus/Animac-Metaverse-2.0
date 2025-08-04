@@ -122,8 +122,7 @@ const CommentSection = ({ articleId }) => {
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const baseURL = 'https://animac-metaverse.onrender.com'; // Use .env if needed
-        const res = await fetch(`${baseURL}/api/comments/${articleId}`);
+        const res = await fetch(`${API_URL}/api/comments/${articleId}`);
         const data = await res.json();
         setComments(data.comments || []);
       } catch (err) {
@@ -135,7 +134,7 @@ const CommentSection = ({ articleId }) => {
 
   const handleVote = async (commentId, type) => {
     try {
-      await fetch(`/api/comments/${commentId}/like`, {
+      await fetch(`${API_URL}/api/comments/${commentId}/like`, {
         method: 'POST',
         body: JSON.stringify({ type }),
         headers: { 'Content-Type': 'application/json' },
@@ -156,8 +155,7 @@ const CommentSection = ({ articleId }) => {
           : prev
       );
 
-      // Refresh comment score
-      const res = await fetch(`/api/articles/${articleId}/comments`);
+      const res = await fetch(`${API_URL}/api/comments/${articleId}`);
       const data = await res.json();
       setComments(data.comments || []);
     } catch (err) {
@@ -170,12 +168,13 @@ const CommentSection = ({ articleId }) => {
     if (!content) return;
 
     try {
-      await fetch(`/api/comments/${parentId}/reply`, {
+      await fetch(`${API_URL}/api/comments/${parentId}/reply`, {
         method: 'POST',
         body: JSON.stringify({ content }),
         headers: { 'Content-Type': 'application/json' },
       });
-      const res = await fetch(`/api/articles/${articleId}/comments`);
+
+      const res = await fetch(`${API_URL}/api/comments/${articleId}`);
       const data = await res.json();
       setComments(data.comments || []);
     } catch (err) {
@@ -190,8 +189,7 @@ const CommentSection = ({ articleId }) => {
     }));
   };
 
-  const groupReplies = (parentId) =>
-    comments.filter((c) => c.parent_id === parentId);
+  const groupReplies = (parentId) => comments.filter((c) => c.parent_id === parentId);
 
   const topLevelComments = comments.filter((c) => !c.parent_id);
 
