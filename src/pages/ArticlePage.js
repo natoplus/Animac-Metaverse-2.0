@@ -178,12 +178,11 @@ const ArticlePage = () => {
       </div>
 
       
-      <div className="relative w-full flex items-center justify-between my-8">
-          {/* START Label */}
-        <span className="text-pink-400 font-bold text-sm md:text-base animate-pulse drop-shadow-md">
-          START
-        </span>
-      </div>
+      <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
+              <span className="top-6xl font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
+                START
+              </span>
+          </div>
 
 
       {/* Content */}
@@ -230,7 +229,7 @@ const ArticlePage = () => {
 
           
           <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
-              <span className="top-6xl absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
+              <span className="top-6xl font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
                 END
               </span>
           </div>
