@@ -135,7 +135,7 @@ const CommentSection = ({ articleId }) => {
   const handleVote = async (commentId, type) => {
     try {
       await fetch(`${API_URL}/api/comments/${commentId}/like`, {
-        method: 'POST',
+        method: 'GET',
         body: JSON.stringify({ type }),
         headers: { 'Content-Type': 'application/json' },
       });
@@ -169,7 +169,7 @@ const CommentSection = ({ articleId }) => {
 
     try {
       await fetch(`${API_URL}/api/comments/${parentId}/reply`, {
-        method: 'POST',
+        method: 'GET',
         body: JSON.stringify({ content }),
         headers: { 'Content-Type': 'application/json' },
       });
