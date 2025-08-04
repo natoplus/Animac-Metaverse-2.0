@@ -228,16 +228,18 @@ const ArticlePage = () => {
           </div>
 
           
-          <div className="relative flex-1 mt-13 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
-              <span className="top-6xl font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
-                END
-              </span>
-          </div>
+                 {/* END Divider */}
+                    <div className="mt-14 mb-10 relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
+                          <span className="font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-blue-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
+                              END
+                          </span>
+                    </div>
+
 
           {/* Related Articles */}
           {related.length > 0 && (
             <div className="mt-16">
-              <h3 className="text-white text-2xl mb-4">Related Articles</h3>
+              <h3 className="text-white font-azonix text-2xl mb-4">Related Articles</h3>
               <div className="grid gap-6 sm:grid-cols-2">
                 {related.map(rel => (
                   <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border border-white-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
@@ -255,7 +257,7 @@ const ArticlePage = () => {
           {/* Tags */}
           {article.tags?.length > 0 && (
             <div className="mt-12">
-              <h3 className="text-white mb-4">Tags</h3>
+              <h3 className="text-white font-azonix mb-4">Tags</h3>
               <div className="flex flex-wrap gap-3">
                 {article.tags.map((tag, i) => (
                   <span key={i} className={`px-3 py-2 rounded-lg text-sm border ${theme.badge}`}>#{tag}</span>
