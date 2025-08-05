@@ -151,15 +151,11 @@ const CommentSection = ({ articleId }) => {
 
       if (type === 'up') {
         setUpvotedComments((prev) =>
-          prev.includes(commentId)
-            ? prev.filter((id) => id !== commentId)
-            : [...prev, commentId]
+          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
         );
       } else {
         setDownvotedComments((prev) =>
-          prev.includes(commentId)
-            ? prev.filter((id) => id !== commentId)
-            : [...prev, commentId]
+          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
         );
       }
 
@@ -211,7 +207,7 @@ const CommentSection = ({ articleId }) => {
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 p-4 rounded-xl border-white border-purple-600 backdrop-blur bg-black/60 neon-glow"
+        className="mb-6 p-4 rounded-xl border border-white backdrop-blur bg-black/60 neon-glow"
       >
         {replyTo && (
           <div className="mb-2 flex items-center justify-between text-sm text-purple-400">
@@ -241,7 +237,7 @@ const CommentSection = ({ articleId }) => {
         />
         <button
           type="submit"
-          className="mt-3 px-4 py-2 rounded-full border-white border-purple-500 text-white hover:bg-purple-700/20 backdrop-blur neon-glow"
+          className="mt-3 px-4 py-2 rounded-full border border-white text-white hover:bg-purple-700/20 backdrop-blur-md bg-black/50 neon-glow"
         >
           {replyTo ? 'Post Reply' : 'Post Comment'}
         </button>
