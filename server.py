@@ -249,6 +249,18 @@ async def get_featured_content():
 
 # -------- COMMENTS --------
 
+@app.get("/api/comments")
+async def get_comments(article_id: str):
+    try:
+        response = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", desc=False).execute()
+        if response.error:
+            raise HTTPException(status_code=500, detail=response.error.message)
+        comments = response.data
+        return {"comments": comments}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/articles/{article_id}/comments")
 def get_comments(article_id: str):
     res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", desc=True).execute()
