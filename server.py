@@ -38,6 +38,9 @@ app.add_middleware(
 )
 
 # ---------- Models ----------
+class LikePayload(BaseModel):
+    session_id: str
+
 class ArticleBase(BaseModel):
     title: str
     content: str
