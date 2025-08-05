@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
@@ -155,32 +156,35 @@ const CommentSection = ({ articleId }) => {
   }, [articleId]);
 
   const handleVote = async (commentId, type) => {
-    const sessionId = getSessionId(); // ✅ get session ID
+  const sessionId = getSessionId(); // ✅ get session ID
 
-    try {
-      await fetch(`${API_URL}/api/comments/${commentId}/like`, {
-        method: 'POST',
+  try {
+    await axios.post(
+      `${API_URL}/api/comments/${commentId}/like`,
+      { type }, // send the vote type in body
+      {
         headers: {
+          'session-id': sessionId,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ session_id: sessionId, type }), // ✅ send session_id and type
-      });
-
-      if (type === 'up') {
-        setUpvotedComments((prev) =>
-          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
-        );
-      } else {
-        setDownvotedComments((prev) =>
-          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
-        );
       }
+    );
 
-      fetchComments();
-    } catch (err) {
-      console.error('Voting error:', err);
+    if (type === 'up') {
+      setUpvotedComments((prev) =>
+        prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+      );
+    } else {
+      setDownvotedComments((prev) =>
+        prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+      );
     }
-  };
+
+    fetchComments();
+  } catch (err) {
+    console.error('Voting error:', err);
+  }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
