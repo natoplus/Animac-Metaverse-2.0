@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from pydantic import BaseModel, Field
@@ -76,11 +76,13 @@ class Comment(CommentBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=datetime.utcnow)
     likes: int = 0
+    dislikes: int = 0
 
 class CommentResponse(CommentBase):
     id: str
     created_at: str
     likes: int
+    dislikes: int
     replies: Optional[List['CommentResponse']] = []
 
 CommentResponse.update_forward_refs()
@@ -297,6 +299,21 @@ async def like_comment(comment_id: str):
     except Exception:
         logging.error("❌ Error liking comment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to like comment")
+
+@app.post("/api/comments/{comment_id}/dislike")
+async def dislike_comment(comment_id: str):
+    try:
+        res = supabase.table("comments").select("dislikes").eq("id", comment_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
+
+        current_dislikes = res.data[0].get("dislikes", 0)
+        updated = supabase.table("comments").update({"dislikes": current_dislikes + 1}).eq("id", comment_id).execute()
+
+        return {"message": "Comment disliked", "dislikes": updated.data[0]["dislikes"]}
+    except Exception:
+        logging.error("❌ Error disliking comment", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to dislike comment")
 
 # ---------- Run ----------
 if __name__ == "__main__":
