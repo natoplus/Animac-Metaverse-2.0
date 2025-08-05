@@ -244,98 +244,101 @@ async def get_featured_content():
         "recent_content": recent
     }
 
-@app.post("/api/comments", response_model=CommentResponse)
-async def create_comment(comment: CommentCreate, request: Request):
-    comment_id = str(uuid4())
-    now = datetime.utcnow().isoformat()
+# -------- COMMENTS --------
 
-    new_comment = {
+@app.get("/api/articles/{article_id}/comments")
+def get_comments(article_id: str):
+    res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", desc=True).execute()
+    return res.data
+
+@app.post("/api/comments")
+def post_comment(payload: CommentCreate):
+    comment_id = str(uuid4())
+    comment_data = {
         "id": comment_id,
-        "article_id": comment.article_id,
-        "content": comment.content,
-        "guest_name": comment.guest_name,
-        "reply_to": comment.reply_to,
-        "created_at": now,
+        "article_id": payload.article_id,
+        "content": payload.content,
+        "guest_name": payload.guest_name,
+        "created_at": datetime.utcnow().isoformat(),
+        "parent_id": payload.parent_id,
+        "reply_count": 0,
         "upvotes": 0,
-        "downvotes": 0,
-        "reply_count": 0
+        "downvotes": 0
     }
 
-    supabase.table("comments").insert(new_comment).execute()
+    # Save comment
+    supabase.table("comments").insert(comment_data).execute()
 
-    if comment.reply_to:
-        supabase.rpc("increment_reply_count", {"comment_id": comment.reply_to}).execute()
+    # If it's a reply, increment reply_count on parent
+    if payload.parent_id:
+        parent = supabase.table("comments").select("*").eq("id", payload.parent_id).single().execute()
+        if parent.data:
+            reply_count = parent.data.get("reply_count", 0) + 1
+            supabase.table("comments").update({"reply_count": reply_count}).eq("id", payload.parent_id).execute()
 
-    return new_comment
+    return comment_data
 
-@app.get("/api/comments", response_model=List[CommentResponse])
-async def get_comments_by_article(article_id: str):
-    comments = (
-        supabase.table("comments")
-        .select("*")
-        .eq("article_id", article_id)
-        .eq("reply_to", None)
-        .order("created_at")
-        .execute()
-        .data
-    )
-    return comments
-
-@app.get("/api/comments/{comment_id}/replies", response_model=List[CommentResponse])
-async def get_replies(comment_id: str):
-    replies = (
-        supabase.table("comments")
-        .select("*")
-        .eq("reply_to", comment_id)
-        .order("created_at")
-        .execute()
-        .data
-    )
-    return replies
+# -------- LIKES / DOWNVOTES --------
 
 @app.post("/api/comments/{comment_id}/like")
-async def like_comment(comment_id: str, request: Request):
-    session_id = request.client.host
-    existing_like = (
-        supabase.table("comment_likes")
-        .select("*")
-        .eq("comment_id", comment_id)
-        .eq("session_id", session_id)
-        .eq("type", "like")
-        .execute().data
-    )
+def like_comment(comment_id: str, payload: LikePayload):
+    session_id = payload.session_id
+    existing = supabase.table("comment_likes").select("*").eq("comment_id", comment_id).eq("session_id", session_id).single().execute()
 
-    if existing_like:
-        supabase.table("comment_likes").delete().eq("id", existing_like[0]["id"]).execute()
-        supabase.rpc("decrement_upvotes", {"comment_id": comment_id}).execute()
-        return {"status": "unliked"}
-    else:
-        supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).eq("type", "dislike").execute()
-        supabase.table("comment_likes").insert({"comment_id": comment_id, "session_id": session_id, "type": "like"}).execute()
-        supabase.rpc("increment_upvotes", {"comment_id": comment_id}).execute()
-        return {"status": "liked"}
+    if existing.data:
+        raise HTTPException(status_code=403, detail="Already liked by this session")
 
-@app.post("/api/comments/{comment_id}/dislike")
-async def dislike_comment(comment_id: str, request: Request):
-    session_id = request.client.host
-    existing_dislike = (
-        supabase.table("comment_likes")
-        .select("*")
-        .eq("comment_id", comment_id)
-        .eq("session_id", session_id)
-        .eq("type", "dislike")
-        .execute().data
-    )
+    supabase.table("comment_likes").insert({
+        "comment_id": comment_id,
+        "session_id": session_id
+    }).execute()
 
-    if existing_dislike:
-        supabase.table("comment_likes").delete().eq("id", existing_dislike[0]["id"]).execute()
-        supabase.rpc("decrement_downvotes", {"comment_id": comment_id}).execute()
-        return {"status": "undisliked"}
-    else:
-        supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).eq("type", "like").execute()
-        supabase.table("comment_likes").insert({"comment_id": comment_id, "session_id": session_id, "type": "dislike"}).execute()
-        supabase.rpc("increment_downvotes", {"comment_id": comment_id}).execute()
-        return {"status": "disliked"}
+    comment = supabase.table("comments").select("*").eq("id", comment_id).single().execute()
+    upvotes = comment.data.get("upvotes", 0) + 1
+    supabase.table("comments").update({"upvotes": upvotes}).eq("id", comment_id).execute()
+
+    return {"message": "Liked"}
+
+@app.post("/api/comments/{comment_id}/unlike")
+def unlike_comment(comment_id: str, payload: LikePayload):
+    session_id = payload.session_id
+    supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
+
+    comment = supabase.table("comments").select("*").eq("id", comment_id).single().execute()
+    upvotes = max(0, comment.data.get("upvotes", 0) - 1)
+    supabase.table("comments").update({"upvotes": upvotes}).eq("id", comment_id).execute()
+
+    return {"message": "Unliked"}
+
+@app.post("/api/comments/{comment_id}/downvote")
+def downvote_comment(comment_id: str, payload: LikePayload):
+    session_id = payload.session_id
+    existing = supabase.table("comment_downvotes").select("*").eq("comment_id", comment_id).eq("session_id", session_id).single().execute()
+
+    if existing.data:
+        raise HTTPException(status_code=403, detail="Already downvoted by this session")
+
+    supabase.table("comment_downvotes").insert({
+        "comment_id": comment_id,
+        "session_id": session_id
+    }).execute()
+
+    comment = supabase.table("comments").select("*").eq("id", comment_id).single().execute()
+    downvotes = comment.data.get("downvotes", 0) + 1
+    supabase.table("comments").update({"downvotes": downvotes}).eq("id", comment_id).execute()
+
+    return {"message": "Downvoted"}
+
+@app.post("/api/comments/{comment_id}/undownvote")
+def undownvote_comment(comment_id: str, payload: LikePayload):
+    session_id = payload.session_id
+    supabase.table("comment_downvotes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
+
+    comment = supabase.table("comments").select("*").eq("id", comment_id).single().execute()
+    downvotes = max(0, comment.data.get("downvotes", 0) - 1)
+    supabase.table("comments").update({"downvotes": downvotes}).eq("id", comment_id).execute()
+
+    return {"message": "Downvote removed"}
 
 # ---------- Run ----------
 if __name__ == "__main__":
