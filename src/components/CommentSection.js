@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
-// Generate or get session ID from localStorage
+// Generate or retrieve session ID from localStorage
 const getSessionId = () => {
   let sessionId = localStorage.getItem("sessionId");
   if (!sessionId) {
@@ -32,6 +32,8 @@ const Comment = ({
   const voteScore = (comment.likes || 0) - (comment.dislikes || 0);
   const replyCount = replyCounts[comment.id] || 0;
   const downvoteCount = downvoteCounts[comment.id] || 0;
+  const sessionId = getSessionId(); // ✅ get session ID
+
 
   return (
     <motion.div
