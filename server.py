@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
 from pydantic import BaseModel, Field
@@ -76,13 +76,11 @@ class Comment(CommentBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=datetime.utcnow)
     likes: int = 0
-    dislikes: int = 0
 
 class CommentResponse(CommentBase):
     id: str
     created_at: str
     likes: int
-    downvotes: int
     replies: Optional[List['CommentResponse']] = []
 
 CommentResponse.update_forward_refs()
@@ -233,8 +231,6 @@ async def get_featured_content():
         "recent_content": recent
     }
 
-from typing import List, Dict
-
 @app.post("/api/comments", response_model=CommentResponse)
 async def create_comment(comment: CommentBase):
     comment_model = Comment(**comment.dict())
@@ -243,29 +239,27 @@ async def create_comment(comment: CommentBase):
 
     try:
         res = supabase.table("comments").insert(data).execute()
-        inserted_data = res.data[0] if res.data and isinstance(res.data, list) else None
-
-        if not inserted_data:
+        if not res.data or not isinstance(res.data, list) or not res.data[0]:
             raise HTTPException(status_code=500, detail="Insert failed or response invalid")
-
-        return CommentResponse(**inserted_data, replies=[])
+        return CommentResponse(**res.data[0], replies=[])
     except Exception as e:
-        logging.error(f"❌ Error creating comment: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to create comment")
+        logging.error("❌ Error creating comment", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
 
 @app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
 async def get_comments_for_article(article_id: str):
     try:
         res = (
-            supabase.table("comments")
+            supabase
+            .table("comments")
             .select("*")
             .eq("article_id", article_id)
             .order("created_at", desc=False)
             .execute()
         )
 
-        flat_comments = res.data or []
-        comment_map: Dict[str, CommentResponse] = {}
+        flat_comments = res.data
+        comment_map: dict[str, CommentResponse] = {}
         root_comments: List[CommentResponse] = []
 
         for c in flat_comments:
@@ -282,7 +276,7 @@ async def get_comments_for_article(article_id: str):
 
         return root_comments
     except Exception as e:
-        logging.error(f"❌ Error fetching comments for article {article_id}: {e}", exc_info=True)
+        logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch comments")
 
 @app.get("/api/comments", response_model=List[CommentResponse])
@@ -296,29 +290,13 @@ async def like_comment(comment_id: str):
         if not res.data:
             raise HTTPException(status_code=404, detail="Comment not found")
 
-        current_likes = res.data[0].get("likes") or 0
-        updated_res = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+        current_likes = res.data[0].get("likes", 0)
+        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
 
-        return {"message": "Comment liked", "likes": updated_res.data[0]["likes"]}
-    except Exception as e:
-        logging.error(f"❌ Error liking comment {comment_id}: {e}", exc_info=True)
+        return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
+    except Exception:
+        logging.error("❌ Error liking comment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to like comment")
-
-@app.post("/api/comments/{comment_id}/dislike")
-async def dislike_comment(comment_id: str):
-    try:
-        res = supabase.table("comments").select("dislikes").eq("id", comment_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Comment not found")
-
-        current_dislikes = res.data[0].get("dislikes") or 0
-        updated_res = supabase.table("comments").update({"dislikes": current_dislikes + 1}).eq("id", comment_id).execute()
-
-        return {"message": "Comment disliked", "dislikes": updated_res.data[0]["dislikes"]}
-    except Exception as e:
-        logging.error(f"❌ Error disliking comment {comment_id}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to dislike comment")
-
 
 # ---------- Run ----------
 if __name__ == "__main__":
