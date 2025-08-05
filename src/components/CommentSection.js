@@ -159,16 +159,14 @@ const CommentSection = ({ articleId }) => {
   const sessionId = getSessionId(); // ✅ get session ID
 
   try {
-    await axios.post(
-      `${API_URL}/api/comments/${commentId}/like`,
-      { type }, // send the vote type in body
-      {
-        headers: {
-          'session-id': sessionId,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    await fetch(`${API_URL}/api/comments/${commentId}/like`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'session-id': sessionId,  // ✅ send session ID here
+  },
+  body: JSON.stringify({ type }),  // ✅ only send type in body
+});
 
     if (type === 'up') {
       setUpvotedComments((prev) =>
