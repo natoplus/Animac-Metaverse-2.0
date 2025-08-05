@@ -156,7 +156,6 @@ const CommentSection = ({ articleId }) => {
         setVotedList((prev) => prev.filter((id) => id !== commentId));
       } else {
         setVotedList((prev) => [...prev, commentId]);
-        // remove from other vote if switching
         if (isUp) setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
         else setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
       }
