@@ -287,11 +287,11 @@ async def get_comments_by_query(article_id: str):
 @app.post("/api/comments/{comment_id}/like")
 async def like_comment(comment_id: str, request: Request):
     try:
-        session_id = request.headers.get("X-Session-ID")
+        session_id = request.headers.get("session-id")  # Match frontend header key
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID required")
 
-        # Check if this session already liked the comment
+        # Check if the session has already liked this comment
         res = supabase.table("comment_likes") \
             .select("id") \
             .eq("comment_id", comment_id) \
@@ -301,22 +301,29 @@ async def like_comment(comment_id: str, request: Request):
         already_liked = res.data and len(res.data) > 0
 
         if already_liked:
-            # Remove the like (toggle off)
+            # Toggle: remove like
             supabase.table("comment_likes") \
                 .delete() \
                 .eq("comment_id", comment_id) \
                 .eq("session_id", session_id) \
                 .execute()
 
-            # Decrement likes on the comment
-            comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-            current_likes = comment_res.data[0].get("likes", 0)
+            comment_res = supabase.table("comments") \
+                .select("likes") \
+                .eq("id", comment_id) \
+                .execute()
+
+            current_likes = comment_res.data[0].get("likes", 0) if comment_res.data else 0
+
             updated = supabase.table("comments") \
                 .update({"likes": max(0, current_likes - 1)}) \
                 .eq("id", comment_id) \
                 .execute()
 
-            return {"message": "Like removed", "likes": updated.data[0]["likes"]}
+            return {
+                "message": "Like removed",
+                "likes": updated.data[0]["likes"] if updated.data else max(0, current_likes - 1)
+            }
 
         else:
             # Add the like
@@ -325,16 +332,24 @@ async def like_comment(comment_id: str, request: Request):
                 "session_id": session_id
             }).execute()
 
-            # Increment likes on the comment
-            comment_res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-            current_likes = comment_res.data[0].get("likes", 0)
+            comment_res = supabase.table("comments") \
+                .select("likes") \
+                .eq("id", comment_id) \
+                .execute()
+
+            current_likes = comment_res.data[0].get("likes", 0) if comment_res.data else 0
+
             updated = supabase.table("comments") \
                 .update({"likes": current_likes + 1}) \
                 .eq("id", comment_id) \
                 .execute()
 
-            return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
-    except Exception:
+            return {
+                "message": "Comment liked",
+                "likes": updated.data[0]["likes"] if updated.data else current_likes + 1
+            }
+
+    except Exception as e:
         logging.error("❌ Error liking/unliking comment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to like/unlike comment")
 
