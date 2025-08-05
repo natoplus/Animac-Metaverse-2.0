@@ -142,11 +142,15 @@ const CommentSection = ({ articleId }) => {
   }, [articleId]);
 
   const handleVote = async (commentId, type) => {
+    const sessionId = getSessionId(); // ✅ get session ID
+
     try {
       await fetch(`${API_URL}/api/comments/${commentId}/like`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ session_id: sessionId, type }), // ✅ send session_id and type
       });
 
       if (type === 'up') {
