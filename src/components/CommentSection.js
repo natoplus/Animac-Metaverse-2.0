@@ -125,9 +125,7 @@ const CommentSection = ({ articleId }) => {
         if (comment.parent_id) {
           repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
         }
-        if (comment.dislikes) {
-          downvotesMap[comment.id] = comment.dislikes;
-        }
+        downvotesMap[comment.id] = comment.dislikes || 0;
       });
 
       setReplyCounts(repliesMap);
@@ -142,11 +140,13 @@ const CommentSection = ({ articleId }) => {
   }, [articleId]);
 
   const handleVote = async (commentId, type) => {
+    const endpoint = type === 'up' ? 'like' : 'dislike';
+
     try {
-      await fetch(`${API_URL}/api/comments/${commentId}/like`, {
+      await fetch(`${API_URL}/api/comments/${commentId}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type }),
+        body: JSON.stringify({}),
       });
 
       if (type === 'up') {
