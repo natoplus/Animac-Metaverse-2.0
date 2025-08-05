@@ -6,7 +6,7 @@ from typing import List, Optional
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-from uuid import uuid4
+import uuid
 import logging
 
 # ---------- Load Env ----------
@@ -38,9 +38,6 @@ app.add_middleware(
 )
 
 # ---------- Models ----------
-class LikePayload(BaseModel):
-    session_id: str
-
 class ArticleBase(BaseModel):
     title: str
     content: str
@@ -81,23 +78,12 @@ class Comment(CommentBase):
     likes: int = 0
     dislikes: int = 0
 
-class CommentCreate(BaseModel):
-    article_id: str
-    content: str
-    guest_name: str
-    reply_to: Optional[str] = None
-
-class CommentResponse(BaseModel):
+class CommentResponse(CommentBase):
     id: str
-    article_id: str
-    content: str
-    guest_name: str
     created_at: str
-    reply_to: Optional[str]
-    upvotes: int
+    likes: int
     downvotes: int
-    reply_count: int
-
+    replies: Optional[List['CommentResponse']] = []
 
 CommentResponse.update_forward_refs()
 
@@ -247,113 +233,87 @@ async def get_featured_content():
         "recent_content": recent
     }
 
-# -------- COMMENTS --------
+@app.post("/api/comments", response_model=CommentResponse)
+async def create_comment(comment: CommentBase):
+    comment_model = Comment(**comment.dict())
+    data = comment_model.dict()
+    data["created_at"] = comment_model.created_at.isoformat()
 
-@app.get("/api/comments")
-async def get_comments(article_id: str):
     try:
-        response = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", desc=False).execute()
-        if response.error:
-            raise HTTPException(status_code=500, detail=response.error.message)
-        comments = response.data
-        return {"comments": comments}
+        res = supabase.table("comments").insert(data).execute()
+        if not res.data or not isinstance(res.data, list) or not res.data[0]:
+            raise HTTPException(status_code=500, detail="Insert failed or response invalid")
+        return CommentResponse(**res.data[0], replies=[])
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logging.error("❌ Error creating comment", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
 
+@app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
+async def get_comments_for_article(article_id: str):
+    try:
+        res = (
+            supabase
+            .table("comments")
+            .select("*")
+            .eq("article_id", article_id)
+            .order("created_at", desc=False)
+            .execute()
+        )
 
-@app.get("/api/articles/{article_id}/comments")
-def get_comments(article_id: str):
-    res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", desc=True).execute()
-    return res.data
+        flat_comments = res.data
+        comment_map: dict[str, CommentResponse] = {}
+        root_comments: List[CommentResponse] = []
 
-@app.post("/api/comments")
-def post_comment(payload: CommentCreate):
-    comment_id = str(uuid4())
-    comment_data = {
-        "id": comment_id,
-        "article_id": payload.article_id,
-        "content": payload.content,
-        "guest_name": payload.guest_name,
-        "created_at": datetime.utcnow().isoformat(),
-        "parent_id": payload.parent_id,
-        "reply_count": 0,
-        "upvotes": 0,
-        "downvotes": 0
-    }
+        for c in flat_comments:
+            comment = CommentResponse(**c, replies=[])
+            comment_map[comment.id] = comment
 
-    # Save comment
-    supabase.table("comments").insert(comment_data).execute()
+        for c in flat_comments:
+            cid = c["id"]
+            parent_id = c.get("parent_id")
+            if parent_id and parent_id in comment_map:
+                comment_map[parent_id].replies.append(comment_map[cid])
+            else:
+                root_comments.append(comment_map[cid])
 
-    # If it's a reply, increment reply_count on parent
-    if payload.parent_id:
-        parent = supabase.table("comments").select("*").eq("id", payload.parent_id).single().execute()
-        if parent.data:
-            reply_count = parent.data.get("reply_count", 0) + 1
-            supabase.table("comments").update({"reply_count": reply_count}).eq("id", payload.parent_id).execute()
+        return root_comments
+    except Exception as e:
+        logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to fetch comments")
 
-    return comment_data
-
-# -------- LIKES / DOWNVOTES --------
+@app.get("/api/comments", response_model=List[CommentResponse])
+async def get_comments_by_query(article_id: str):
+    return await get_comments_for_article(article_id)
 
 @app.post("/api/comments/{comment_id}/like")
-def like_comment(comment_id: str, payload: LikePayload):
-    session_id = payload.session_id
-    existing = supabase.table("comment_likes").select("*").eq("comment_id", comment_id).eq("session_id", session_id).single().execute()
+async def like_comment(comment_id: str):
+    try:
+        res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
 
-    if existing.data:
-        raise HTTPException(status_code=403, detail="Already liked by this session")
+        current_likes = res.data[0].get("likes", 0)
+        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
 
-    supabase.table("comment_likes").insert({
-        "comment_id": comment_id,
-        "session_id": session_id
-    }).execute()
+        return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
+    except Exception:
+        logging.error("❌ Error liking comment", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to like comment")
 
-    comment = supabase.table("comments").select("*").eq("id", comment_id).single().execute()
-    upvotes = comment.data.get("upvotes", 0) + 1
-    supabase.table("comments").update({"upvotes": upvotes}).eq("id", comment_id).execute()
+@app.post("/api/comments/{comment_id}/dislike")
+async def dislike_comment(comment_id: str):
+    try:
+        res = supabase.table("comments").select("dislikes").eq("id", comment_id).execute()
+        if not res.data:
+            raise HTTPException(status_code=404, detail="Comment not found")
 
-    return {"message": "Liked"}
+        current_dislikes = res.data[0].get("dislikes", 0)
+        updated = supabase.table("comments").update({"dislikes": current_dislikes + 1}).eq("id", comment_id).execute()
 
-@app.post("/api/comments/{comment_id}/unlike")
-def unlike_comment(comment_id: str, payload: LikePayload):
-    session_id = payload.session_id
-    supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
-
-    comment = supabase.table("comments").select("*").eq("id", comment_id).single().execute()
-    upvotes = max(0, comment.data.get("upvotes", 0) - 1)
-    supabase.table("comments").update({"upvotes": upvotes}).eq("id", comment_id).execute()
-
-    return {"message": "Unliked"}
-
-@app.post("/api/comments/{comment_id}/downvote")
-def downvote_comment(comment_id: str, payload: LikePayload):
-    session_id = payload.session_id
-    existing = supabase.table("comment_downvotes").select("*").eq("comment_id", comment_id).eq("session_id", session_id).single().execute()
-
-    if existing.data:
-        raise HTTPException(status_code=403, detail="Already downvoted by this session")
-
-    supabase.table("comment_downvotes").insert({
-        "comment_id": comment_id,
-        "session_id": session_id
-    }).execute()
-
-    comment = supabase.table("comments").select("*").eq("id", comment_id).single().execute()
-    downvotes = comment.data.get("downvotes", 0) + 1
-    supabase.table("comments").update({"downvotes": downvotes}).eq("id", comment_id).execute()
-
-    return {"message": "Downvoted"}
-
-@app.post("/api/comments/{comment_id}/undownvote")
-def undownvote_comment(comment_id: str, payload: LikePayload):
-    session_id = payload.session_id
-    supabase.table("comment_downvotes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
-
-    comment = supabase.table("comments").select("*").eq("id", comment_id).single().execute()
-    downvotes = max(0, comment.data.get("downvotes", 0) - 1)
-    supabase.table("comments").update({"downvotes": downvotes}).eq("id", comment_id).execute()
-
-    return {"message": "Downvote removed"}
+        return {"message": "Comment disliked", "dislikes": updated.data[0]["dislikes"]}
+    except Exception:
+        logging.error("❌ Error disliking comment", exc_info=True)
+        raise HTTPException(status_code=500, detail="Failed to dislike comment")
 
 # ---------- Run ----------
 if __name__ == "__main__":
