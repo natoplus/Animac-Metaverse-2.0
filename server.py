@@ -6,7 +6,7 @@ from typing import List, Optional
 from datetime import datetime
 import os
 from dotenv import load_dotenv
-import uuid
+from uuid import uuid4
 import logging
 
 # ---------- Load Env ----------
@@ -261,10 +261,8 @@ async def create_comment(comment: CommentCreate, request: Request):
         "reply_count": 0
     }
 
-    # Insert the comment
-    result = supabase.table("comments").insert(new_comment).execute()
+    supabase.table("comments").insert(new_comment).execute()
 
-    # If it's a reply, increment reply_count of parent
     if comment.reply_to:
         supabase.rpc("increment_reply_count", {"comment_id": comment.reply_to}).execute()
 
@@ -272,13 +270,12 @@ async def create_comment(comment: CommentCreate, request: Request):
 
 @app.get("/api/comments", response_model=List[CommentResponse])
 async def get_comments_by_article(article_id: str):
-    # Get top-level comments
     comments = (
-        supabase
-        .table("comments")
+        supabase.table("comments")
         .select("*")
         .eq("article_id", article_id)
-        .order("created_at", desc=False)
+        .eq("reply_to", None)
+        .order("created_at")
         .execute()
         .data
     )
@@ -287,11 +284,10 @@ async def get_comments_by_article(article_id: str):
 @app.get("/api/comments/{comment_id}/replies", response_model=List[CommentResponse])
 async def get_replies(comment_id: str):
     replies = (
-        supabase
-        .table("comments")
+        supabase.table("comments")
         .select("*")
         .eq("reply_to", comment_id)
-        .order("created_at", desc=False)
+        .order("created_at")
         .execute()
         .data
     )
@@ -300,64 +296,47 @@ async def get_replies(comment_id: str):
 @app.post("/api/comments/{comment_id}/like")
 async def like_comment(comment_id: str, request: Request):
     session_id = request.client.host
-    existing = (
+    existing_like = (
         supabase.table("comment_likes")
         .select("*")
         .eq("comment_id", comment_id)
         .eq("session_id", session_id)
         .eq("type", "like")
-        .execute()
-        .data
+        .execute().data
     )
 
-    if existing:
-        # Unlike: remove and decrement
-        supabase.table("comment_likes").delete().eq("id", existing[0]["id"]).execute()
+    if existing_like:
+        supabase.table("comment_likes").delete().eq("id", existing_like[0]["id"]).execute()
         supabase.rpc("decrement_upvotes", {"comment_id": comment_id}).execute()
         return {"status": "unliked"}
     else:
-        # Remove downvote if it exists
         supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).eq("type", "dislike").execute()
-
-        # Like: insert and increment
-        supabase.table("comment_likes").insert({
-            "comment_id": comment_id,
-            "session_id": session_id,
-            "type": "like"
-        }).execute()
+        supabase.table("comment_likes").insert({"comment_id": comment_id, "session_id": session_id, "type": "like"}).execute()
         supabase.rpc("increment_upvotes", {"comment_id": comment_id}).execute()
         return {"status": "liked"}
 
 @app.post("/api/comments/{comment_id}/dislike")
 async def dislike_comment(comment_id: str, request: Request):
     session_id = request.client.host
-    existing = (
+    existing_dislike = (
         supabase.table("comment_likes")
         .select("*")
         .eq("comment_id", comment_id)
         .eq("session_id", session_id)
         .eq("type", "dislike")
-        .execute()
-        .data
+        .execute().data
     )
 
-    if existing:
-        # Remove dislike
-        supabase.table("comment_likes").delete().eq("id", existing[0]["id"]).execute()
+    if existing_dislike:
+        supabase.table("comment_likes").delete().eq("id", existing_dislike[0]["id"]).execute()
         supabase.rpc("decrement_downvotes", {"comment_id": comment_id}).execute()
         return {"status": "undisliked"}
     else:
-        # Remove upvote if it exists
         supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).eq("type", "like").execute()
-
-        # Dislike
-        supabase.table("comment_likes").insert({
-            "comment_id": comment_id,
-            "session_id": session_id,
-            "type": "dislike"
-        }).execute()
+        supabase.table("comment_likes").insert({"comment_id": comment_id, "session_id": session_id, "type": "dislike"}).execute()
         supabase.rpc("increment_downvotes", {"comment_id": comment_id}).execute()
         return {"status": "disliked"}
+
 # ---------- Run ----------
 if __name__ == "__main__":
     import uvicorn
