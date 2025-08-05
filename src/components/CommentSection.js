@@ -125,7 +125,9 @@ const CommentSection = ({ articleId }) => {
         if (comment.parent_id) {
           repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
         }
-        downvotesMap[comment.id] = comment.dislikes || 0;
+        if (comment.dislikes) {
+          downvotesMap[comment.id] = comment.dislikes;
+        }
       });
 
       setReplyCounts(repliesMap);
@@ -140,24 +142,25 @@ const CommentSection = ({ articleId }) => {
   }, [articleId]);
 
   const handleVote = async (commentId, type) => {
-    const isUp = type === 'up';
-    const votedList = isUp ? upvotedComments : downvotedComments;
-    const setVotedList = isUp ? setUpvotedComments : setDownvotedComments;
-    const endpoint = isUp ? 'like' : 'dislike';
-
-    const alreadyVoted = votedList.includes(commentId);
     try {
-      await fetch(`${API_URL}/api/comments/${commentId}/${endpoint}`, {
+      await fetch(`${API_URL}/api/comments/${commentId}/like`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type }),
       });
 
-      if (alreadyVoted) {
-        setVotedList((prev) => prev.filter((id) => id !== commentId));
+      if (type === 'up') {
+        setUpvotedComments((prev) =>
+          prev.includes(commentId)
+            ? prev.filter((id) => id !== commentId)
+            : [...prev, commentId]
+        );
       } else {
-        setVotedList((prev) => [...prev, commentId]);
-        if (isUp) setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
-        else setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
+        setDownvotedComments((prev) =>
+          prev.includes(commentId)
+            ? prev.filter((id) => id !== commentId)
+            : [...prev, commentId]
+        );
       }
 
       fetchComments();
@@ -208,7 +211,7 @@ const CommentSection = ({ articleId }) => {
 
       <form
         onSubmit={handleSubmit}
-        className="mb-6 p-4 rounded-xl border border-purple-500/40 bg-black/60 backdrop-blur-lg text-white"
+        className="mb-6 p-4 rounded-xl border border-purple-600 backdrop-blur bg-black/60 neon-glow"
       >
         {replyTo && (
           <div className="mb-2 flex items-center justify-between text-sm text-purple-400">
@@ -224,13 +227,13 @@ const CommentSection = ({ articleId }) => {
         )}
         <input
           type="text"
-          className="w-full mb-2 p-2 rounded-md border border-purple-600/30 bg-black/80 text-white"
+          className="w-full mb-2 p-2 rounded-md border border-gray-700 bg-black/80 text-white"
           placeholder="Your alias (optional)"
           value={alias}
           onChange={(e) => setAlias(e.target.value)}
         />
         <textarea
-          className="w-full p-3 rounded-md border border-purple-600/30 bg-black/80 text-white"
+          className="w-full p-3 rounded-md border border-gray-700 bg-black/80 text-white focus:outline-none"
           rows="4"
           placeholder={replyTo ? 'Write your reply...' : 'Add a comment...'}
           value={newComment}
@@ -238,7 +241,7 @@ const CommentSection = ({ articleId }) => {
         />
         <button
           type="submit"
-          className="mt-3 px-4 py-2 rounded-full border border-purple-500 text-white hover:bg-purple-700/10 bg-black/40 neon-glow transition-all"
+          className="mt-3 px-4 py-2 rounded-full border border-purple-500 text-white hover:bg-purple-700/20 backdrop-blur neon-glow"
         >
           {replyTo ? 'Post Reply' : 'Post Comment'}
         </button>
