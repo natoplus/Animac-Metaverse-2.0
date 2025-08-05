@@ -4,6 +4,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
+// Generate or get session ID from localStorage
+const getSessionId = () => {
+  let sessionId = localStorage.getItem("sessionId");
+  if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("sessionId", sessionId);
+  }
+  return sessionId;
+};
+
+
 const Comment = ({
   comment,
   replies,
