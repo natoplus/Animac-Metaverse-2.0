@@ -78,12 +78,23 @@ class Comment(CommentBase):
     likes: int = 0
     dislikes: int = 0
 
-class CommentResponse(CommentBase):
+class CommentCreate(BaseModel):
+    article_id: str
+    content: str
+    guest_name: str
+    reply_to: Optional[str] = None
+
+class CommentResponse(BaseModel):
     id: str
+    article_id: str
+    content: str
+    guest_name: str
     created_at: str
-    likes: int
-    dislikes: int
-    replies: Optional[List['CommentResponse']] = []
+    reply_to: Optional[str]
+    upvotes: int
+    downvotes: int
+    reply_count: int
+
 
 CommentResponse.update_forward_refs()
 
@@ -234,87 +245,119 @@ async def get_featured_content():
     }
 
 @app.post("/api/comments", response_model=CommentResponse)
-async def create_comment(comment: CommentBase):
-    comment_model = Comment(**comment.dict())
-    data = comment_model.dict()
-    data["created_at"] = comment_model.created_at.isoformat()
+async def create_comment(comment: CommentCreate, request: Request):
+    comment_id = str(uuid4())
+    now = datetime.utcnow().isoformat()
 
-    try:
-        res = supabase.table("comments").insert(data).execute()
-        if not res.data or not isinstance(res.data, list) or not res.data[0]:
-            raise HTTPException(status_code=500, detail="Insert failed or response invalid")
-        return CommentResponse(**res.data[0], replies=[])
-    except Exception as e:
-        logging.error("❌ Error creating comment", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
+    new_comment = {
+        "id": comment_id,
+        "article_id": comment.article_id,
+        "content": comment.content,
+        "guest_name": comment.guest_name,
+        "reply_to": comment.reply_to,
+        "created_at": now,
+        "upvotes": 0,
+        "downvotes": 0,
+        "reply_count": 0
+    }
 
-@app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
-async def get_comments_for_article(article_id: str):
-    try:
-        res = (
-            supabase
-            .table("comments")
-            .select("*")
-            .eq("article_id", article_id)
-            .order("created_at", desc=False)
-            .execute()
-        )
+    # Insert the comment
+    result = supabase.table("comments").insert(new_comment).execute()
 
-        flat_comments = res.data
-        comment_map: dict[str, CommentResponse] = {}
-        root_comments: List[CommentResponse] = []
+    # If it's a reply, increment reply_count of parent
+    if comment.reply_to:
+        supabase.rpc("increment_reply_count", {"comment_id": comment.reply_to}).execute()
 
-        for c in flat_comments:
-            comment = CommentResponse(**c, replies=[])
-            comment_map[comment.id] = comment
-
-        for c in flat_comments:
-            cid = c["id"]
-            parent_id = c.get("parent_id")
-            if parent_id and parent_id in comment_map:
-                comment_map[parent_id].replies.append(comment_map[cid])
-            else:
-                root_comments.append(comment_map[cid])
-
-        return root_comments
-    except Exception as e:
-        logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to fetch comments")
+    return new_comment
 
 @app.get("/api/comments", response_model=List[CommentResponse])
-async def get_comments_by_query(article_id: str):
-    return await get_comments_for_article(article_id)
+async def get_comments_by_article(article_id: str):
+    # Get top-level comments
+    comments = (
+        supabase
+        .table("comments")
+        .select("*")
+        .eq("article_id", article_id)
+        .order("created_at", desc=False)
+        .execute()
+        .data
+    )
+    return comments
+
+@app.get("/api/comments/{comment_id}/replies", response_model=List[CommentResponse])
+async def get_replies(comment_id: str):
+    replies = (
+        supabase
+        .table("comments")
+        .select("*")
+        .eq("reply_to", comment_id)
+        .order("created_at", desc=False)
+        .execute()
+        .data
+    )
+    return replies
 
 @app.post("/api/comments/{comment_id}/like")
-async def like_comment(comment_id: str):
-    try:
-        res = supabase.table("comments").select("likes").eq("id", comment_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Comment not found")
+async def like_comment(comment_id: str, request: Request):
+    session_id = request.client.host
+    existing = (
+        supabase.table("comment_likes")
+        .select("*")
+        .eq("comment_id", comment_id)
+        .eq("session_id", session_id)
+        .eq("type", "like")
+        .execute()
+        .data
+    )
 
-        current_likes = res.data[0].get("likes", 0)
-        updated = supabase.table("comments").update({"likes": current_likes + 1}).eq("id", comment_id).execute()
+    if existing:
+        # Unlike: remove and decrement
+        supabase.table("comment_likes").delete().eq("id", existing[0]["id"]).execute()
+        supabase.rpc("decrement_upvotes", {"comment_id": comment_id}).execute()
+        return {"status": "unliked"}
+    else:
+        # Remove downvote if it exists
+        supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).eq("type", "dislike").execute()
 
-        return {"message": "Comment liked", "likes": updated.data[0]["likes"]}
-    except Exception:
-        logging.error("❌ Error liking comment", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to like comment")
+        # Like: insert and increment
+        supabase.table("comment_likes").insert({
+            "comment_id": comment_id,
+            "session_id": session_id,
+            "type": "like"
+        }).execute()
+        supabase.rpc("increment_upvotes", {"comment_id": comment_id}).execute()
+        return {"status": "liked"}
 
 @app.post("/api/comments/{comment_id}/dislike")
-async def dislike_comment(comment_id: str):
-    try:
-        res = supabase.table("comments").select("dislikes").eq("id", comment_id).execute()
-        if not res.data:
-            raise HTTPException(status_code=404, detail="Comment not found")
+async def dislike_comment(comment_id: str, request: Request):
+    session_id = request.client.host
+    existing = (
+        supabase.table("comment_likes")
+        .select("*")
+        .eq("comment_id", comment_id)
+        .eq("session_id", session_id)
+        .eq("type", "dislike")
+        .execute()
+        .data
+    )
 
-        current_dislikes = res.data[0].get("dislikes", 0)
-        updated = supabase.table("comments").update({"dislikes": current_dislikes + 1}).eq("id", comment_id).execute()
+    if existing:
+        # Remove dislike
+        supabase.table("comment_likes").delete().eq("id", existing[0]["id"]).execute()
+        supabase.rpc("decrement_downvotes", {"comment_id": comment_id}).execute()
+        return {"status": "undisliked"}
+    else:
+        # Remove upvote if it exists
+        supabase.table("comment_likes").delete().eq("comment_id", comment_id).eq("session_id", session_id).eq("type", "like").execute()
 
-        return {"message": "Comment disliked", "dislikes": updated.data[0]["dislikes"]}
-    except Exception:
-        logging.error("❌ Error disliking comment", exc_info=True)
-        raise HTTPException(status_code=500, detail="Failed to dislike comment")
-
+        # Dislike
+        supabase.table("comment_likes").insert({
+            "comment_id": comment_id,
+            "session_id": session_id,
+            "type": "dislike"
+        }).execute()
+        supabase.rpc("increment_downvotes", {"comment_id": comment_id}).execute()
+        return {"status": "disliked"}
 # ---------- Run ----------
 if __name__ == "__main__":
     import uvicorn
