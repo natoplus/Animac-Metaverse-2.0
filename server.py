@@ -82,14 +82,16 @@ class CommentResponse(BaseModel):
     id: str
     article_id: str
     content: str
+    author: Optional[str] = "Anonymous"  # ✅ Add this line
     created_at: datetime
     parent_id: Optional[str] = None
     likes: int = 0
-    dislikes: int = 0  # ✅ ADD THIS
+    dislikes: int = 0
     replies: List["CommentResponse"] = []
     liked_by_user: bool = False
     is_liked_by_session: Optional[bool] = False
-    is_disliked_by_session: Optional[bool] = False  # ✅ ADD THIS
+    is_disliked_by_session: Optional[bool] = False
+
 
 
 
