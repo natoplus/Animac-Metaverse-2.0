@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
@@ -14,7 +13,6 @@ const getSessionId = () => {
   }
   return sessionId;
 };
-
 
 const Comment = ({
   comment,
@@ -29,12 +27,10 @@ const Comment = ({
   downvoteCounts,
 }) => {
   const isUpvoted = comment.liked_by_user || upvotedComments.includes(comment.id);
-const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
+  const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
-  const downvoteCount = comment.dislikes || 0;
-  const sessionId = getSessionId(); // ✅ get session ID
-
+  const downvoteCount = downvoteCounts[comment.id] || comment.dislikes || 0;
 
   return (
     <motion.div
@@ -59,18 +55,14 @@ const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comme
             <ThumbsUp size={16} fill={isUpvoted ? 'currentColor' : 'none'} />
           </button>
           <span className="text-gray-300 font-semibold">{voteScore}</span>
+
           <button
             onClick={() => onVote(comment.id, 'down')}
             className={`hover:text-red-400 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
           >
-            <ThumbsDown
-              size={16}
-              fill={isDownvoted ? 'currentColor' : 'none'}
-              className="cursor-pointer hover:text-red-500"
-              onClick={() => handleDislike(comment.id)}
-            />
+            <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
           </button>
-          <span className="text-red-400 font-semibold">{comment.dislikes}</span>
+          <span className="text-red-400 font-semibold">{downvoteCount}</span>
 
           <button
             onClick={() => onReplyClick(comment)}
@@ -79,6 +71,7 @@ const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comme
             <MessageCircle size={14} />
             <span>Reply</span>
           </button>
+
           {replyCount > 0 && (
             <button
               onClick={() => toggleReplies(comment.id)}
@@ -133,94 +126,90 @@ const CommentSection = ({ articleId }) => {
   const [downvoteCounts, setDownvoteCounts] = useState({});
 
   const fetchComments = async () => {
-  try {
-    const sessionId = getSessionId();
-    const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
-      headers: { 'session-id': sessionId },
-    });
+    try {
+      const sessionId = getSessionId();
+      const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
+        headers: { 'session-id': sessionId },
+      });
 
-    const data = await res.json();
-    setComments(data || []);
+      const data = await res.json();
+      setComments(data || []);
 
-    const repliesMap = {};
-    const downvotesMap = {};
-    const likedIds = [];
-    const dislikedIds = [];
+      const repliesMap = {};
+      const downvotesMap = {};
+      const likedIds = [];
+      const dislikedIds = [];
 
-    data.forEach((comment) => {
-      if (comment.parent_id) {
-        repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
-      }
-      if (comment.dislikes) {
-        downvotesMap[comment.id] = comment.dislikes;
-      }
+      data.forEach((comment) => {
+        if (comment.parent_id) {
+          repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
+        }
+        if (comment.dislikes) {
+          downvotesMap[comment.id] = comment.dislikes;
+        }
 
-      if (comment.is_liked_by_session) {
-        likedIds.push(comment.id);
-      }
-      if (comment.is_disliked_by_session) {
-        dislikedIds.push(comment.id);
-      }
-    });
+        if (comment.is_liked_by_session || comment.liked_by_user) {
+          likedIds.push(comment.id);
+        }
+        if (comment.is_disliked_by_session || comment.disliked_by_user) {
+          dislikedIds.push(comment.id);
+        }
+      });
 
-    setReplyCounts(repliesMap);
-    setDownvoteCounts(downvotesMap);
-    setUpvotedComments(likedIds);
-    setDownvotedComments(dislikedIds);
-  } catch (err) {
-    console.error('Error loading comments:', err);
-  }
-};
-
+      setReplyCounts(repliesMap);
+      setDownvoteCounts(downvotesMap);
+      setUpvotedComments(likedIds);
+      setDownvotedComments(dislikedIds);
+    } catch (err) {
+      console.error('Error loading comments:', err);
+    }
+  };
 
   useEffect(() => {
     if (articleId) fetchComments();
   }, [articleId]);
 
   const handleVote = async (commentId, type) => {
-  const sessionId = getSessionId();
-  const isUpvote = type === 'up';
-  const isDownvote = type === 'down';
-    // use correct endpoint
-  const endpoint = isUpvote ? 'like' : 'dislike';
-  try {
-    const res = await fetch(`${API_URL}/api/comments/${commentId}/${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'session-id': sessionId,
-      },
-      body: JSON.stringify({ type }),
-    });
+    const sessionId = getSessionId();
+    const isUpvote = type === 'up';
+    const isDownvote = type === 'down';
+    const endpoint = isUpvote ? 'like' : 'dislike';
 
-    if (!res.ok) throw new Error('Vote failed');
+    try {
+      const res = await fetch(`${API_URL}/api/comments/${commentId}/${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'session-id': sessionId,
+        },
+        body: JSON.stringify({ type }),
+      });
 
-    // Update UI state optimistically
-    if (isUpvote) {
-      setUpvotedComments((prev) =>
-        prev.includes(commentId)
-          ? prev.filter((id) => id !== commentId)
-          : [...prev, commentId]
-      );
-      setDownvotedComments((prev) => prev.filter((id) => id !== commentId)); // remove downvote if exists
+      if (!res.ok) throw new Error('Vote failed');
+
+      if (isUpvote) {
+        setUpvotedComments((prev) =>
+          prev.includes(commentId)
+            ? prev.filter((id) => id !== commentId)
+            : [...prev, commentId]
+        );
+        setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
+      }
+
+      if (isDownvote) {
+        setDownvotedComments((prev) =>
+          prev.includes(commentId)
+            ? prev.filter((id) => id !== commentId)
+            : [...prev, commentId]
+        );
+        setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
+      }
+
+      fetchComments();
+    } catch (err) {
+      console.error('Voting error:', err);
     }
-
-    if (isDownvote) {
-      setDownvotedComments((prev) =>
-        prev.includes(commentId)
-          ? prev.filter((id) => id !== commentId)
-          : [...prev, commentId]
-      );
-      setUpvotedComments((prev) => prev.filter((id) => id !== commentId)); // remove upvote if exists
-    }
-
-    // Re-fetch to sync vote count (or update manually if you want pure optimistic)
-    fetchComments();
-  } catch (err) {
-    console.error('Voting error:', err);
-  }
-};
-
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -242,8 +231,8 @@ const CommentSection = ({ articleId }) => {
 
       setNewComment('');
       setReplyTo(null);
-      fetchComments();
       setAlias('');
+      fetchComments();
     } catch (err) {
       console.error('Submit error:', err);
     }
