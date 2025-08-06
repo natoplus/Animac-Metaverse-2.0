@@ -272,32 +272,48 @@ async def get_comments_for_article(article_id: str, request: Request):
             .order("created_at", desc=False)
             .execute()
         )
-        flat_comments = res.data
+        flat_comments = res.data or []
 
         # Fetch liked comment IDs for this session
-        likes_res = supabase.table("comment_likes") \
-            .select("comment_id") \
-            .eq("session_id", session_id) \
+        likes_res = (
+            supabase
+            .table("comment_likes")
+            .select("comment_id")
+            .eq("session_id", session_id)
             .execute()
-        liked_ids = set([item["comment_id"] for item in likes_res.data])
+        )
+        liked_ids = set(item["comment_id"] for item in likes_res.data or [])
 
         # Fetch disliked comment IDs for this session
-        dislikes_res = supabase.table("comment_dislikes") \
-            .select("comment_id") \
-            .eq("session_id", session_id) \
+        dislikes_res = (
+            supabase
+            .table("comment_dislikes")
+            .select("comment_id")
+            .eq("session_id", session_id)
             .execute()
-        disliked_ids = set([item["comment_id"] for item in dislikes_res.data])
+        )
+        disliked_ids = set(item["comment_id"] for item in dislikes_res.data or [])
 
-        # Map and build threaded comments
+        # Prepare map for threaded comments
         comment_map: dict[str, CommentResponse] = {}
         root_comments: List[CommentResponse] = []
 
         for c in flat_comments:
-            comment = CommentResponse(**c, replies=[])
-            comment.liked = comment.id in liked_ids
-            comment.disliked = comment.id in disliked_ids
+            comment = CommentResponse(
+                id=c["id"],
+                article_id=c["article_id"],
+                content=c["content"],
+                created_at=c["created_at"],
+                parent_id=c.get("parent_id"),
+                likes=c.get("likes", 0),
+                liked_by_user=c["id"] in liked_ids,
+                is_liked_by_session=c["id"] in liked_ids,
+                is_disliked_by_session=c["id"] in disliked_ids,
+                replies=[]
+            )
             comment_map[comment.id] = comment
 
+        # Thread comments
         for c in flat_comments:
             cid = c["id"]
             parent_id = c.get("parent_id")
@@ -307,9 +323,14 @@ async def get_comments_for_article(article_id: str, request: Request):
                 root_comments.append(comment_map[cid])
 
         return root_comments
+
     except Exception as e:
-        logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
+        logging.error(
+            f"❌ Error fetching comments for article {article_id}: {str(e)}",
+            exc_info=True
+        )
         raise HTTPException(status_code=500, detail="Failed to fetch comments")
+
 
 
 @app.get("/api/comments", response_model=List[CommentResponse])
@@ -417,6 +438,16 @@ async def dislike_comment(comment_id: str, request: Request):
     except Exception as e:
         logging.error(f"❌ Error disliking comment {comment_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to toggle dislike")
+
+@app.post("/api/comments/{comment_id}/undislike")
+async def undislike_comment(comment_id: str, request: Request):
+    session_id = request.cookies.get("session_id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID missing")
+
+    supabase.table("comment_dislikes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
+
+    return {"message": "Undisliked successfully"}
 
 
 # ---------- Run ----------
