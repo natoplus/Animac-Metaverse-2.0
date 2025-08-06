@@ -87,6 +87,8 @@ class CommentResponse(BaseModel):
     likes: int = 0
     replies: List["CommentResponse"] = []
     liked_by_user: bool = False  # <- add this line
+    is_liked_by_session: Optional[bool] = False
+
 
 
 CommentResponse.update_forward_refs()
@@ -259,7 +261,7 @@ async def get_comments_for_article(article_id: str, request: Request):
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID required")
 
-        # Get all comments for article
+        # Get all comments for the article
         res = (
             supabase
             .table("comments")
@@ -270,7 +272,7 @@ async def get_comments_for_article(article_id: str, request: Request):
         )
         flat_comments = res.data
 
-        # Get liked comment IDs for current session
+        # Get liked comment IDs for this session
         likes_res = (
             supabase
             .table("comment_likes")
@@ -278,14 +280,14 @@ async def get_comments_for_article(article_id: str, request: Request):
             .eq("session_id", session_id)
             .execute()
         )
-        liked_ids = set([item["comment_id"] for item in likes_res.data])
+        liked_ids = set(item["comment_id"] for item in likes_res.data)
 
         comment_map: dict[str, CommentResponse] = {}
         root_comments: List[CommentResponse] = []
 
         for c in flat_comments:
-            liked = c["id"] in liked_ids
-            comment = CommentResponse(**c, replies=[], liked_by_user=liked)
+            is_liked = c["id"] in liked_ids
+            comment = CommentResponse(**c, replies=[], is_liked_by_session=is_liked)
             comment_map[comment.id] = comment
 
         for c in flat_comments:
