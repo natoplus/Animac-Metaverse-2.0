@@ -175,9 +175,10 @@ const CommentSection = ({ articleId }) => {
   const sessionId = getSessionId();
   const isUpvote = type === 'up';
   const isDownvote = type === 'down';
-
+    // use correct endpoint
+  const endpoint = isUpvote ? 'like' : 'dislike';
   try {
-    const res = await fetch(`${API_URL}/api/comments/${commentId}/like`, {
+    const res = await fetch(`${API_URL}/api/comments/${commentId}/${endpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -221,7 +222,7 @@ const CommentSection = ({ articleId }) => {
 
     const body = {
       content: newComment,
-      author: alias,
+      author: alias.trim() || "Anonymous",
       article_id: articleId,
       parent_id: replyTo?.id || null,
     };
