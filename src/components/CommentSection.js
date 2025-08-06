@@ -63,9 +63,15 @@ const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comme
             onClick={() => onVote(comment.id, 'down')}
             className={`hover:text-red-400 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
           >
-            <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
+            <ThumbsDown
+              size={16}
+              fill={isDownvoted ? 'currentColor' : 'none'}
+              className="cursor-pointer hover:text-red-500"
+              onClick={() => handleDislike(comment.id)}
+            />
           </button>
-          <span className="text-red-400 font-semibold">{downvoteCount}</span>
+          <span className="text-red-400 font-semibold">{comment.dislikes}</span>
+
           <button
             onClick={() => onReplyClick(comment)}
             className="hover:text-white flex items-center gap-1 text-gray-400"
