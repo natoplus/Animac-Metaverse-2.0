@@ -78,11 +78,16 @@ class Comment(CommentBase):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     likes: int = 0
 
-class CommentResponse(CommentBase):
+class CommentResponse(BaseModel):
     id: str
-    created_at: str
-    likes: int
-    replies: Optional[List['CommentResponse']] = []
+    article_id: str
+    content: str
+    created_at: datetime
+    parent_id: Optional[str] = None
+    likes: int = 0
+    replies: List["CommentResponse"] = []
+    liked_by_user: bool = False  # <- add this line
+
 
 CommentResponse.update_forward_refs()
 
@@ -248,8 +253,13 @@ async def create_comment(comment: CommentBase):
         raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
 
 @app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
-async def get_comments_for_article(article_id: str):
+async def get_comments_for_article(article_id: str, request: Request):
     try:
+        session_id = request.headers.get("session-id")  # Match frontend header key
+        if not session_id:
+            raise HTTPException(status_code=400, detail="Session ID required")
+
+        # Get all comments for article
         res = (
             supabase
             .table("comments")
@@ -258,13 +268,24 @@ async def get_comments_for_article(article_id: str):
             .order("created_at", desc=False)
             .execute()
         )
-
         flat_comments = res.data
+
+        # Get liked comment IDs for current session
+        likes_res = (
+            supabase
+            .table("comment_likes")
+            .select("comment_id")
+            .eq("session_id", session_id)
+            .execute()
+        )
+        liked_ids = set([item["comment_id"] for item in likes_res.data])
+
         comment_map: dict[str, CommentResponse] = {}
         root_comments: List[CommentResponse] = []
 
         for c in flat_comments:
-            comment = CommentResponse(**c, replies=[])
+            liked = c["id"] in liked_ids
+            comment = CommentResponse(**c, replies=[], liked_by_user=liked)
             comment_map[comment.id] = comment
 
         for c in flat_comments:
@@ -276,9 +297,11 @@ async def get_comments_for_article(article_id: str):
                 root_comments.append(comment_map[cid])
 
         return root_comments
+
     except Exception as e:
         logging.error("❌ Error fetching comments for article %s: %s", article_id, str(e), exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to fetch comments")
+
 
 @app.get("/api/comments", response_model=List[CommentResponse])
 async def get_comments_by_query(article_id: str):
