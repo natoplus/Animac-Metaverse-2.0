@@ -30,7 +30,7 @@ const Comment = ({
   const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
-  const downvoteCount = downvoteCounts[comment.id] || comment.dislikes || 0;
+  const downvoteCount = comment.dislikes || 0;
 
   return (
     <motion.div
