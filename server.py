@@ -351,6 +351,16 @@ async def like_comment(comment_id: str, request: Request):
             .eq("session_id", session_id) \
             .execute()
 
+        # Fetch current likes/dislikes count
+        comment = supabase.table("comments") \
+            .select("likes", "dislikes") \
+            .eq("id", comment_id) \
+            .single() \
+            .execute()
+
+        current_likes = comment.data.get("likes", 0)
+        current_dislikes = comment.data.get("dislikes", 0)
+
         if liked_res.data:
             # Remove like
             supabase.table("comment_likes") \
@@ -360,7 +370,7 @@ async def like_comment(comment_id: str, request: Request):
                 .execute()
 
             supabase.table("comments") \
-                .update({"likes": supabase.raw("likes - 1")}) \
+                .update({"likes": max(0, current_likes - 1)}) \
                 .eq("id", comment_id) \
                 .execute()
 
@@ -372,12 +382,13 @@ async def like_comment(comment_id: str, request: Request):
             "session_id": session_id
         }).execute()
 
+        # Update likes count
         supabase.table("comments") \
-            .update({"likes": supabase.raw("likes + 1")}) \
+            .update({"likes": current_likes + 1}) \
             .eq("id", comment_id) \
             .execute()
 
-        # 🔄 Remove dislike (if exists) AND decrement
+        # Remove dislike if it exists
         dislike_res = supabase.table("comment_dislikes") \
             .select("id") \
             .eq("comment_id", comment_id) \
@@ -392,11 +403,12 @@ async def like_comment(comment_id: str, request: Request):
                 .execute()
 
             supabase.table("comments") \
-                .update({"dislikes": supabase.raw("dislikes - 1")}) \
+                .update({"dislikes": max(0, current_dislikes - 1)}) \
                 .eq("id", comment_id) \
                 .execute()
 
         return {"message": "Comment liked"}
+
     except Exception as e:
         logging.error("❌ Error liking/unliking comment", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to like/unlike comment")
@@ -409,16 +421,27 @@ async def dislike_comment(comment_id: str, request: Request):
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID required")
 
+        # Check if already disliked
         res = supabase.table("comment_dislikes") \
             .select("id") \
             .eq("comment_id", comment_id) \
             .eq("session_id", session_id) \
             .execute()
 
-        already_disliked = res.data and len(res.data) > 0
+        already_disliked = bool(res.data)
+
+        # Fetch current likes/dislikes count
+        comment = supabase.table("comments") \
+            .select("likes", "dislikes") \
+            .eq("id", comment_id) \
+            .single() \
+            .execute()
+
+        current_likes = comment.data.get("likes", 0)
+        current_dislikes = comment.data.get("dislikes", 0)
 
         if already_disliked:
-            # Toggle off: remove dislike
+            # Remove dislike
             supabase.table("comment_dislikes") \
                 .delete() \
                 .eq("comment_id", comment_id) \
@@ -426,24 +449,24 @@ async def dislike_comment(comment_id: str, request: Request):
                 .execute()
 
             supabase.table("comments") \
-                .update({"dislikes": supabase.raw("dislikes - 1")}) \
+                .update({"dislikes": max(0, current_dislikes - 1)}) \
                 .eq("id", comment_id) \
                 .execute()
 
             return {"message": "Dislike removed"}
 
-        # Add new dislike
+        # Add dislike
         supabase.table("comment_dislikes").insert({
             "comment_id": comment_id,
             "session_id": session_id
         }).execute()
 
         supabase.table("comments") \
-            .update({"dislikes": supabase.raw("dislikes + 1")}) \
+            .update({"dislikes": current_dislikes + 1}) \
             .eq("id", comment_id) \
             .execute()
 
-        # 🔄 Remove like (if exists) AND decrement
+        # Remove like if it exists
         like_res = supabase.table("comment_likes") \
             .select("id") \
             .eq("comment_id", comment_id) \
@@ -458,11 +481,12 @@ async def dislike_comment(comment_id: str, request: Request):
                 .execute()
 
             supabase.table("comments") \
-                .update({"likes": supabase.raw("likes - 1")}) \
+                .update({"likes": max(0, current_likes - 1)}) \
                 .eq("id", comment_id) \
                 .execute()
 
         return {"message": "Comment disliked"}
+
     except Exception as e:
         logging.error(f"❌ Error disliking comment {comment_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to toggle dislike")
