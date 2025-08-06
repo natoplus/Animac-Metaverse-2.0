@@ -93,8 +93,6 @@ class CommentResponse(BaseModel):
 
 
 
-
-
 CommentResponse.update_forward_refs()
 
 # ---------- Utils ----------
@@ -368,7 +366,7 @@ async def like_comment(comment_id: str, request: Request):
 
             return {"message": "Like removed"}
 
-        # Else, add like
+        # Add like
         supabase.table("comment_likes").insert({
             "comment_id": comment_id,
             "session_id": session_id
@@ -379,12 +377,24 @@ async def like_comment(comment_id: str, request: Request):
             .eq("id", comment_id) \
             .execute()
 
-        # Remove dislike if it exists
-        supabase.table("comment_dislikes") \
-            .delete() \
+        # 🔄 Remove dislike (if exists) AND decrement
+        dislike_res = supabase.table("comment_dislikes") \
+            .select("id") \
             .eq("comment_id", comment_id) \
             .eq("session_id", session_id) \
             .execute()
+
+        if dislike_res.data:
+            supabase.table("comment_dislikes") \
+                .delete() \
+                .eq("comment_id", comment_id) \
+                .eq("session_id", session_id) \
+                .execute()
+
+            supabase.table("comments") \
+                .update({"dislikes": supabase.raw("dislikes - 1")}) \
+                .eq("id", comment_id) \
+                .execute()
 
         return {"message": "Comment liked"}
     except Exception as e:
@@ -415,47 +425,44 @@ async def dislike_comment(comment_id: str, request: Request):
                 .eq("session_id", session_id) \
                 .execute()
 
-            comment_res = supabase.table("comments") \
-                .select("dislikes") \
+            supabase.table("comments") \
+                .update({"dislikes": supabase.raw("dislikes - 1")}) \
                 .eq("id", comment_id) \
                 .execute()
 
-            current_dislikes = comment_res.data[0].get("dislikes", 0) if comment_res.data else 0
+            return {"message": "Dislike removed"}
 
-            updated = supabase.table("comments") \
-                .update({"dislikes": max(0, current_dislikes - 1)}) \
+        # Add new dislike
+        supabase.table("comment_dislikes").insert({
+            "comment_id": comment_id,
+            "session_id": session_id
+        }).execute()
+
+        supabase.table("comments") \
+            .update({"dislikes": supabase.raw("dislikes + 1")}) \
+            .eq("id", comment_id) \
+            .execute()
+
+        # 🔄 Remove like (if exists) AND decrement
+        like_res = supabase.table("comment_likes") \
+            .select("id") \
+            .eq("comment_id", comment_id) \
+            .eq("session_id", session_id) \
+            .execute()
+
+        if like_res.data:
+            supabase.table("comment_likes") \
+                .delete() \
+                .eq("comment_id", comment_id) \
+                .eq("session_id", session_id) \
+                .execute()
+
+            supabase.table("comments") \
+                .update({"likes": supabase.raw("likes - 1")}) \
                 .eq("id", comment_id) \
                 .execute()
 
-            return {
-                "message": "Dislike removed",
-                "dislikes": updated.data[0]["dislikes"] if updated.data else max(0, current_dislikes - 1)
-            }
-
-        else:
-            # Add new dislike
-            supabase.table("comment_dislikes").insert({
-                "comment_id": comment_id,
-                "session_id": session_id
-            }).execute()
-
-            comment_res = supabase.table("comments") \
-                .select("dislikes") \
-                .eq("id", comment_id) \
-                .execute()
-
-            current_dislikes = comment_res.data[0].get("dislikes", 0) if comment_res.data else 0
-
-            updated = supabase.table("comments") \
-                .update({"dislikes": current_dislikes + 1}) \
-                .eq("id", comment_id) \
-                .execute()
-
-            return {
-                "message": "Comment disliked",
-                "dislikes": updated.data[0]["dislikes"] if updated.data else current_dislikes + 1
-            }
-
+        return {"message": "Comment disliked"}
     except Exception as e:
         logging.error(f"❌ Error disliking comment {comment_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to toggle dislike")
