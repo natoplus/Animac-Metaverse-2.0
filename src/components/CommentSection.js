@@ -30,7 +30,7 @@ const Comment = ({
   const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
-  const downvoteCount = comment.dislikes || 0;
+  const downvoteCount = downvoteCounts?.[comment.id] ?? comment.dislikes ?? 0;
 
   return (
     <motion.div
@@ -44,7 +44,7 @@ const Comment = ({
       <p className="mb-2">{comment.content || '[Deleted]'}</p>
       <div className="flex justify-between items-center text-xs text-gray-500">
         <span>
-          by <span className="text-purple-400">{comment.author || 'Anonymous'}</span> •{' '}
+          by <span className="text-purple-400">{comment.author?.trim() || 'Anonymous'}</span> •{' '}
           {new Date(comment.created_at).toLocaleString()} • {replyCount} repl{replyCount === 1 ? 'y' : 'ies'}
         </span>
         <div className="flex gap-3 items-center">
