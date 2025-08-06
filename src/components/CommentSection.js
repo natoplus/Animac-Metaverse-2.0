@@ -28,11 +28,11 @@ const Comment = ({
   replyCounts,
   downvoteCounts,
 }) => {
-  const isUpvoted = upvotedComments.includes(comment.id);
-  const isDownvoted = downvotedComments.includes(comment.id);
-  const voteScore = (comment.likes || 0) - (comment.dislikes || 0);
+  const isUpvoted = comment.liked_by_user || upvotedComments.includes(comment.id);
+  const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
+  const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
-  const downvoteCount = downvoteCounts[comment.id] || 0;
+  const downvoteCount = comment.dislikes || 0;
   const sessionId = getSessionId(); // ✅ get session ID
 
 
@@ -66,6 +66,7 @@ const Comment = ({
             <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
           </button>
           <span className="text-red-400 font-semibold">{downvoteCount}</span>
+
           <button
             onClick={() => onReplyClick(comment)}
             className="hover:text-white flex items-center gap-1 text-gray-400"
@@ -127,62 +128,93 @@ const CommentSection = ({ articleId }) => {
   const [downvoteCounts, setDownvoteCounts] = useState({});
 
   const fetchComments = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/comments?article_id=${articleId}`);
-      const data = await res.json();
-      setComments(data || []);
+  try {
+    const sessionId = getSessionId();
+    const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
+      headers: { 'session-id': sessionId },
+    });
 
-      const repliesMap = {};
-      const downvotesMap = {};
+    const data = await res.json();
+    setComments(data || []);
 
-      data.forEach((comment) => {
-        if (comment.parent_id) {
-          repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
-        }
-        if (comment.dislikes) {
-          downvotesMap[comment.id] = comment.dislikes;
-        }
-      });
+    const repliesMap = {};
+    const downvotesMap = {};
+    const likedIds = [];
+    const dislikedIds = [];
 
-      setReplyCounts(repliesMap);
-      setDownvoteCounts(downvotesMap);
-    } catch (err) {
-      console.error('Error loading comments:', err);
-    }
-  };
+    data.forEach((comment) => {
+      if (comment.parent_id) {
+        repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
+      }
+      if (comment.dislikes) {
+        downvotesMap[comment.id] = comment.dislikes;
+      }
+
+      if (comment.is_liked_by_session) {
+        likedIds.push(comment.id);
+      }
+      if (comment.is_disliked_by_session) {
+        dislikedIds.push(comment.id);
+      }
+    });
+
+    setReplyCounts(repliesMap);
+    setDownvoteCounts(downvotesMap);
+    setUpvotedComments(likedIds);
+    setDownvotedComments(dislikedIds);
+  } catch (err) {
+    console.error('Error loading comments:', err);
+  }
+};
+
 
   useEffect(() => {
     if (articleId) fetchComments();
   }, [articleId]);
 
   const handleVote = async (commentId, type) => {
-  const sessionId = getSessionId(); // ✅ get session ID
+  const sessionId = getSessionId();
+  const isUpvote = type === 'up';
+  const isDownvote = type === 'down';
 
   try {
-    await fetch(`${API_URL}/api/comments/${commentId}/like`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'session-id': sessionId,  // ✅ send session ID here
-  },
-  body: JSON.stringify({ type }),  // ✅ only send type in body
-});
+    const res = await fetch(`${API_URL}/api/comments/${commentId}/like`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'session-id': sessionId,
+      },
+      body: JSON.stringify({ type }),
+    });
 
-    if (type === 'up') {
+    if (!res.ok) throw new Error('Vote failed');
+
+    // Update UI state optimistically
+    if (isUpvote) {
       setUpvotedComments((prev) =>
-        prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+        prev.includes(commentId)
+          ? prev.filter((id) => id !== commentId)
+          : [...prev, commentId]
       );
-    } else {
-      setDownvotedComments((prev) =>
-        prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
-      );
+      setDownvotedComments((prev) => prev.filter((id) => id !== commentId)); // remove downvote if exists
     }
 
+    if (isDownvote) {
+      setDownvotedComments((prev) =>
+        prev.includes(commentId)
+          ? prev.filter((id) => id !== commentId)
+          : [...prev, commentId]
+      );
+      setUpvotedComments((prev) => prev.filter((id) => id !== commentId)); // remove upvote if exists
+    }
+
+    // Re-fetch to sync vote count (or update manually if you want pure optimistic)
     fetchComments();
   } catch (err) {
     console.error('Voting error:', err);
   }
 };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
