@@ -27,10 +27,11 @@ const Comment = ({
   downvoteCounts,
 }) => {
   const isUpvoted = comment.liked_by_user || upvotedComments.includes(comment.id);
-  const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
-  const downvoteCount = downvoteCounts[comment.id] || comment.dislikes || 0;
+  const [downvoteCount, setDownvoteCount] = useState(comment.dislikes || 0);
+  const [isDownvoted, setIsDownvoted] = useState(comment.is_disliked_by_session || false);
+
 
   return (
     <motion.div
@@ -124,6 +125,7 @@ const CommentSection = ({ articleId }) => {
   const [replyTo, setReplyTo] = useState(null);
   const [replyCounts, setReplyCounts] = useState({});
   const [downvoteCounts, setDownvoteCounts] = useState({});
+  
 
   const fetchComments = async () => {
     try {
