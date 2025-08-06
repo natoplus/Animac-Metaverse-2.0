@@ -84,13 +84,13 @@ class CommentResponse(BaseModel):
     content: str
     created_at: datetime
     parent_id: Optional[str] = None
-    likes: int = Field(default=0, ge=0)
-    dislikes: int = Field(default=0, ge=0)
+    likes: int = 0
     replies: List["CommentResponse"] = []
-    
-    # Session-based flags for frontend state handling
-    is_liked_by_session: bool = False
-    is_disliked_by_session: bool = False
+    liked_by_user: bool = False
+    is_liked_by_session: Optional[bool] = False
+    is_disliked_by_session: Optional[bool] = False  # ✅ new field
+
+
 
 
 CommentResponse.update_forward_refs()
