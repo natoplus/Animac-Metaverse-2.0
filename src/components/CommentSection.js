@@ -174,41 +174,40 @@ const CommentSection = ({ articleId }) => {
 
   const handleVote = async (commentId, type) => {
   const sessionId = getSessionId();
-  const isUpvote = type === 'up';
-  const isDownvote = type === 'down';
-
-  const endpoint = `${API_URL}/api/comments/${commentId}/${isUpvote ? 'like' : 'dislike'}`;
+  const vote_type = type === 'up' ? 'like' : 'dislike';
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetch(`${API_URL}/api/comments/${commentId}/vote`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'session-id': sessionId,
       },
+      body: JSON.stringify({ vote_type }),
     });
 
     if (!res.ok) throw new Error('Vote failed');
 
-    if (isUpvote) {
+    if (vote_type === 'like') {
       setUpvotedComments((prev) =>
         prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
       );
       setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
     }
 
-    if (isDownvote) {
+    if (vote_type === 'dislike') {
       setDownvotedComments((prev) =>
         prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
       );
       setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
     }
 
-    fetchComments(); // Re-fetch to sync counts
+    fetchComments(); // Refresh to get updated counts
   } catch (err) {
     console.error('Voting error:', err);
   }
 };
+
 
 
 
