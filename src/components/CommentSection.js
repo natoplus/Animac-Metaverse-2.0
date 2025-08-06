@@ -29,10 +29,10 @@ const Comment = ({
   downvoteCounts,
 }) => {
   const isUpvoted = comment.liked_by_user || upvotedComments.includes(comment.id);
-  const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
+const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
-  const downvoteCount = comment.dislikes || 0;
+  const downvoteCount = downvoteCounts[comment.id] || 0;
   const sessionId = getSessionId(); // ✅ get session ID
 
 
@@ -66,7 +66,6 @@ const Comment = ({
             <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
           </button>
           <span className="text-red-400 font-semibold">{downvoteCount}</span>
-
           <button
             onClick={() => onReplyClick(comment)}
             className="hover:text-white flex items-center gap-1 text-gray-400"
@@ -174,41 +173,46 @@ const CommentSection = ({ articleId }) => {
 
   const handleVote = async (commentId, type) => {
   const sessionId = getSessionId();
-  const vote_type = type === 'up' ? 'like' : 'dislike';
+  const isUpvote = type === 'up';
+  const isDownvote = type === 'down';
 
   try {
-    const res = await fetch(`${API_URL}/api/comments/${commentId}/vote`, {
+    const res = await fetch(`${API_URL}/api/comments/${commentId}/like`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'session-id': sessionId,
       },
-      body: JSON.stringify({ vote_type }),
+      body: JSON.stringify({ type }),
     });
 
     if (!res.ok) throw new Error('Vote failed');
 
-    if (vote_type === 'like') {
+    // Update UI state optimistically
+    if (isUpvote) {
       setUpvotedComments((prev) =>
-        prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+        prev.includes(commentId)
+          ? prev.filter((id) => id !== commentId)
+          : [...prev, commentId]
       );
-      setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
+      setDownvotedComments((prev) => prev.filter((id) => id !== commentId)); // remove downvote if exists
     }
 
-    if (vote_type === 'dislike') {
+    if (isDownvote) {
       setDownvotedComments((prev) =>
-        prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+        prev.includes(commentId)
+          ? prev.filter((id) => id !== commentId)
+          : [...prev, commentId]
       );
-      setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
+      setUpvotedComments((prev) => prev.filter((id) => id !== commentId)); // remove upvote if exists
     }
 
-    fetchComments(); // Refresh to get updated counts
+    // Re-fetch to sync vote count (or update manually if you want pure optimistic)
+    fetchComments();
   } catch (err) {
     console.error('Voting error:', err);
   }
 };
-
-
 
 
   const handleSubmit = async (e) => {
