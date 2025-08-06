@@ -237,6 +237,7 @@ const CommentSection = ({ articleId }) => {
       setNewComment('');
       setReplyTo(null);
       fetchComments();
+      setAlias('');
     } catch (err) {
       console.error('Submit error:', err);
     }
