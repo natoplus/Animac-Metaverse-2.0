@@ -177,43 +177,39 @@ const CommentSection = ({ articleId }) => {
   const isUpvote = type === 'up';
   const isDownvote = type === 'down';
 
+  const endpoint = `${API_URL}/api/comments/${commentId}/${isUpvote ? 'like' : 'dislike'}`;
+
   try {
-    const res = await fetch(`${API_URL}/api/comments/${commentId}/like`, {
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'session-id': sessionId,
       },
-      body: JSON.stringify({ type }),
     });
 
     if (!res.ok) throw new Error('Vote failed');
 
-    // Update UI state optimistically
     if (isUpvote) {
       setUpvotedComments((prev) =>
-        prev.includes(commentId)
-          ? prev.filter((id) => id !== commentId)
-          : [...prev, commentId]
+        prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
       );
-      setDownvotedComments((prev) => prev.filter((id) => id !== commentId)); // remove downvote if exists
+      setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
     }
 
     if (isDownvote) {
       setDownvotedComments((prev) =>
-        prev.includes(commentId)
-          ? prev.filter((id) => id !== commentId)
-          : [...prev, commentId]
+        prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
       );
-      setUpvotedComments((prev) => prev.filter((id) => id !== commentId)); // remove upvote if exists
+      setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
     }
 
-    // Re-fetch to sync vote count (or update manually if you want pure optimistic)
-    fetchComments();
+    fetchComments(); // Re-fetch to sync counts
   } catch (err) {
     console.error('Voting error:', err);
   }
 };
+
 
 
   const handleSubmit = async (e) => {
