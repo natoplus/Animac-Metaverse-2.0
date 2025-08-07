@@ -41,7 +41,8 @@ const Comment = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      className={`bg-[#111] p-4 rounded-xl mb-3 text-gray-200 border border-purple-500/20 ml-${depth * 4}`}
+      className="bg-[#111] p-4 rounded-xl mb-3 text-gray-200 border border-purple-500/20"
+      style={{ marginLeft: depth * 16 }}
     >
       <p className="mb-2">{comment.content || '[Deleted]'}</p>
       <div className="flex justify-between items-center text-xs text-gray-500">
@@ -88,28 +89,20 @@ const Comment = ({
       <AnimatePresence>
         {showReplies[comment.id] &&
           replies.map((reply) => (
-            <motion.div
+            <Comment
               key={reply.id}
-              className="ml-4 mt-3 border-l border-purple-800/30 pl-4"
-              initial={{ opacity: 0, y: -5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -5 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Comment
-                comment={reply}
-                allComments={allComments}
-                onReplyClick={onReplyClick}
-                onVote={onVote}
-                upvotedComments={upvotedComments}
-                downvotedComments={downvotedComments}
-                toggleReplies={toggleReplies}
-                showReplies={showReplies}
-                replyCounts={replyCounts}
-                downvoteCounts={downvoteCounts}
-                depth={depth + 1}
-              />
-            </motion.div>
+              comment={reply}
+              allComments={allComments}
+              onReplyClick={onReplyClick}
+              onVote={onVote}
+              upvotedComments={upvotedComments}
+              downvotedComments={downvotedComments}
+              toggleReplies={toggleReplies}
+              showReplies={showReplies}
+              replyCounts={replyCounts}
+              downvoteCounts={downvoteCounts}
+              depth={depth + 1}
+            />
           ))}
       </AnimatePresence>
     </motion.div>
