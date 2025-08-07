@@ -223,6 +223,7 @@ const CommentSection = ({ articleId }) => {
       author: trimmedAlias !== '' ? trimmedAlias : undefined,
       article_id: articleId,
       parent_id: replyTo?.id || null,
+      session_id: getSessionId(), // ✅ critical fix
     };
 
     try {
@@ -235,11 +236,17 @@ const CommentSection = ({ articleId }) => {
       setNewComment('');
       setReplyTo(null);
       setAlias('');
+
+      if (replyTo?.id) {
+        setShowReplies((prev) => ({ ...prev, [replyTo.id]: true })); // ✅ open replies
+      }
+
       fetchComments();
     } catch (err) {
       console.error('Submit error:', err);
     }
   };
+
 
   const toggleReplies = (commentId) => {
     setShowReplies((prev) => ({
