@@ -1,6 +1,6 @@
 // ...[Imports remain unchanged]
 import React, { useState, useEffect, useRef } from 'react';
-import { ThumbsUp, ThumbsDown, MessageCircle, X } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageCircle, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
@@ -78,32 +78,40 @@ const Comment = ({
           {replyCount > 0 && (
             <button
               onClick={() => toggleReplies(comment.id)}
-              className="text-blue-400 hover:text-white ml-2"
+              className="text-blue-400 hover:text-white ml-2 flex items-center gap-1"
             >
-              {showReplies[comment.id] ? 'Hide Replies' : 'View Replies'}
+              {showReplies[comment.id] ? <><ChevronUp size={14} /> Hide</> : <><ChevronDown size={14} /> View</>}
             </button>
           )}
         </div>
       </div>
 
       <AnimatePresence>
-        {showReplies[comment.id] &&
-          replies.map((reply) => (
-            <Comment
-              key={reply.id}
-              comment={reply}
-              allComments={allComments}
-              onReplyClick={onReplyClick}
-              onVote={onVote}
-              upvotedComments={upvotedComments}
-              downvotedComments={downvotedComments}
-              toggleReplies={toggleReplies}
-              showReplies={showReplies}
-              replyCounts={replyCounts}
-              downvoteCounts={downvoteCounts}
-              depth={depth + 1}
-            />
-          ))}
+        {showReplies[comment.id] && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            {replies.map((reply) => (
+              <Comment
+                key={reply.id}
+                comment={reply}
+                allComments={allComments}
+                onReplyClick={onReplyClick}
+                onVote={onVote}
+                upvotedComments={upvotedComments}
+                downvotedComments={downvotedComments}
+                toggleReplies={toggleReplies}
+                showReplies={showReplies}
+                replyCounts={replyCounts}
+                downvoteCounts={downvoteCounts}
+                depth={depth + 1}
+              />
+            ))}
+          </motion.div>
+        )}
       </AnimatePresence>
     </motion.div>
   );
