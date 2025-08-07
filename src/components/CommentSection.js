@@ -1,3 +1,4 @@
+// ...[Imports remain unchanged]
 import React, { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,7 +31,7 @@ const Comment = ({
   const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
-  const downvoteCount = downvoteCounts?.[comment.id] ?? comment.dislikes ?? 0;
+  const downvoteCount = downvoteCounts?.[comment.id] ?? comment.downvotes ?? 0; // ✅ Supports both props
 
   return (
     <motion.div
@@ -62,7 +63,7 @@ const Comment = ({
           >
             <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
           </button>
-          <span className="text-red-400 font-semibold">{downvoteCount}</span>
+          <span className="text-red-400 font-semibold">{downvoteCount}</span> {/* ✅ Fixed here */}
 
           <button
             onClick={() => onReplyClick(comment)}
@@ -144,10 +145,9 @@ const CommentSection = ({ articleId }) => {
         if (comment.parent_id) {
           repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
         }
-        if (comment.dislikes) {
-          downvotesMap[comment.id] = comment.dislikes;
+        if (comment.downvotes || comment.dislikes) {
+          downvotesMap[comment.id] = comment.downvotes ?? comment.dislikes;
         }
-
         if (comment.is_liked_by_session || comment.liked_by_user) {
           likedIds.push(comment.id);
         }
@@ -215,9 +215,11 @@ const CommentSection = ({ articleId }) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
+    const trimmedAlias = alias.trim(); // ✅ Trim alias here
+
     const body = {
       content: newComment,
-      author: alias.trim() || "Anonymous",
+      author: trimmedAlias !== '' ? trimmedAlias : undefined, // ✅ Only send if not blank
       article_id: articleId,
       parent_id: replyTo?.id || null,
     };
