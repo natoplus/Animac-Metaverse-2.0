@@ -139,13 +139,14 @@ const CommentSection = ({ articleId }) => {
       });
 
       const data = await res.json();
-      setComments(data || []);
+      if (!Array.isArray(data)) return;
 
       const repliesMap = {};
       const downvotesMap = {};
       const likedIds = [];
       const dislikedIds = [];
 
+      // Count replies, votes
       data.forEach((comment) => {
         if (comment.parent_id) {
           repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
@@ -161,6 +162,23 @@ const CommentSection = ({ articleId }) => {
         }
       });
 
+      // Build nested structure
+      const commentMap = {};
+      data.forEach(comment => {
+        comment.replies = [];
+        commentMap[comment.id] = comment;
+      });
+
+      const nested = [];
+      data.forEach(comment => {
+        if (comment.parent_id && commentMap[comment.parent_id]) {
+          commentMap[comment.parent_id].replies.push(comment);
+        } else {
+          nested.push(comment);
+        }
+      });
+
+      setComments(nested);
       setReplyCounts(repliesMap);
       setDownvoteCounts(downvotesMap);
       setUpvotedComments(likedIds);
@@ -169,6 +187,7 @@ const CommentSection = ({ articleId }) => {
       console.error('Error loading comments:', err);
     }
   };
+
 
   useEffect(() => {
     if (articleId) fetchComments();
