@@ -76,7 +76,7 @@ class CommentBase(BaseModel):
 class Comment(CommentBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    likes: int = 0
+    likes: int = 0; dislikes: int = 0
 
 class CommentResponse(BaseModel):
     id: str
@@ -248,11 +248,8 @@ async def create_comment(comment: CommentBase):
     comment_model = Comment(**comment.dict())
     data = comment_model.dict()
     data["created_at"] = comment_model.created_at.isoformat()
-
     try:
         res = supabase.table("comments").insert(data).execute()
-        if not res.data or not isinstance(res.data, list) or not res.data[0]:
-            raise HTTPException(status_code=500, detail="Insert failed or response invalid")
         return CommentResponse(**res.data[0], replies=[])
     except Exception as e:
         logging.error("❌ Error creating comment", exc_info=True)
@@ -260,79 +257,42 @@ async def create_comment(comment: CommentBase):
 
 @app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
 async def get_comments_for_article(article_id: str, request: Request):
-    try:
-        session_id = request.headers.get("session-id")
-        if not session_id:
-            raise HTTPException(status_code=400, detail="Session ID required")
+    session_id = request.headers.get("session-id")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="Session ID required")
 
-        # Fetch all comments for the article
-        res = (
-            supabase
-            .table("comments")
-            .select("*")
-            .eq("article_id", article_id)
-            .order("created_at", desc=False)
-            .execute()
+    res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", desc=False).execute()
+    flat_comments = res.data or []
+
+    liked_res = supabase.table("comment_likes").select("comment_id").eq("session_id", session_id).execute()
+    liked_ids = {item["comment_id"] for item in liked_res.data or []}
+
+    disliked_res = supabase.table("comment_dislikes").select("comment_id").eq("session_id", session_id).execute()
+    disliked_ids = {item["comment_id"] for item in disliked_res.data or []}
+
+    comment_map: dict[str, CommentResponse] = {}
+    root_comments: List[CommentResponse] = []
+
+    for c in flat_comments:
+        comment_obj = CommentResponse(
+            id=c["id"], article_id=c["article_id"], content=c["content"],
+            author=c.get("author", "Anonymous"), created_at=c["created_at"],
+            parent_id=c.get("parent_id"), likes=c.get("likes", 0),
+            dislikes=c.get("dislikes", 0), replies=[],
+            liked_by_user=c["id"] in liked_ids,
+            is_liked_by_session=c["id"] in liked_ids,
+            is_disliked_by_session=c["id"] in disliked_ids
         )
-        flat_comments = res.data or []
+        comment_map[comment_obj.id] = comment_obj
 
-        # Fetch liked comment IDs for this session
-        likes_res = (
-            supabase
-            .table("comment_likes")
-            .select("comment_id")
-            .eq("session_id", session_id)
-            .execute()
-        )
-        liked_ids = set(item["comment_id"] for item in likes_res.data or [])
+    for c in flat_comments:
+        parent_id = c.get("parent_id")
+        if parent_id and parent_id in comment_map:
+            comment_map[parent_id].replies.append(comment_map[c["id"]])
+        else:
+            root_comments.append(comment_map[c["id"]])
 
-        # Fetch disliked comment IDs for this session
-        dislikes_res = (
-            supabase
-            .table("comment_dislikes")
-            .select("comment_id")
-            .eq("session_id", session_id)
-            .execute()
-        )
-        disliked_ids = set(item["comment_id"] for item in dislikes_res.data or [])
-
-        # Prepare map for threaded comments
-        comment_map: dict[str, CommentResponse] = {}
-        root_comments: List[CommentResponse] = []
-
-        for c in flat_comments:
-            comment = CommentResponse(
-                id=c["id"],
-                article_id=c["article_id"],
-                content=c["content"],
-                created_at=c["created_at"],
-                parent_id=c.get("parent_id"),
-                likes=c.get("likes", 0),
-                liked_by_user=c["id"] in liked_ids,
-                is_liked_by_session=c["id"] in liked_ids,
-                is_disliked_by_session=c["id"] in disliked_ids,
-                replies=[]
-            )
-            comment_map[comment.id] = comment
-
-        # Thread comments
-        for c in flat_comments:
-            cid = c["id"]
-            parent_id = c.get("parent_id")
-            if parent_id and parent_id in comment_map:
-                comment_map[parent_id].replies.append(comment_map[cid])
-            else:
-                root_comments.append(comment_map[cid])
-
-        return root_comments
-
-    except Exception as e:
-        logging.error(
-            f"❌ Error fetching comments for article {article_id}: {str(e)}",
-            exc_info=True
-        )
-        raise HTTPException(status_code=500, detail="Failed to fetch comments")
-
+    return root_comments
 
 
 @app.get("/api/comments", response_model=List[CommentResponse])
