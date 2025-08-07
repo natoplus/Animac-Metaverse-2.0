@@ -1,11 +1,10 @@
 // ...[Imports remain unchanged]
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
-// Generate or retrieve session ID from localStorage
 const getSessionId = () => {
   let sessionId = localStorage.getItem("sessionId");
   if (!sessionId) {
@@ -17,7 +16,7 @@ const getSessionId = () => {
 
 const Comment = ({
   comment,
-  replies,
+  allComments,
   onReplyClick,
   onVote,
   upvotedComments,
@@ -26,12 +25,14 @@ const Comment = ({
   showReplies,
   replyCounts,
   downvoteCounts,
+  depth = 0,
 }) => {
   const isUpvoted = comment.liked_by_user || upvotedComments.includes(comment.id);
   const isDownvoted = comment.disliked_by_user || downvotedComments.includes(comment.id);
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
-  const downvoteCount = downvoteCounts?.[comment.id] ?? comment.downvotes ?? 0; // ✅ Supports both props
+  const downvoteCount = downvoteCounts?.[comment.id] ?? comment.downvotes ?? 0;
+  const replies = allComments.filter((c) => c.parent_id === comment.id);
 
   return (
     <motion.div
@@ -40,7 +41,7 @@ const Comment = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.2 }}
-      className="bg-[#111] p-4 rounded-xl mb-3 text-gray-200 border border-purple-500/20"
+      className={`bg-[#111] p-4 rounded-xl mb-3 text-gray-200 border border-purple-500/20 ml-${depth * 4}`}
     >
       <p className="mb-2">{comment.content || '[Deleted]'}</p>
       <div className="flex justify-between items-center text-xs text-gray-500">
@@ -63,7 +64,7 @@ const Comment = ({
           >
             <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
           </button>
-          <span className="text-red-400 font-semibold">{downvoteCount}</span> {/* ✅ Fixed here */}
+          <span className="text-red-400 font-semibold">{downvoteCount}</span>
 
           <button
             onClick={() => onReplyClick(comment)}
@@ -97,7 +98,7 @@ const Comment = ({
             >
               <Comment
                 comment={reply}
-                replies={[]}
+                allComments={allComments}
                 onReplyClick={onReplyClick}
                 onVote={onVote}
                 upvotedComments={upvotedComments}
@@ -106,6 +107,7 @@ const Comment = ({
                 showReplies={showReplies}
                 replyCounts={replyCounts}
                 downvoteCounts={downvoteCounts}
+                depth={depth + 1}
               />
             </motion.div>
           ))}
@@ -125,6 +127,8 @@ const CommentSection = ({ articleId }) => {
   const [replyTo, setReplyTo] = useState(null);
   const [replyCounts, setReplyCounts] = useState({});
   const [downvoteCounts, setDownvoteCounts] = useState({});
+
+  const replyFormRef = useRef();
 
   const fetchComments = async () => {
     try {
@@ -189,18 +193,14 @@ const CommentSection = ({ articleId }) => {
 
       if (isUpvote) {
         setUpvotedComments((prev) =>
-          prev.includes(commentId)
-            ? prev.filter((id) => id !== commentId)
-            : [...prev, commentId]
+          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
         );
         setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
       }
 
       if (isDownvote) {
         setDownvotedComments((prev) =>
-          prev.includes(commentId)
-            ? prev.filter((id) => id !== commentId)
-            : [...prev, commentId]
+          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
         );
         setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
       }
@@ -215,11 +215,11 @@ const CommentSection = ({ articleId }) => {
     e.preventDefault();
     if (!newComment.trim()) return;
 
-    const trimmedAlias = alias.trim(); // ✅ Trim alias here
+    const trimmedAlias = alias.trim();
 
     const body = {
       content: newComment,
-      author: trimmedAlias !== '' ? trimmedAlias : undefined, // ✅ Only send if not blank
+      author: trimmedAlias !== '' ? trimmedAlias : undefined,
       article_id: articleId,
       parent_id: replyTo?.id || null,
     };
@@ -247,7 +247,6 @@ const CommentSection = ({ articleId }) => {
     }));
   };
 
-  const groupReplies = (parentId) => comments.filter((c) => c.parent_id === parentId);
   const topLevelComments = comments.filter((c) => !c.parent_id);
 
   return (
@@ -256,6 +255,7 @@ const CommentSection = ({ articleId }) => {
 
       <form
         onSubmit={handleSubmit}
+        ref={replyFormRef}
         className="mb-6 p-4 rounded-xl border border-white backdrop-blur bg-black/60 neon-glow"
       >
         {replyTo && (
@@ -297,8 +297,13 @@ const CommentSection = ({ articleId }) => {
           <Comment
             key={comment.id}
             comment={comment}
-            replies={groupReplies(comment.id)}
-            onReplyClick={setReplyTo}
+            allComments={comments}
+            onReplyClick={(comment) => {
+              setReplyTo(comment);
+              setTimeout(() => {
+                replyFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+            }}
             onVote={handleVote}
             upvotedComments={upvotedComments}
             downvotedComments={downvotedComments}
