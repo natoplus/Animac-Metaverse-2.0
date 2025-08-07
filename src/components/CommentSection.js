@@ -111,210 +111,296 @@ const Comment = ({
 
 const CommentSection = ({ articleId }) => {
   const [comments, setComments] = useState([]);
+  const [content, setContent] = useState('');
+  const [author, setAuthor] = useState('');
+  const [replyTo, setReplyTo] = useState(null);
   const [visibleCount, setVisibleCount] = useState(5);
+  const [expandedComments, setExpandedComments] = useState({});
   const [upvotedComments, setUpvotedComments] = useState([]);
   const [downvotedComments, setDownvotedComments] = useState([]);
-  const [showReplies, setShowReplies] = useState({});
-  const [alias, setAlias] = useState('');
-  const [newComment, setNewComment] = useState('');
-  const [replyTo, setReplyTo] = useState(null);
-  const [replyCounts, setReplyCounts] = useState({});
-  const [downvoteCounts, setDownvoteCounts] = useState({});
-
-  const replyFormRef = useRef();
 
   const fetchComments = async () => {
     try {
-      const sessionId = getSessionId();
-      const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
-        headers: { 'session-id': sessionId },
-      });
-
+      const res = await fetch(`${API_URL}/api/articles/${articleId}/comments`);
       const data = await res.json();
-      setComments(data || []);
-
-      const repliesMap = {};
-      const downvotesMap = {};
-      const likedIds = [];
-      const dislikedIds = [];
-
-      data.forEach((comment) => {
-        if (comment.parent_id) {
-          repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
-        }
-        if (comment.downvotes || comment.dislikes) {
-          downvotesMap[comment.id] = comment.downvotes ?? comment.dislikes;
-        }
-        if (comment.is_liked_by_session || comment.liked_by_user) {
-          likedIds.push(comment.id);
-        }
-        if (comment.is_disliked_by_session || comment.disliked_by_user) {
-          dislikedIds.push(comment.id);
-        }
-      });
-
-      setReplyCounts(repliesMap);
-      setDownvoteCounts(downvotesMap);
-      setUpvotedComments(likedIds);
-      setDownvotedComments(dislikedIds);
+      setComments(data);
     } catch (err) {
-      console.error('Error loading comments:', err);
+      console.error('Failed to fetch comments:', err);
     }
   };
 
   useEffect(() => {
-    if (articleId) fetchComments();
+    fetchComments();
   }, [articleId]);
-
-  const handleVote = async (commentId, type) => {
-    const sessionId = getSessionId();
-    const isUpvote = type === 'up';
-    const isDownvote = type === 'down';
-    const endpoint = isUpvote ? 'like' : 'dislike';
-
-    try {
-      const res = await fetch(`${API_URL}/api/comments/${commentId}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'session-id': sessionId,
-        },
-        body: JSON.stringify({ type }),
-      });
-
-      if (!res.ok) throw new Error('Vote failed');
-
-      if (isUpvote) {
-        setUpvotedComments((prev) =>
-          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
-        );
-        setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
-      }
-
-      if (isDownvote) {
-        setDownvotedComments((prev) =>
-          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
-        );
-        setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
-      }
-
-      fetchComments();
-    } catch (err) {
-      console.error('Voting error:', err);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
-
-    const trimmedAlias = alias.trim();
-
-    const body = {
-      content: newComment,
-      author: trimmedAlias !== '' ? trimmedAlias : undefined,
-      article_id: articleId,
-      parent_id: replyTo?.id || null,
-    };
+    if (!content.trim()) return;
 
     try {
-      await fetch(`${API_URL}/api/comments`, {
+      const res = await fetch(`${API_URL}/api/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({
+          article_id: articleId,
+          content,
+          author: author || 'Anonymous',
+          parent_id: replyTo,
+        }),
       });
 
-      setNewComment('');
-      setReplyTo(null);
-      setAlias('');
-      fetchComments();
+      if (res.ok) {
+        const newComment = await res.json();
+        setComments((prev) => [...prev, newComment]);
+        setContent('');
+        setReplyTo(null);
+      } else {
+        console.error('Failed to post comment');
+      }
     } catch (err) {
       console.error('Submit error:', err);
     }
   };
 
-  const toggleReplies = (commentId) => {
-    setShowReplies((prev) => ({
+  const toggleExpand = (id) => {
+    setExpandedComments((prev) => ({
       ...prev,
-      [commentId]: !prev[commentId],
+      [id]: !prev[id],
     }));
   };
 
-  const topLevelComments = comments.filter((c) => !c.parent_id);
+  const handleVote = async (commentId, type) => {
+    const isUpvote = type === 'like';
+    const endpoint = `${API_URL}/api/comments/${commentId}/${type}`;
+
+    try {
+      const res = await fetch(endpoint, { method: 'POST' });
+      if (res.ok) {
+        setComments((prev) =>
+          prev.map((c) =>
+            c.id === commentId
+              ? {
+                  ...c,
+                  likes: isUpvote ? c.likes + 1 : c.likes,
+                  dislikes: !isUpvote ? c.dislikes + 1 : c.dislikes,
+                }
+              : c
+          )
+        );
+
+        if (isUpvote) {
+          setUpvotedComments([...upvotedComments, commentId]);
+        } else {
+          setDownvotedComments([...downvotedComments, commentId]);
+        }
+      } else if (res.status === 403) {
+        // Unlike or undislike
+        const reverseEndpoint = `${API_URL}/api/comments/${commentId}/${type}`;
+        const undoRes = await fetch(reverseEndpoint, { method: 'DELETE' });
+
+        if (undoRes.ok) {
+          setComments((prev) =>
+            prev.map((c) =>
+              c.id === commentId
+                ? {
+                    ...c,
+                    likes: isUpvote ? Math.max(0, c.likes - 1) : c.likes,
+                    dislikes: !isUpvote ? Math.max(0, c.dislikes - 1) : c.dislikes,
+                  }
+                : c
+            )
+          );
+
+          if (isUpvote) {
+            setUpvotedComments(upvotedComments.filter((id) => id !== commentId));
+          } else {
+            setDownvotedComments(downvotedComments.filter((id) => id !== commentId));
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Vote error:', err);
+    }
+  };
+
+  const renderReplies = (parentId, level = 1) => {
+    const replies = comments.filter((c) => c.parent_id === parentId);
+
+    if (replies.length === 0) return null;
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0 }}
+        className={`ml-${Math.min(level * 4, 16)} mt-2 space-y-2`}
+      >
+        {replies.map((reply) => (
+          <div key={reply.id} className="bg-[#121212] p-2 rounded-lg border border-zinc-800">
+            <div className="flex justify-between items-center text-sm text-gray-300">
+              <span className="font-semibold">{reply.author}</span>
+              <span className="text-xs opacity-50">{new Date(reply.created_at).toLocaleString()}</span>
+            </div>
+            <p className="text-gray-200 mt-1">{reply.content}</p>
+            <div className="flex items-center mt-1 gap-3 text-xs text-zinc-400">
+              <button
+                onClick={() => handleVote(reply.id, 'like')}
+                className={`flex items-center gap-1 ${upvotedComments.includes(reply.id) ? 'text-green-400' : ''}`}
+              >
+                <ThumbsUp size={14} />
+                {reply.likes}
+              </button>
+              <button
+                onClick={() => handleVote(reply.id, 'dislike')}
+                className={`flex items-center gap-1 ${downvotedComments.includes(reply.id) ? 'text-red-400' : ''}`}
+              >
+                <ThumbsDown size={14} />
+                {reply.dislikes}
+              </button>
+              <button
+                onClick={() => setReplyTo(reply.id)}
+                className="flex items-center gap-1 hover:text-blue-400"
+              >
+                <MessageCircle size={14} />
+                Reply
+              </button>
+              {comments.some((c) => c.parent_id === reply.id) && (
+                <button onClick={() => toggleExpand(reply.id)} className="flex items-center gap-1 hover:text-yellow-400">
+                  {expandedComments[reply.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  {expandedComments[reply.id] ? 'Hide replies' : 'View replies'}
+                </button>
+              )}
+            </div>
+
+            <AnimatePresence>
+              {expandedComments[reply.id] && renderReplies(reply.id, level + 1)}
+            </AnimatePresence>
+
+            {replyTo === reply.id && (
+              <form onSubmit={handleSubmit} className="mt-2 space-y-2">
+                <input
+                  type="text"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full rounded-md bg-zinc-900 border border-zinc-700 p-1 text-sm text-white"
+                />
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Your reply..."
+                  className="w-full rounded-md bg-zinc-900 border border-zinc-700 p-1 text-sm text-white"
+                />
+                <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                  Post Reply
+                </button>
+              </form>
+            )}
+          </div>
+        ))}
+      </motion.div>
+    );
+  };
+
+  const topLevelComments = comments
+    .filter((c) => !c.parent_id)
+    .slice(0, visibleCount);
 
   return (
-    <div className="mt-8">
-      <h3 className="text-xl font-semibold text-white mb-4">Comments</h3>
+    <div className="w-full max-w-3xl mx-auto p-4 text-white">
+      <h2 className="text-xl font-bold mb-4">Comments</h2>
 
-      <form
-        onSubmit={handleSubmit}
-        ref={replyFormRef}
-        className="mb-6 p-4 rounded-xl border border-white backdrop-blur bg-black/60 neon-glow"
-      >
-        {replyTo && (
-          <div className="mb-2 flex items-center justify-between text-sm text-purple-400">
-            Replying to: {replyTo.author || 'Anonymous'}
-            <button
-              onClick={() => setReplyTo(null)}
-              type="button"
-              className="text-red-500 hover:text-red-700"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-2 mb-6">
         <input
           type="text"
-          className="w-full mb-2 p-2 rounded-md border border-gray-700 bg-black/80 text-white"
-          placeholder="Your alias (optional)"
-          value={alias}
-          onChange={(e) => setAlias(e.target.value)}
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          placeholder="Your name"
+          className="w-full rounded-md bg-zinc-900 border border-zinc-700 p-2 text-white"
         />
         <textarea
-          className="w-full p-3 rounded-md border border-gray-700 bg-black/80 text-white focus:outline-none"
-          rows="4"
-          placeholder={replyTo ? 'Write your reply...' : 'Add a comment...'}
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Write a comment..."
+          className="w-full rounded-md bg-zinc-900 border border-zinc-700 p-2 text-white"
         />
-        <button
-          type="submit"
-          className="mt-3 px-4 py-2 rounded-full border border-white text-white hover:bg-purple-700/20 backdrop-blur-md bg-black/50 neon-glow"
-        >
-          {replyTo ? 'Post Reply' : 'Post Comment'}
+        <button type="submit" className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded text-white">
+          Post Comment
         </button>
       </form>
 
-      <AnimatePresence>
-        {topLevelComments.slice(0, visibleCount).map((comment) => (
-          <Comment
-            key={comment.id}
-            comment={comment}
-            allComments={comments}
-            onReplyClick={(comment) => {
-              setReplyTo(comment);
-              setTimeout(() => {
-                replyFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }, 100);
-            }}
-            onVote={handleVote}
-            upvotedComments={upvotedComments}
-            downvotedComments={downvotedComments}
-            toggleReplies={toggleReplies}
-            showReplies={showReplies}
-            replyCounts={replyCounts}
-            downvoteCounts={downvoteCounts}
-          />
-        ))}
-      </AnimatePresence>
+      <div className="space-y-4">
+        {topLevelComments.map((comment) => (
+          <div key={comment.id} className="bg-[#1a1a1a] p-4 rounded-lg border border-zinc-800">
+            <div className="flex justify-between text-sm">
+              <span className="font-bold">{comment.author}</span>
+              <span className="text-xs text-zinc-400">{new Date(comment.created_at).toLocaleString()}</span>
+            </div>
+            <p className="text-zinc-200 mt-2">{comment.content}</p>
+            <div className="flex items-center gap-3 mt-2 text-sm text-zinc-400">
+              <button
+                onClick={() => handleVote(comment.id, 'like')}
+                className={`flex items-center gap-1 ${upvotedComments.includes(comment.id) ? 'text-green-400' : ''}`}
+              >
+                <ThumbsUp size={16} /> {comment.likes}
+              </button>
+              <button
+                onClick={() => handleVote(comment.id, 'dislike')}
+                className={`flex items-center gap-1 ${downvotedComments.includes(comment.id) ? 'text-red-400' : ''}`}
+              >
+                <ThumbsDown size={16} /> {comment.dislikes}
+              </button>
+              <button
+                onClick={() => setReplyTo(comment.id)}
+                className="flex items-center gap-1 hover:text-blue-400"
+              >
+                <MessageCircle size={16} /> Reply
+              </button>
+              {comments.some((c) => c.parent_id === comment.id) && (
+                <button onClick={() => toggleExpand(comment.id)} className="flex items-center gap-1 hover:text-yellow-400">
+                  {expandedComments[comment.id] ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {expandedComments[comment.id] ? 'Hide replies' : 'View replies'}
+                </button>
+              )}
+            </div>
 
-      {visibleCount < topLevelComments.length && (
-        <button
-          onClick={() => setVisibleCount((prev) => prev + 5)}
-          className="text-purple-400 mt-4 hover:underline"
-        >
-          Load more comments
-        </button>
+            <AnimatePresence>
+              {expandedComments[comment.id] && renderReplies(comment.id)}
+            </AnimatePresence>
+
+            {replyTo === comment.id && (
+              <form onSubmit={handleSubmit} className="mt-3 space-y-2">
+                <input
+                  type="text"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full rounded-md bg-zinc-900 border border-zinc-700 p-1 text-sm text-white"
+                />
+                <textarea
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Your reply..."
+                  className="w-full rounded-md bg-zinc-900 border border-zinc-700 p-1 text-sm text-white"
+                />
+                <button type="submit" className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                  Post Reply
+                </button>
+              </form>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {visibleCount < comments.filter((c) => !c.parent_id).length && (
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => setVisibleCount((prev) => prev + 5)}
+            className="text-blue-400 hover:underline"
+          >
+            Load more comments
+          </button>
+        </div>
       )}
     </div>
   );
