@@ -21,7 +21,7 @@ const WatchTowerPreview = () => {
     const fetchEastTrailers = async () => {
       const query = `
         query {
-          Page(perPage: 15) {
+          Page(perPage: 5) {
             media(type: ANIME, sort: SCORE_DESC, status: NOT_YET_RELEASED) {
               id
               title { romaji }
@@ -69,7 +69,7 @@ const WatchTowerPreview = () => {
           `https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`
         );
         const trailersData = await Promise.all(
-          res.data.results.slice(0, 15).map(async (movie) => {
+          res.data.results.slice(0, 5).map(async (movie) => {
             try {
               const videosRes = await axios.get(
                 `https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_API_KEY}&language=en-US`
