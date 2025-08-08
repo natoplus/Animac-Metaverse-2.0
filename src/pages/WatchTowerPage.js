@@ -165,8 +165,6 @@ function HeroFeatured({ trailer, countdownDate, onPlay }) {
         <PlayCircle className="w-24 h-24 text-purple-500 drop-shadow-lg animate-pulse" />
       </div>
 
-      <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full"></div>
-
     </section>
   );
 }
@@ -367,7 +365,7 @@ export default function WatchTowerPage() {
       style={{ fontFamily: "'Azonix', sans-serif" }}
     >
       {/* Toggle Switch fixed top-right */}
-      <div className="fixed top-6 right-6 z-50 bg-black/70 p-1 rounded-full shadow-lg">
+      <div className="fixed top-6 right-6 z-50 p-1 rounded-full shadow-lg">
         <label className="relative inline-flex items-center cursor-pointer select-none">
           <input
             type="checkbox"
@@ -398,6 +396,8 @@ export default function WatchTowerPage() {
           />
         )}
       </div>
+
+      <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full"></div>
 
       {/* Genre Filter Buttons */}
       <div className="mb-16 flex flex-wrap justify-center gap-3">
