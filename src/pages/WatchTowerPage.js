@@ -164,6 +164,9 @@ function HeroFeatured({ trailer, countdownDate, onPlay }) {
       <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
         <PlayCircle className="w-24 h-24 text-purple-500 drop-shadow-lg animate-pulse" />
       </div>
+
+      <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full"></div>
+
     </section>
   );
 }
@@ -436,7 +439,7 @@ export default function WatchTowerPage() {
         <motion.div
           ref={trailerScrollRef}
           layout
-          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black`}
+          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mb-13`}
         >
           {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
             <TrailerCard
