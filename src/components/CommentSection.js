@@ -115,72 +115,61 @@ const CommentSection = ({ articleId }) => {
   const replyFormRef = useRef();
 
   const fetchComments = async () => {
-    try {
-      const sessionId = getSessionId();
-      const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
-        headers: { "session-id": sessionId },
-      });
+  try {
+    const sessionId = getSessionId();
+    const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
+      headers: { 'session-id': sessionId },
+    });
 
-      const data = await res.json();
-      if (!Array.isArray(data)) {
-        console.error("Invalid comments data from backend:", data);
-        setComments([]);
-        return;
-      }
-
-      // Map for quick lookup
-      const commentMap = {};
-      const likedIds = [];
-      const dislikedIds = [];
-      const replyCounts = {};
-      const downvoteCounts = {};
-
-      data.forEach(comment => {
-        comment.replies = [];
-        commentMap[comment.id] = comment;
-
-        if (comment.parent_id) {
-          replyCounts[comment.parent_id] = (replyCounts[comment.parent_id] || 0) + 1;
-        }
-        if (comment.downvotes || comment.dislikes) {
-          downvoteCounts[comment.id] = comment.downvotes ?? comment.dislikes;
-        }
-        if (comment.is_liked_by_session || comment.liked_by_user) {
-          likedIds.push(comment.id);
-        }
-        if (comment.is_disliked_by_session || comment.disliked_by_user) {
-          dislikedIds.push(comment.id);
-        }
-      });
-
-      // Build nested structure (multi-level)
-      const nested = [];
-      data.forEach(comment => {
-        if (comment.parent_id && commentMap[comment.parent_id]) {
-          commentMap[comment.parent_id].replies.push(comment);
-        } else if (!comment.parent_id) {
-          nested.push(comment);
-        }
-      });
-
-      // Optional: sort top-level and replies by creation date
-      const sortByDate = (a, b) => new Date(a.created_at) - new Date(b.created_at);
-      const sortTree = arr => {
-        arr.sort(sortByDate);
-        arr.forEach(c => sortTree(c.replies));
-      };
-      sortTree(nested);
-
-      setComments(nested);
-      setReplyCounts(replyCounts);
-      setDownvoteCounts(downvoteCounts);
-      setUpvotedComments(likedIds);
-      setDownvotedComments(dislikedIds);
-    } catch (err) {
-      console.error("Error loading comments:", err);
+    const data = await res.json();
+    if (!Array.isArray(data)) {
+      console.error("Invalid comments data from backend:", data);
+      setComments([]);
+      return;
     }
-  };
 
+    const repliesMap = {};
+    const downvotesMap = {};
+    const likedIds = [];
+    const dislikedIds = [];
+
+    const commentMap = {};
+    data.forEach((comment) => {
+      comment.replies = [];
+      commentMap[comment.id] = comment;
+
+      if (comment.parent_id) {
+        repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
+      }
+      if (comment.downvotes || comment.dislikes) {
+        downvotesMap[comment.id] = comment.downvotes ?? comment.dislikes;
+      }
+      if (comment.is_liked_by_session || comment.liked_by_user) {
+        likedIds.push(comment.id);
+      }
+      if (comment.is_disliked_by_session || comment.disliked_by_user) {
+        dislikedIds.push(comment.id);
+      }
+    });
+
+    const nested = [];
+    data.forEach((comment) => {
+      if (comment.parent_id && commentMap[comment.parent_id]) {
+        commentMap[comment.parent_id].replies.push(comment);
+      } else if (!comment.parent_id) {
+        nested.push(comment);
+      }
+    });
+
+    setComments(nested);
+    setReplyCounts(repliesMap);
+    setDownvoteCounts(downvotesMap);
+    setUpvotedComments(likedIds);
+    setDownvotedComments(dislikedIds);
+  } catch (err) {
+    console.error("Error loading comments:", err);
+  }
+};
 
 
 
@@ -191,88 +180,75 @@ const CommentSection = ({ articleId }) => {
   const handleVote = async (commentId, type) => {
     const sessionId = getSessionId();
     const isUpvote = type === 'up';
+    const isDownvote = type === 'down';
     const endpoint = isUpvote ? 'like' : 'dislike';
 
-    // Optimistically update local state
-    setComments(prevComments => {
-      const updateVotes = commentsArr =>
-        commentsArr.map(c => {
-          if (c.id === commentId) {
-            const newLikes = isUpvote
-              ? (upvotedComments.includes(commentId) ? c.likes - 1 : c.likes + 1)
-              : c.likes;
-            const newDownvotes = !isUpvote
-              ? (downvotedComments.includes(commentId) ? c.downvotes - 1 : c.downvotes + 1)
-              : c.downvotes;
-            return { ...c, likes: newLikes, downvotes: newDownvotes };
-          }
-          return { ...c, replies: updateVotes(c.replies) };
-        });
-      return updateVotes(prevComments);
-    });
-
-    // Update upvote/downvote arrays
-    if (isUpvote) {
-      setUpvotedComments(prev =>
-        prev.includes(commentId) ? prev.filter(id => id !== commentId) : [...prev, commentId]
-      );
-      setDownvotedComments(prev => prev.filter(id => id !== commentId));
-    } else {
-      setDownvotedComments(prev =>
-        prev.includes(commentId) ? prev.filter(id => id !== commentId) : [...prev, commentId]
-      );
-      setUpvotedComments(prev => prev.filter(id => id !== commentId));
-    }
-
-    // Send to backend
     try {
       const res = await fetch(`${API_URL}/api/comments/${commentId}/${endpoint}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'session-id': sessionId },
+        headers: {
+          'Content-Type': 'application/json',
+          'session-id': sessionId,
+        },
         body: JSON.stringify({ type }),
       });
+
       if (!res.ok) throw new Error('Vote failed');
-    } catch (err) {
-      console.error('Voting error:', err);
-      fetchComments(); // fallback if optimistic update fails
-    }
-  };
 
+      if (isUpvote) {
+        setUpvotedComments((prev) =>
+          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+        );
+        setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
+      }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!newComment.trim()) return;
-
-    const trimmedAlias = alias.trim();
-
-    const body = {
-      content: newComment,
-      author: trimmedAlias !== '' ? trimmedAlias : undefined,
-      article_id: articleId,
-      parent_id: replyTo?.id || null,
-      session_id: getSessionId(), // ✅ critical fix
-    };
-
-    try {
-      await fetch(`${API_URL}/api/comments`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      setNewComment('');
-      setReplyTo(null);
-      setAlias('');
-
-      if (replyTo?.id) {
-        setShowReplies((prev) => ({ ...prev, [replyTo.id]: true })); // ✅ open replies
+      if (isDownvote) {
+        setDownvotedComments((prev) =>
+          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
+        );
+        setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
       }
 
       fetchComments();
     } catch (err) {
-      console.error('Submit error:', err);
+      console.error('Voting error:', err);
     }
   };
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!newComment.trim()) return;
+
+  const trimmedAlias = alias.trim();
+
+  const body = {
+    content: newComment,
+    author: trimmedAlias !== '' ? trimmedAlias : undefined,
+    article_id: articleId,
+    parent_id: replyTo?.id || null,
+    session_id: getSessionId(), // ✅ critical fix
+  };
+
+  try {
+    await fetch(`${API_URL}/api/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    setNewComment('');
+    setReplyTo(null);
+    setAlias('');
+
+    if (replyTo?.id) {
+      setShowReplies((prev) => ({ ...prev, [replyTo.id]: true })); // ✅ open replies
+    }
+
+    fetchComments();
+  } catch (err) {
+    console.error('Submit error:', err);
+  }
+};
 
 
   const toggleReplies = (commentId) => {
