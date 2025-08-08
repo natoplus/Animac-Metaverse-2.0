@@ -389,7 +389,7 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Hero Featured Trailer */}
-      <div className="mb-14 mt-13">
+      <div className="mb-14 mt-20">
         {featuredTrailer && featuredDate && (
           <HeroFeatured
             trailer={featuredTrailer}
@@ -427,6 +427,7 @@ export default function WatchTowerPage() {
         ))}
       </div>
 
+      <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full"></div>
 
       {/* Trailer Cards Section */}
       <div className="relative mb-13">
@@ -441,7 +442,7 @@ export default function WatchTowerPage() {
         <motion.div
           ref={trailerScrollRef}
           layout
-          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mt-9`}
+          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mt-20`}
         >
           {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
             <TrailerCard
@@ -463,13 +464,14 @@ export default function WatchTowerPage() {
         </button>
       </div>
 
+
       {/* Spotlight section */}
-      <div className="mb-14 mt-16">
+      <div className="mb-10 mt-10">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className={`${neonGlowPanel} max-w-5xl mx-auto mb-16 mt-13`}
+          className={`${neonGlowPanel} max-w-5xl mx-auto mb-20 mt-20`}
         >
           <h2 className="text-3xl font-extrabold mb-7 flex items-center gap-3">
             <Film className="w-8 h-8 text-purple-500" />
@@ -523,10 +525,10 @@ export default function WatchTowerPage() {
         </motion.section>
       </div>
       
-
+      <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full"></div>
 
       {/* Release Calendar Section */}
-      <section className="mt-16 relative mb-16">
+      <section className="mt-20 relative mb-20">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Calendar className="w-8 h-8" /> Release Calendar
         </h2>
