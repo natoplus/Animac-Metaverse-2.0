@@ -429,7 +429,7 @@ export default function WatchTowerPage() {
 
 
       {/* Trailer Cards Section */}
-      <div className="relative mb-13">
+      <div className="relative mb-13 mt-18">
         <button
           aria-label="Scroll trailers left"
           onClick={scrollTrailerLeft}
