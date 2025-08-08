@@ -142,65 +142,61 @@ const CommentSection = ({ articleId }) => {
       });
 
       const data = await res.json();
+
       if (!Array.isArray(data)) {
-        console.error('Invalid comments data from backend:', data);
+        console.error("Invalid comments data:", data);
         setComments([]);
         return;
       }
 
-      const repliesMap = {};
-      const downvotesMap = {};
-      const likedIds = [];
-      const dislikedIds = [];
+      // Helper to sort comments by newest first
+      const sortComments = (arr) =>
+        arr
+          .slice()
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .map(comment => ({
+            ...comment,
+            replies: comment.replies ? sortComments(comment.replies) : []
+          }));
 
-      // Prepare comment map with empty replies
-      const commentMap = {};
-      data.forEach((comment) => {
-        comment.replies = [];
-        commentMap[comment.id] = comment;
+      // Helper to count replies recursively
+      const getReplyCount = (comment) => {
+        if (!comment.replies || comment.replies.length === 0) return 0;
+        return comment.replies.length + comment.replies.reduce((sum, r) => sum + getReplyCount(r), 0);
+      };
 
-        if (comment.parent_id) {
-          repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
-        }
-        if (comment.downvotes || comment.dislikes) {
-          downvotesMap[comment.id] = comment.downvotes ?? comment.dislikes;
-        }
-        if (comment.is_liked_by_session || comment.liked_by_user) {
-          likedIds.push(comment.id);
-        }
-        if (comment.is_disliked_by_session || comment.disliked_by_user) {
-          dislikedIds.push(comment.id);
-        }
+      // Sort the main comments + replies recursively
+      const sortedComments = sortComments(data);
+
+      // Store reply counts for each comment
+      const counts = {};
+      sortedComments.forEach(comment => {
+        counts[comment.id] = getReplyCount(comment);
       });
 
-      // Attach children to their parent
-      const nested = [];
-      data.forEach((comment) => {
-        if (comment.parent_id && commentMap[comment.parent_id]) {
-          commentMap[comment.parent_id].replies.push(comment);
-        } else if (!comment.parent_id) {
-          nested.push(comment);
-        }
-      });
-
-      // Recursively sort replies newest first
-      const sortReplies = (comments) => {
-        comments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-        comments.forEach((c) => {
-          if (c.replies?.length) sortReplies(c.replies);
+      // Store which comments are liked/disliked by the current user
+      const liked = [];
+      const disliked = [];
+      const walkComments = (arr) => {
+        arr.forEach(comment => {
+          if (comment.liked_by_user) liked.push(comment.id);
+          if (comment.disliked_by_user) disliked.push(comment.id);
+          if (comment.replies) walkComments(comment.replies);
         });
       };
-      sortReplies(nested);
+      walkComments(sortedComments);
 
-      setComments(nested);
-      setReplyCounts(repliesMap);
-      setDownvoteCounts(downvotesMap);
-      setUpvotedComments(likedIds);
-      setDownvotedComments(dislikedIds);
+      setComments(sortedComments);
+      setReplyCounts(counts);
+      setUpvotedComments(liked);
+      setDownvotedComments(disliked);
+
     } catch (err) {
-      console.error('Error loading comments:', err);
+      console.error("❌ Error fetching comments:", err);
+      setComments([]);
     }
   };
+
 
 
 
