@@ -269,6 +269,37 @@ async def create_comment(comment: CommentBase):
         logging.error("❌ Error creating comment", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to create comment: {str(e)}")
 
+
+# Helper to nest comments
+def build_comment_tree(comments, liked_ids, disliked_ids):
+    comment_map = {}
+    for c in comments:
+        comment_map[c["id"]] = {
+            "id": c["id"],
+            "article_id": c["article_id"],
+            "content": c["content"],
+            "author": c.get("author", "Anonymous"),
+            "created_at": c["created_at"],
+            "parent_id": c.get("parent_id"),
+            "likes": c.get("likes", 0),
+            "dislikes": c.get("dislikes", 0),
+            "replies": [],
+            "liked_by_user": c["id"] in liked_ids,
+            "is_liked_by_session": c["id"] in liked_ids,
+            "is_disliked_by_session": c["id"] in disliked_ids
+        }
+
+    roots = []
+    for cid, obj in comment_map.items():
+        parent_id = obj["parent_id"]
+        if parent_id and parent_id in comment_map:
+            comment_map[parent_id]["replies"].append(obj)
+        else:
+            roots.append(obj)
+
+    return roots
+
+
 @app.get("/api/comments/{article_id}", response_model=List[CommentResponse])
 async def get_comments_for_article(article_id: str, request: Request):
     session_id = request.headers.get("session-id")
@@ -296,30 +327,14 @@ async def get_comments_for_article(article_id: str, request: Request):
         .execute()
     disliked_ids = {item["comment_id"] for item in disliked_res.data or []}
 
-    # 3. Return as flat list (no nesting yet)
-    return [
-        CommentResponse(
-            id=c["id"],
-            article_id=c["article_id"],
-            content=c["content"],
-            author=c.get("author", "Anonymous"),
-            created_at=c["created_at"],
-            parent_id=c.get("parent_id"),
-            likes=c.get("likes", 0),
-            dislikes=c.get("dislikes", 0),
-            replies=[],  # frontend will fill this
-            liked_by_user=c["id"] in liked_ids,
-            is_liked_by_session=c["id"] in liked_ids,
-            is_disliked_by_session=c["id"] in disliked_ids
-        )
-        for c in flat_comments
-    ]
-
+    # 3. Return nested tree
+    return build_comment_tree(flat_comments, liked_ids, disliked_ids)
 
 
 @app.get("/api/comments", response_model=List[CommentResponse])
-async def get_comments_by_query(article_id: str):
-    return await get_comments_for_article(article_id)
+async def get_comments_by_query(article_id: str, request: Request):
+    return await get_comments_for_article(article_id, request)
+
 
 @app.post("/api/comments/{comment_id}/like")
 async def like_comment(comment_id: str, request: Request):
@@ -328,14 +343,12 @@ async def like_comment(comment_id: str, request: Request):
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID required")
 
-        # Check if already liked
         liked_res = supabase.table("comment_likes") \
             .select("id") \
             .eq("comment_id", comment_id) \
             .eq("session_id", session_id) \
             .execute()
 
-        # Fetch current likes/dislikes count
         comment = supabase.table("comments") \
             .select("likes", "dislikes") \
             .eq("id", comment_id) \
@@ -346,46 +359,37 @@ async def like_comment(comment_id: str, request: Request):
         current_dislikes = comment.data.get("dislikes", 0)
 
         if liked_res.data:
-            # Remove like
             supabase.table("comment_likes") \
                 .delete() \
                 .eq("comment_id", comment_id) \
                 .eq("session_id", session_id) \
                 .execute()
-
             supabase.table("comments") \
                 .update({"likes": max(0, current_likes - 1)}) \
                 .eq("id", comment_id) \
                 .execute()
-
             return {"message": "Like removed"}
 
-        # Add like
         supabase.table("comment_likes").insert({
             "comment_id": comment_id,
             "session_id": session_id
         }).execute()
-
-        # Update likes count
         supabase.table("comments") \
             .update({"likes": current_likes + 1}) \
             .eq("id", comment_id) \
             .execute()
 
-        # Remove dislike if it exists
         dislike_res = supabase.table("comment_dislikes") \
             .select("id") \
             .eq("comment_id", comment_id) \
             .eq("session_id", session_id) \
             .execute()
-
         if dislike_res.data:
             supabase.table("comment_dislikes") \
                 .delete() \
                 .eq("comment_id", comment_id) \
                 .eq("session_id", session_id) \
                 .execute()
-
             supabase.table("comments") \
                 .update({"dislikes": max(0, current_dislikes - 1)}) \
                 .eq("id", comment_id) \
@@ -405,65 +409,53 @@ async def dislike_comment(comment_id: str, request: Request):
         if not session_id:
             raise HTTPException(status_code=400, detail="Session ID required")
 
-        # Check if already disliked
         res = supabase.table("comment_dislikes") \
             .select("id") \
             .eq("comment_id", comment_id) \
             .eq("session_id", session_id) \
             .execute()
-
         already_disliked = bool(res.data)
 
-        # Fetch current likes/dislikes count
         comment = supabase.table("comments") \
             .select("likes", "dislikes") \
             .eq("id", comment_id) \
             .single() \
             .execute()
-
         current_likes = comment.data.get("likes", 0)
         current_dislikes = comment.data.get("dislikes", 0)
 
         if already_disliked:
-            # Remove dislike
             supabase.table("comment_dislikes") \
                 .delete() \
                 .eq("comment_id", comment_id) \
                 .eq("session_id", session_id) \
                 .execute()
-
             supabase.table("comments") \
                 .update({"dislikes": max(0, current_dislikes - 1)}) \
                 .eq("id", comment_id) \
                 .execute()
-
             return {"message": "Dislike removed"}
 
-        # Add dislike
         supabase.table("comment_dislikes").insert({
             "comment_id": comment_id,
             "session_id": session_id
         }).execute()
-
         supabase.table("comments") \
             .update({"dislikes": current_dislikes + 1}) \
             .eq("id", comment_id) \
             .execute()
 
-        # Remove like if it exists
         like_res = supabase.table("comment_likes") \
             .select("id") \
             .eq("comment_id", comment_id) \
             .eq("session_id", session_id) \
             .execute()
-
         if like_res.data:
             supabase.table("comment_likes") \
                 .delete() \
                 .eq("comment_id", comment_id) \
                 .eq("session_id", session_id) \
                 .execute()
-
             supabase.table("comments") \
                 .update({"likes": max(0, current_likes - 1)}) \
                 .eq("id", comment_id) \
@@ -476,16 +468,32 @@ async def dislike_comment(comment_id: str, request: Request):
         raise HTTPException(status_code=500, detail="Failed to toggle dislike")
 
 
-
 @app.post("/api/comments/{comment_id}/undislike")
 async def undislike_comment(comment_id: str, request: Request):
-    session_id = request.cookies.get("session_id")
+    session_id = request.headers.get("session-id")
     if not session_id:
-        raise HTTPException(status_code=400, detail="Session ID missing")
+        raise HTTPException(status_code=400, detail="Session ID required")
 
-    supabase.table("comment_dislikes").delete().eq("comment_id", comment_id).eq("session_id", session_id).execute()
+    supabase.table("comment_dislikes") \
+        .delete() \
+        .eq("comment_id", comment_id) \
+        .eq("session_id", session_id) \
+        .execute()
+
+    comment = supabase.table("comments") \
+        .select("dislikes") \
+        .eq("id", comment_id) \
+        .single() \
+        .execute()
+    if comment and comment.data:
+        current = comment.data.get("dislikes", 0)
+        supabase.table("comments") \
+            .update({"dislikes": max(0, current - 1)}) \
+            .eq("id", comment_id) \
+            .execute()
 
     return {"message": "Undisliked successfully"}
+
 
 
 # ---------- Run ----------
