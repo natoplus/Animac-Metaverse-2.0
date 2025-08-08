@@ -152,8 +152,9 @@ const CommentSection = ({ articleId }) => {
       const downvotesMap = {};
       const likedIds = [];
       const dislikedIds = [];
-      const commentMap = {};
 
+      // Prepare comment map with empty replies
+      const commentMap = {};
       data.forEach((comment) => {
         comment.replies = [];
         commentMap[comment.id] = comment;
@@ -172,16 +173,24 @@ const CommentSection = ({ articleId }) => {
         }
       });
 
+      // Attach children to their parent
       const nested = [];
       data.forEach((comment) => {
-        if (comment.parent_id) {
-          if (commentMap[comment.parent_id]) {
-            commentMap[comment.parent_id].replies.push(comment);
-          }
-        } else {
+        if (comment.parent_id && commentMap[comment.parent_id]) {
+          commentMap[comment.parent_id].replies.push(comment);
+        } else if (!comment.parent_id) {
           nested.push(comment);
         }
       });
+
+      // Recursively sort replies newest first
+      const sortReplies = (comments) => {
+        comments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        comments.forEach((c) => {
+          if (c.replies?.length) sortReplies(c.replies);
+        });
+      };
+      sortReplies(nested);
 
       setComments(nested);
       setReplyCounts(repliesMap);
@@ -192,6 +201,8 @@ const CommentSection = ({ articleId }) => {
       console.error('Error loading comments:', err);
     }
   };
+
+
 
   useEffect(() => {
     if (articleId) fetchComments();
