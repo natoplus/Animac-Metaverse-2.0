@@ -395,7 +395,7 @@ export default function WatchTowerPage() {
       )}
 
       {/* Genre Filter Buttons */}
-      <div className="mb-8 flex flex-wrap justify-center gap-3">
+      <div className="mb-11 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
@@ -424,7 +424,7 @@ export default function WatchTowerPage() {
 
 
       {/* Trailer Cards Section */}
-      <div className="relative">
+      <div className="relative mb-13">
         <button
           aria-label="Scroll trailers left"
           onClick={scrollTrailerLeft}
@@ -465,7 +465,7 @@ export default function WatchTowerPage() {
         viewport={{ once: true }}
         className={`${neonGlowPanel} max-w-5xl mx-auto`}
       >
-        <h2 className="text-3xl font-extrabold mb-6 flex items-center gap-3">
+        <h2 className="text-3xl font-extrabold mb-20 flex items-center gap-3">
           <Film className="w-8 h-8 text-purple-500" />
           Spotlight Upcoming {isEast ? "Anime" : "Movies"}
         </h2>
