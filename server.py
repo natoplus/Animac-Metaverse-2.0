@@ -327,8 +327,34 @@ async def get_comments_for_article(article_id: str, request: Request):
         .execute()
     disliked_ids = {item["comment_id"] for item in disliked_res.data or []}
 
-    # 3. Return nested tree
-    return build_comment_tree(flat_comments, liked_ids, disliked_ids)
+    # 3. Build nested comment tree with reply_count
+    comment_map = {c["id"]: {**c, "replies": [], "reply_count": 0} for c in flat_comments}
+
+    for c in flat_comments:
+        parent_id = c.get("parent_id")
+        if parent_id and parent_id in comment_map:
+            comment_map[parent_id]["replies"].append(comment_map[c["id"]])
+            comment_map[parent_id]["reply_count"] += 1
+
+    # Only return top-level comments, but with nested replies already attached
+    top_level_comments = [
+        comment_map[c["id"]]
+        for c in flat_comments
+        if not c.get("parent_id")
+    ]
+
+    # 4. Mark liked/disliked for this session
+    def mark_votes(comment):
+        comment["liked_by_session"] = comment["id"] in liked_ids
+        comment["disliked_by_session"] = comment["id"] in disliked_ids
+        for reply in comment["replies"]:
+            mark_votes(reply)
+
+    for comment in top_level_comments:
+        mark_votes(comment)
+
+    return top_level_comments
+
 
 
 @app.get("/api/comments", response_model=List[CommentResponse])
