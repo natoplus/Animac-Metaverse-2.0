@@ -15,7 +15,7 @@ const HeroSection = ({ featuredContent }) => {
         "Eren Yeager's journey reaches its climactic end as humanity faces its greatest threat yet. Experience the stunning conclusion to Hajime Isayama's masterpiece.",
       category: 'east',
       image:
-        'https://images.unsplash.com/photo-1615592389070-bcc97e05ad01?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwxfHxhbmltZSUyMGhlcm98ZW58MHx8fGJsYWNrfDE3NTMwNjk1NzR8MA&ixlib=rb-4.1.0&q=85',
+        'https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/Z-WHgqd_TeJxSuha8aZ5WpyLcX8/AAAABfrlSgfIEw-hX0imXlnY3qlZQoHl7Sx1z4CVxkWNdRMltLiGO6lkciwA1XsDjZto2aQJP9X7ulUOHfspuCwAdhfCngH7SZzsPZZn.jpg?r=551',
       link: '/article/attack-on-titan',
     },
     {
@@ -26,7 +26,7 @@ const HeroSection = ({ featuredContent }) => {
         'How Into the Spider-Verse changed animation forever with groundbreaking visual storytelling that influenced a generation of filmmakers.',
       category: 'west',
       image:
-        'https://images.unsplash.com/photo-1717395948943-f2a38e2e41f4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1Nzl8MHwxfHNlYXJjaHwyfHxhbmltZSUyMGhlcm98ZW58MHx8fGJsYWNrfDE3NTMwNjk1NzR8MA&ixlib=rb-4.1.0&q=85',
+        'https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/13572496/SpiderVerse_cropped.jpg?quality=90&strip=all&crop=0,0,100,100',
       link: '/article/spider-verse',
     },
     {
@@ -37,7 +37,7 @@ const HeroSection = ({ featuredContent }) => {
         "Dive deep into the studios that shape our favorite animated worlds, from MAPPA's revolutionary techniques to Pixar's emotional storytelling.",
       category: 'both',
       image:
-        'https://images.unsplash.com/photo-1720576127187-12d4b9045d93?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxhbmltZSUyMGNpbmVtYXRpY3xlbnwwfHx8YmxhY2t8MTc1MzA2OTU2Nnww&ixlib=rb-4.1.0&q=85',
+        'https://static1.cbrimages.com/wordpress/wp-content/uploads/2021/12/deku-and-spider-man.jpg',
       link: '/buzzfeed',
     },
   ];
