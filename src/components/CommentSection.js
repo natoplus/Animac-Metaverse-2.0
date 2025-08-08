@@ -149,7 +149,6 @@ const CommentSection = ({ articleId }) => {
         return;
       }
 
-      // Helper to sort comments by newest first
       const sortComments = (arr) =>
         arr
           .slice()
@@ -159,35 +158,34 @@ const CommentSection = ({ articleId }) => {
             replies: comment.replies ? sortComments(comment.replies) : []
           }));
 
-      // Helper to count replies recursively
       const getReplyCount = (comment) => {
         if (!comment.replies || comment.replies.length === 0) return 0;
         return comment.replies.length + comment.replies.reduce((sum, r) => sum + getReplyCount(r), 0);
       };
 
-      // Sort the main comments + replies recursively
       const sortedComments = sortComments(data);
 
-      // Store reply counts for each comment
-      const counts = {};
-      sortedComments.forEach(comment => {
-        counts[comment.id] = getReplyCount(comment);
-      });
-
-      // Store which comments are liked/disliked by the current user
+      const replyCountMap = {};
+      const downvoteCountMap = {};
       const liked = [];
       const disliked = [];
+
       const walkComments = (arr) => {
         arr.forEach(comment => {
+          replyCountMap[comment.id] = getReplyCount(comment);
+          downvoteCountMap[comment.id] = comment.dislikes || 0;
+
           if (comment.liked_by_user) liked.push(comment.id);
           if (comment.disliked_by_user) disliked.push(comment.id);
+
           if (comment.replies) walkComments(comment.replies);
         });
       };
       walkComments(sortedComments);
 
       setComments(sortedComments);
-      setReplyCounts(counts);
+      setReplyCounts(replyCountMap);
+      setDownvoteCounts(downvoteCountMap);
       setUpvotedComments(liked);
       setDownvotedComments(disliked);
 
@@ -196,6 +194,7 @@ const CommentSection = ({ articleId }) => {
       setComments([]);
     }
   };
+
 
 
 
