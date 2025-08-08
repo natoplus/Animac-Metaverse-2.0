@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet';
 import { ArrowRight, Users, BookOpen, TrendingUp } from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
 import clsx from 'clsx';
@@ -68,9 +69,8 @@ const PortraitSlideshow = () => {
           <button
             key={idx}
             onClick={() => setCurrent(idx)}
-            className={`w-3 h-3 rounded-full transition ${
-              idx === current ? 'bg-east-500' : 'bg-gray-600 hover:bg-gray-400'
-            }`}
+            className={`w-3 h-3 rounded-full transition ${idx === current ? 'bg-east-500' : 'bg-gray-600 hover:bg-gray-400'
+              }`}
             aria-label={`Go to slide ${idx + 1}`}
           />
         ))}
@@ -82,6 +82,13 @@ const PortraitSlideshow = () => {
 const BuzzfeedHub = () => {
   const { articles: eastArticles } = useArticles('east');
   const { articles: westArticles } = useArticles('west');
+
+  // Meta data for SEO and social sharing
+  const pageTitle = "Buzzfeed - Your go too Blog on Anything and Everything west and east Entertainment";
+  const pageDescription = "Dive into curated anime and western entertainment culture on Animac Buzzfeed.";
+  const pageUrl = "https://animac-metaverse.vercel.app/buzzfeed"; // Replace with your actual site URL
+  const previewImage = "https://animac-metaverse.vercel.app/buzzfeed/assets/buzzfeed-preview.jpg"; // Replace with your actual image URL
+
 
   const portalData = [
     {
@@ -125,177 +132,199 @@ const BuzzfeedHub = () => {
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
-      className="min-h-screen pt-20"
-    >
-      {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-netflix-black via-netflix-dark to-netflix-black">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1720576127187-12d4b9045d93')] bg-cover bg-center opacity-10" />
-        <div className="relative z-10 container mx-auto px-4 py-20">
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            
+    <>
+      {/* SEO Metadata */}
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
 
-            <img
-              src="/assets/buzzfeed-logo.svg"
-              alt="Buzzfeed logo"
-              className="mx-auto h-80 w-auto mb-2"
-            />
+        {/* Open Graph / Facebook */}
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:image" content={previewImage} />
+        <meta property="og:url" content={pageUrl} />
+        <meta property="og:type" content="website" />
 
-            {/* Portrait slideshow inserted here */}
-            <PortraitSlideshow />
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={previewImage} />
+      </Helmet>
 
-            <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
-              Where Culture Meets Commentary
-            </p>
-            <p className="text-lg font-inter text-gray-400 leading-relaxed max-w-2xl mx-auto">
-              Choose your journey through our curated content portals. Each side offers unique perspectives on the entertainment that shapes our world.
-            </p>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Portals */}
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {portalData.map((portal, index) => (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.5 }}
+        className="min-h-screen pt-20"
+      >
+        {/* Header */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-netflix-black via-netflix-dark to-netflix-black">
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1720576127187-12d4b9045d93')] bg-cover bg-center opacity-10" />
+          <div className="relative z-10 container mx-auto px-4 py-20">
             <motion.div
-              key={portal.id}
-              initial={{ x: index === 0 ? -100 : 100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              transition={{ delay: index * 0.3, duration: 0.8 }}
-              className="group"
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              className="text-center max-w-4xl mx-auto"
             >
-              <Link to={portal.path} aria-label={`Enter ${portal.title} portal`}>
-                <div
-                  className={clsx(
-                    'relative overflow-hidden rounded-2xl bg-gradient-to-br p-1 transition-all duration-500 group-hover:scale-105',
-                    portal.gradient,
-                    portal.hoverGlow
-                  )}
-                >
-                  <div className="bg-netflix-dark rounded-xl p-8 h-full">
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-6">
-                      <div>
-                        <h2
-                          className={clsx(
-                            'font-bold mb-2',
-                            portal.textGlow,
-                            portal.id === 'east' && 'font-japanese text-5xl',
-                            portal.id === 'west' && 'font-ackno text-4xl'
-                          )}
-                        >
-                          {portal.title}
-                        </h2>
-                        <p className="text-xl font-montserrat font-medium text-gray-300">{portal.subtitle}</p>
-                      </div>
 
-                      <motion.div
-                        whileHover={{ x: 5 }}
-                        className={clsx(
-                          'p-3 rounded-full border',
-                          `bg-${portal.color}-500/20`,
-                          `border-${portal.color}-500/30`
-                        )}
-                      >
-                        <ArrowRight className={`text-${portal.color}-400`} size={24} />
-                      </motion.div>
-                    </div>
 
-                    {/* Description */}
-                    <p className="text-gray-400 font-inter leading-relaxed mb-8">{portal.description}</p>
+              <img
+                src="/assets/buzzfeed-logo.svg"
+                alt="Buzzfeed logo"
+                className="mx-auto h-80 w-auto mb-2"
+              />
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-8">
-                      {[
-                        { icon: <BookOpen size={20} />, value: portal.stats.articles, label: 'Articles' },
-                        { icon: <Users size={20} />, value: portal.stats.readers, label: 'Readers' },
-                        { icon: <TrendingUp size={20} />, value: portal.stats.trending, label: 'Trending' },
-                      ].map((stat, i) => (
-                        <div key={i} className="text-center">
-                          <div className="flex items-center justify-center mb-2 text-sm text-gray-400">
-                            {React.cloneElement(stat.icon, {
-                              className: `text-${portal.color}-400`,
-                            })}
-                          </div>
-                          <div
+              {/* Portrait slideshow inserted here */}
+              <PortraitSlideshow />
+
+              <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
+                Where Culture Meets Commentary
+              </p>
+              <p className="text-lg font-inter text-gray-400 leading-relaxed max-w-2xl mx-auto">
+                Choose your journey through our curated content portals. Each side offers unique perspectives on the entertainment that shapes our world.
+              </p>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Portals */}
+        <div className="container mx-auto px-4 py-16">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+            {portalData.map((portal, index) => (
+              <motion.div
+                key={portal.id}
+                initial={{ x: index === 0 ? -100 : 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: index * 0.3, duration: 0.8 }}
+                className="group"
+              >
+                <Link to={portal.path} aria-label={`Enter ${portal.title} portal`}>
+                  <div
+                    className={clsx(
+                      'relative overflow-hidden rounded-2xl bg-gradient-to-br p-1 transition-all duration-500 group-hover:scale-105',
+                      portal.gradient,
+                      portal.hoverGlow
+                    )}
+                  >
+                    <div className="bg-netflix-dark rounded-xl p-8 h-full">
+                      {/* Header */}
+                      <div className="flex items-start justify-between mb-6">
+                        <div>
+                          <h2
                             className={clsx(
-                              'font-bold',
-                              i === 2 ? 'text-sm text-white' : `text-2xl text-${portal.color}-400`
+                              'font-bold mb-2',
+                              portal.textGlow,
+                              portal.id === 'east' && 'font-japanese text-5xl',
+                              portal.id === 'west' && 'font-ackno text-4xl'
                             )}
                           >
-                            {stat.value}
-                          </div>
-                          <div className="text-xs text-gray-500 font-inter">{stat.label}</div>
+                            {portal.title}
+                          </h2>
+                          <p className="text-xl font-montserrat font-medium text-gray-300">{portal.subtitle}</p>
                         </div>
-                      ))}
-                    </div>
 
-                    {/* Articles Preview */}
-                    <div className="space-y-3">
-                      <h4 className="font-montserrat font-semibold text-white text-sm mb-3">
-                        Recent Articles:
-                      </h4>
-                      {(portal.articles || []).slice(0, 3).map((article, idx) => (
-                        <div key={idx} className="flex items-center space-x-3 group/item">
-                          <div className={`w-2 h-2 rounded-full bg-${portal.color}-500 opacity-60`} />
-                          <span className="text-sm text-gray-300 font-inter group-hover/item:text-white transition-colors line-clamp-1">
-                            {article.title}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* CTA Button */}
-                    <motion.div whileHover={{ scale: 1.02 }} className="mt-8">
-                      <div
-                        className={clsx(
-                          `w-full py-3 px-6 text-white font-montserrat font-semibold rounded-lg text-center transition-all duration-300`,
-                          `bg-gradient-to-r from-${portal.color}-600 to-${portal.color}-500`,
-                          `hover:from-${portal.color}-700 hover:to-${portal.color}-600`
-                        )}
-                      >
-                        Enter {portal.title} Portal
+                        <motion.div
+                          whileHover={{ x: 5 }}
+                          className={clsx(
+                            'p-3 rounded-full border',
+                            `bg-${portal.color}-500/20`,
+                            `border-${portal.color}-500/30`
+                          )}
+                        >
+                          <ArrowRight className={`text-${portal.color}-400`} size={24} />
+                        </motion.div>
                       </div>
-                    </motion.div>
-                  </div>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
 
-        {/* Bottom CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="text-center mt-16"
-        >
-          <h3 className="font-azonix text-3xl font-bold text-white mb-4">Can't Choose?</h3>
-          <p className="text-gray-400 font-inter mb-6 max-w-2xl mx-auto">
-            Explore both portals and discover the full spectrum of entertainment culture.
-            Each side offers unique insights and passionate community discussions.
-          </p>
-          <Link
-            to="/"
-            className="inline-flex items-center px-6 py-3 border border-gray-500 text-gray-300 font-inter font-medium rounded-lg hover:border-gray-400 hover:text-white transition-all duration-300"
+                      {/* Description */}
+                      <p className="text-gray-400 font-inter leading-relaxed mb-8">{portal.description}</p>
+
+                      {/* Stats */}
+                      <div className="grid grid-cols-3 gap-4 mb-8">
+                        {[
+                          { icon: <BookOpen size={20} />, value: portal.stats.articles, label: 'Articles' },
+                          { icon: <Users size={20} />, value: portal.stats.readers, label: 'Readers' },
+                          { icon: <TrendingUp size={20} />, value: portal.stats.trending, label: 'Trending' },
+                        ].map((stat, i) => (
+                          <div key={i} className="text-center">
+                            <div className="flex items-center justify-center mb-2 text-sm text-gray-400">
+                              {React.cloneElement(stat.icon, {
+                                className: `text-${portal.color}-400`,
+                              })}
+                            </div>
+                            <div
+                              className={clsx(
+                                'font-bold',
+                                i === 2 ? 'text-sm text-white' : `text-2xl text-${portal.color}-400`
+                              )}
+                            >
+                              {stat.value}
+                            </div>
+                            <div className="text-xs text-gray-500 font-inter">{stat.label}</div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Articles Preview */}
+                      <div className="space-y-3">
+                        <h4 className="font-montserrat font-semibold text-white text-sm mb-3">
+                          Recent Articles:
+                        </h4>
+                        {(portal.articles || []).slice(0, 3).map((article, idx) => (
+                          <div key={idx} className="flex items-center space-x-3 group/item">
+                            <div className={`w-2 h-2 rounded-full bg-${portal.color}-500 opacity-60`} />
+                            <span className="text-sm text-gray-300 font-inter group-hover/item:text-white transition-colors line-clamp-1">
+                              {article.title}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* CTA Button */}
+                      <motion.div whileHover={{ scale: 1.02 }} className="mt-8">
+                        <div
+                          className={clsx(
+                            `w-full py-3 px-6 text-white font-montserrat font-semibold rounded-lg text-center transition-all duration-300`,
+                            `bg-gradient-to-r from-${portal.color}-600 to-${portal.color}-500`,
+                            `hover:from-${portal.color}-700 hover:to-${portal.color}-600`
+                          )}
+                        >
+                          Enter {portal.title} Portal
+                        </div>
+                      </motion.div>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Bottom CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+            className="text-center mt-16"
           >
-            Return to Homepage
-          </Link>
-        </motion.div>
-      </div>
-    </motion.div>
-  );
+            <h3 className="font-azonix text-3xl font-bold text-white mb-4">Can't Choose?</h3>
+            <p className="text-gray-400 font-inter mb-6 max-w-2xl mx-auto">
+              Explore both portals and discover the full spectrum of entertainment culture.
+              Each side offers unique insights and passionate community discussions.
+            </p>
+            <Link
+              to="/"
+              className="inline-flex items-center px-6 py-3 border border-gray-500 text-gray-300 font-inter font-medium rounded-lg hover:border-gray-400 hover:text-white transition-all duration-300"
+            >
+              Return to Homepage
+            </Link>
+          </motion.div>
+        </div>
+      </motion.div>
+      
+    </>
+  );  
 };
 
-export default BuzzfeedHub;
+      export default BuzzfeedHub;
