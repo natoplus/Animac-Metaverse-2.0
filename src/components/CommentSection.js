@@ -1,4 +1,4 @@
-// ...[Imports remain unchanged]
+// CommentSection.js
 import React, { useState, useEffect, useRef } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,7 +31,7 @@ const Comment = ({
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
   const downvoteCount = downvoteCounts?.[comment.id] ?? comment.downvotes ?? 0;
-  const replies = comment.replies || []; // ✅ Use pre-built replies array
+  const replies = comment.replies || [];
 
   return (
     <motion.div
@@ -50,7 +50,20 @@ const Comment = ({
           {new Date(comment.created_at).toLocaleString()} • {replyCount} repl{replyCount === 1 ? 'y' : 'ies'}
         </span>
         <div className="flex gap-3 items-center">
-          {/* Vote buttons unchanged */}
+          <button
+            onClick={() => onVote(comment.id, 'up')}
+            className={`flex items-center gap-1 ${isUpvoted ? 'text-green-400' : 'text-gray-400 hover:text-white'}`}
+          >
+            <ThumbsUp size={14} />
+            <span>{voteScore}</span>
+          </button>
+          <button
+            onClick={() => onVote(comment.id, 'down')}
+            className={`flex items-center gap-1 ${isDownvoted ? 'text-red-400' : 'text-gray-400 hover:text-white'}`}
+          >
+            <ThumbsDown size={14} />
+            <span>{downvoteCount}</span>
+          </button>
           <button
             onClick={() => onReplyClick(comment)}
             className="hover:text-white flex items-center gap-1 text-gray-400"
@@ -63,7 +76,15 @@ const Comment = ({
               onClick={() => toggleReplies(comment.id)}
               className="text-blue-400 hover:text-white ml-2 flex items-center gap-1"
             >
-              {showReplies[comment.id] ? <><ChevronUp size={14} /> Hide</> : <><ChevronDown size={14} /> View</>}
+              {showReplies[comment.id] ? (
+                <>
+                  <ChevronUp size={14} /> Hide
+                </>
+              ) : (
+                <>
+                  <ChevronDown size={14} /> View
+                </>
+              )}
             </button>
           )}
         </div>
@@ -80,7 +101,7 @@ const Comment = ({
             {replies.map((reply) => (
               <Comment
                 key={reply.id}
-                comment={reply} // ✅ no allComments needed
+                comment={reply}
                 onReplyClick={onReplyClick}
                 onVote={onVote}
                 upvotedComments={upvotedComments}
@@ -99,7 +120,6 @@ const Comment = ({
   );
 };
 
-
 const CommentSection = ({ articleId }) => {
   const [comments, setComments] = useState([]);
   const [visibleCount, setVisibleCount] = useState(5);
@@ -115,63 +135,63 @@ const CommentSection = ({ articleId }) => {
   const replyFormRef = useRef();
 
   const fetchComments = async () => {
-  try {
-    const sessionId = getSessionId();
-    const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
-      headers: { 'session-id': sessionId },
-    });
+    try {
+      const sessionId = getSessionId();
+      const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
+        headers: { 'session-id': sessionId },
+      });
 
-    const data = await res.json();
-    if (!Array.isArray(data)) {
-      console.error("Invalid comments data from backend:", data);
-      setComments([]);
-      return;
+      const data = await res.json();
+      if (!Array.isArray(data)) {
+        console.error('Invalid comments data from backend:', data);
+        setComments([]);
+        return;
+      }
+
+      const repliesMap = {};
+      const downvotesMap = {};
+      const likedIds = [];
+      const dislikedIds = [];
+      const commentMap = {};
+
+      data.forEach((comment) => {
+        comment.replies = [];
+        commentMap[comment.id] = comment;
+
+        if (comment.parent_id) {
+          repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
+        }
+        if (comment.downvotes || comment.dislikes) {
+          downvotesMap[comment.id] = comment.downvotes ?? comment.dislikes;
+        }
+        if (comment.is_liked_by_session || comment.liked_by_user) {
+          likedIds.push(comment.id);
+        }
+        if (comment.is_disliked_by_session || comment.disliked_by_user) {
+          dislikedIds.push(comment.id);
+        }
+      });
+
+      const nested = [];
+      data.forEach((comment) => {
+        if (comment.parent_id) {
+          if (commentMap[comment.parent_id]) {
+            commentMap[comment.parent_id].replies.push(comment);
+          }
+        } else {
+          nested.push(comment);
+        }
+      });
+
+      setComments(nested);
+      setReplyCounts(repliesMap);
+      setDownvoteCounts(downvotesMap);
+      setUpvotedComments(likedIds);
+      setDownvotedComments(dislikedIds);
+    } catch (err) {
+      console.error('Error loading comments:', err);
     }
-
-    const repliesMap = {};
-    const downvotesMap = {};
-    const likedIds = [];
-    const dislikedIds = [];
-
-    const commentMap = {};
-    data.forEach((comment) => {
-      comment.replies = [];
-      commentMap[comment.id] = comment;
-
-      if (comment.parent_id) {
-        repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
-      }
-      if (comment.downvotes || comment.dislikes) {
-        downvotesMap[comment.id] = comment.downvotes ?? comment.dislikes;
-      }
-      if (comment.is_liked_by_session || comment.liked_by_user) {
-        likedIds.push(comment.id);
-      }
-      if (comment.is_disliked_by_session || comment.disliked_by_user) {
-        dislikedIds.push(comment.id);
-      }
-    });
-
-    const nested = [];
-    data.forEach((comment) => {
-      if (comment.parent_id && commentMap[comment.parent_id]) {
-        commentMap[comment.parent_id].replies.push(comment);
-      } else if (!comment.parent_id) {
-        nested.push(comment);
-      }
-    });
-
-    setComments(nested);
-    setReplyCounts(repliesMap);
-    setDownvoteCounts(downvotesMap);
-    setUpvotedComments(likedIds);
-    setDownvotedComments(dislikedIds);
-  } catch (err) {
-    console.error("Error loading comments:", err);
-  }
-};
-
-
+  };
 
   useEffect(() => {
     if (articleId) fetchComments();
@@ -216,40 +236,39 @@ const CommentSection = ({ articleId }) => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!newComment.trim()) return;
+    e.preventDefault();
+    if (!newComment.trim()) return;
 
-  const trimmedAlias = alias.trim();
+    const trimmedAlias = alias.trim();
 
-  const body = {
-    content: newComment,
-    author: trimmedAlias !== '' ? trimmedAlias : undefined,
-    article_id: articleId,
-    parent_id: replyTo?.id || null,
-    session_id: getSessionId(), // ✅ critical fix
-  };
+    const body = {
+      content: newComment,
+      author: trimmedAlias !== '' ? trimmedAlias : undefined,
+      article_id: articleId,
+      parent_id: replyTo?.id || null,
+      session_id: getSessionId(),
+    };
 
-  try {
-    await fetch(`${API_URL}/api/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    try {
+      await fetch(`${API_URL}/api/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
 
-    setNewComment('');
-    setReplyTo(null);
-    setAlias('');
+      setNewComment('');
+      setReplyTo(null);
+      setAlias('');
 
-    if (replyTo?.id) {
-      setShowReplies((prev) => ({ ...prev, [replyTo.id]: true })); // ✅ open replies
+      if (replyTo?.id) {
+        setShowReplies((prev) => ({ ...prev, [replyTo.id]: true }));
+      }
+
+      fetchComments();
+    } catch (err) {
+      console.error('Submit error:', err);
     }
-
-    fetchComments();
-  } catch (err) {
-    console.error('Submit error:', err);
-  }
-};
-
+  };
 
   const toggleReplies = (commentId) => {
     setShowReplies((prev) => ({
@@ -307,7 +326,7 @@ const CommentSection = ({ articleId }) => {
         {topLevelComments.slice(0, visibleCount).map((comment) => (
           <Comment
             key={comment.id}
-            comment={comment} // ✅ nested structure
+            comment={comment}
             onReplyClick={(comment) => {
               setReplyTo(comment);
               setTimeout(() => {
@@ -324,7 +343,6 @@ const CommentSection = ({ articleId }) => {
           />
         ))}
       </AnimatePresence>
-
 
       {visibleCount < topLevelComments.length && (
         <button
