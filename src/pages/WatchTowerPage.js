@@ -464,12 +464,12 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Spotlight section */}
-      <div className="mb-14 mt-13">
+      <div className="mb-14">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className={`${neonGlowPanel} max-w-5xl mx-auto mb-16`}
+          className={`${neonGlowPanel} max-w-5xl mx-auto mb-16 mt-13`}
         >
           <h2 className="text-3xl font-extrabold mb-7 flex items-center gap-3">
             <Film className="w-8 h-8 text-purple-500" />
