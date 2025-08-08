@@ -400,7 +400,7 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Genre Filter Buttons */}
-      <div className="mb-15 mt-15 flex flex-wrap justify-center gap-3">
+      <div className="mb-16 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
@@ -441,7 +441,7 @@ export default function WatchTowerPage() {
         <motion.div
           ref={trailerScrollRef}
           layout
-          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mb-16 mt-17`}
+          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mt-9`}
         >
           {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
             <TrailerCard
