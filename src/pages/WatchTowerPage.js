@@ -10,6 +10,9 @@ import {
   X,
 } from "lucide-react";
 import axios from "axios";
+import LoadingScreen from "./LoadingScreen"; // Adjust path if needed
+import { ChevronRight, ChevronLeft } from "lucide-react";
+
 
 // Import Azonix font (can move to global CSS or head tag)
 const azonixFontLink = "https://fonts.googleapis.com/css2?family=Azonix&display=swap";
@@ -181,6 +184,11 @@ export default function WatchTowerPage() {
   const [selectedGenre, setSelectedGenre] = useState(null);
 
   const [modalTrailer, setModalTrailer] = useState(null);
+  const scrollTrailerLeft = () => trailerScrollRef.current?.scrollBy({ left: -300, behavior: "smooth" });
+  const scrollTrailerRight = () => trailerScrollRef.current?.scrollBy({ left: 300, behavior: "smooth" });
+  const scrollCalendarLeft = () => calendarScrollRef.current?.scrollBy({ left: -300, behavior: "smooth" });
+  const scrollCalendarRight = () => calendarScrollRef.current?.scrollBy({ left: 300, behavior: "smooth" });
+
 
   // Fetch Anime (East)
   useEffect(() => {
@@ -410,61 +418,120 @@ export default function WatchTowerPage() {
         ))}
       </div>
 
-      {/* Spotlight Section (Big image with countdown overlay + gradient) */}
-      {featuredTrailer && featuredDate && (
-        <section
-          className={`${neonGlowPanel} relative mb-12 cursor-pointer select-none`}
-          onClick={() => setModalTrailer(featuredTrailer)}
-        >
-          <img
-            src={featuredTrailer.poster}
-            alt={`Spotlight on ${featuredTrailer.title}`}
-            className="w-full h-64 md:h-80 lg:h-96 object-cover rounded-lg brightness-75"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent rounded-lg" />
-          <div className="absolute bottom-6 left-6 text-white max-w-xl">
-            <h2
-              className="text-4xl font-azonix font-extrabold mb-2"
-              style={{ fontFamily: "'Azonix', sans-serif" }}
-            >
-              Spotlight: {featuredTrailer.title}
-            </h2>
-            <div className="flex items-center gap-4 font-mono text-lg text-blue-400">
-              <TimerReset />
-              <Countdown targetDate={featuredDate} />
-            </div>
-          </div>
-          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-            <PlayCircle className="w-20 h-20 text-purple-500 drop-shadow-lg animate-pulse" />
-          </div>
-        </section>
-      )}
+      {/* Spotlight section */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className={`${neonGlowPanel} max-w-5xl mx-auto`}
+      >
+        <h2 className="text-3xl font-extrabold mb-6 flex items-center gap-3">
+          <Film className="w-8 h-8 text-purple-500" />
+          Spotlight Upcoming {isEast ? "Anime" : "Movies"}
+        </h2>
+
+        {(isEast ? eastList : westList).length === 0 && (
+          <p className="text-red-500 font-semibold">No upcoming titles found.</p>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {(isEast ? eastList : westList)
+            .filter((item) =>
+              selectedGenre ? item.genres.includes(selectedGenre) : true
+            )
+            .slice(0, 9)
+            .map((item) => (
+              <motion.article
+                key={item.id}
+                whileHover={{ scale: 1.02 }}
+                className="rounded-lg overflow-hidden cursor-pointer bg-black/30 border border-white/50 neon-glow"
+                title={`${item.title} (${new Date(item.date).getFullYear()})`}
+              >
+                <img
+                  src={item.image}
+                  alt={`${item.title} cover`}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-[180px] object-cover rounded-t-lg transition-transform duration-300 hover:scale-105"
+                />
+                <div className="p-4 text-center select-text">
+                  <h3 className="text-lg font-semibold line-clamp-2">{item.title}</h3>
+                  <p className="text-sm mt-1 text-gray-400">
+                    Release:{" "}
+                    {new Date(item.date).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                  {item.score && (
+                    <p className="flex items-center justify-center mt-1 gap-1 text-yellow-400 font-semibold">
+                      <Star className="w-4 h-4" />
+                      {item.score}%
+                    </p>
+                  )}
+                </div>
+              </motion.article>
+            ))}
+        </div>
+      </motion.section>
 
       {/* Trailer Cards Section */}
-      <motion.div
-        layout
-        className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black`}
-      >
-        {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
-          <TrailerCard
-            key={`${title}-${i}`}
-            title={title}
-            youtubeKey={youtubeKey}
-            poster={poster}
-            onClick={() => setModalTrailer({ youtubeKey, title })}
-          />
-        ))}
-      </motion.div>
+      return (
+      <div className="relative">
+        <button
+          aria-label="Scroll trailers left"
+          onClick={scrollTrailerLeft}
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/60 rounded-full hover:bg-purple-700 transition text-white"
+        >
+          <ChevronLeft size={24} />
+        </button>
+
+        <motion.div
+          ref={trailerScrollRef}
+          layout
+          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black`}
+        >
+          {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
+            <TrailerCard
+              key={`${title}-${i}`}
+              title={title}
+              youtubeKey={youtubeKey}
+              poster={poster}
+              onClick={() => setModalTrailer({ youtubeKey, title })}
+            />
+          ))}
+        </motion.div>
+
+        <button
+          aria-label="Scroll trailers right"
+          onClick={scrollTrailerRight}
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/60 rounded-full hover:bg-purple-700 transition text-white"
+        >
+          <ChevronRight size={24} />
+        </button>
+      </div>
+      );
 
       {/* Release Calendar Section */}
-      <section className="mt-16">
+      return (
+      <section className="mt-16 relative">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Calendar className="w-8 h-8" /> Release Calendar
         </h2>
 
-        {/* Calendar horizontal scroll with date cards */}
-        <div className="flex overflow-x-auto space-x-4 px-2 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black">
+        <button
+          aria-label="Scroll calendar left"
+          onClick={scrollCalendarLeft}
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/60 rounded-full hover:bg-purple-700 transition text-white"
+        >
+          <ChevronLeft size={24} />
+        </button>
+
+        <div
+          ref={calendarScrollRef}
+          className="flex overflow-x-auto space-x-4 px-2 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black"
+        >
           {(isEast ? eastList : westList)
             .sort((a, b) => new Date(a.date) - new Date(b.date))
             .map(({ id, title, date, image }) => {
@@ -478,7 +545,6 @@ export default function WatchTowerPage() {
                   key={id}
                   className={`${neonGlowPanel} flex-shrink-0 w-36 cursor-pointer hover:shadow-[0_0_20px_rgba(180,100,255,0.8)] transition`}
                   onClick={() => {
-                    // Show trailer if available or just alert title
                     const trailer = (isEast ? eastTrailers : westTrailers).find(
                       (t) => t.title === title
                     );
@@ -513,7 +579,16 @@ export default function WatchTowerPage() {
               );
             })}
         </div>
+
+        <button
+          aria-label="Scroll calendar right"
+          onClick={scrollCalendarRight}
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/60 rounded-full hover:bg-purple-700 transition text-white"
+        >
+          <ChevronRight size={24} />
+        </button>
       </section>
+      );
 
       {/* Top Rated Section */}
       <section className="mt-16">
