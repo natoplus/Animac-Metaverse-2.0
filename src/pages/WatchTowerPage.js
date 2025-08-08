@@ -182,11 +182,16 @@ export default function WatchTowerPage() {
 
   const [selectedGenre, setSelectedGenre] = useState(null);
 
+  const trailerScrollRef = useRef(null);
+  const calendarScrollRef = useRef(null);
+
   const [modalTrailer, setModalTrailer] = useState(null);
   const scrollTrailerLeft = () => trailerScrollRef.current?.scrollBy({ left: -300, behavior: "smooth" });
   const scrollTrailerRight = () => trailerScrollRef.current?.scrollBy({ left: 300, behavior: "smooth" });
   const scrollCalendarLeft = () => calendarScrollRef.current?.scrollBy({ left: -300, behavior: "smooth" });
   const scrollCalendarRight = () => calendarScrollRef.current?.scrollBy({ left: 300, behavior: "smooth" });
+
+  
 
 
   // Fetch Anime (East)
