@@ -11,19 +11,19 @@ const PortraitSlideshow = () => {
     {
       src: '/assets/east-poster-animac-website.jpg',
       alt: 'Anime trends',
-      caption: 'Discover the latest anime trends',
+      caption: ' ',
       link: '/buzzfeed/east',
     },
     {
-      src: '/assets/buzzfeed-slides/slide2.jpg',
+      src: '/assets/west-poster-animac-website.jpg',
       alt: 'Western blockbusters',
-      caption: 'Explore blockbuster western movies',
+      caption: ' ',
       link: '/buzzfeed/west',
     },
     {
-      src: '/assets/buzzfeed-slides/slide3.jpg',
+      src: '/assets/animac-neutral-poster.jpg',
       alt: 'Cartoon behind scenes',
-      caption: 'Behind the scenes of your favorite cartoons',
+      caption: ' ',
       link: '/buzzfeed/west',
     },
     // Add more slides if needed
