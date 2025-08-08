@@ -243,8 +243,8 @@ export default function WatchTowerPage() {
   const error = isEast ? errorEast : errorWest;
 
   // Segment title styles
-  const eastTitleStyle = "text-4xl font-extrabold text-red-500 font-serif tracking-widest drop-shadow-lg";
-  const westTitleStyle = "text-4xl font-extrabold text-blue-500 font-mono tracking-wide drop-shadow-lg";
+  const eastTitleStyle = "text-4xl font-extrabold text-red-500 font-japanese tracking-widest drop-shadow-lg";
+  const westTitleStyle = "text-4xl font-extrabold text-blue-500 font-ackno tracking-wide drop-shadow-lg";
 
   return (
     <div className="min-h-screen bg-black text-white px-6 py-10 font-sans max-w-7xl mx-auto">
