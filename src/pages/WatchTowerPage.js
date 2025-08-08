@@ -403,7 +403,7 @@ export default function WatchTowerPage() {
       <div className="mb-15 mt-15 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 mt-16 mb-16 ${
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
             selectedGenre === null
               ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
               : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
@@ -601,7 +601,7 @@ export default function WatchTowerPage() {
       </section>
 
       {/* Top Rated Section */}
-      <section className="mt-16 mb-16">
+      <section className="mt-16">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Star className="w-8 h-8" /> Top Rated {isEast ? "Anime" : "Movies"}
         </h2>
