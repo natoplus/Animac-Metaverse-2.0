@@ -403,7 +403,7 @@ export default function WatchTowerPage() {
       <div className="mb-15 mt-15 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 mt-16 mb-16 ${
             selectedGenre === null
               ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
               : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
@@ -441,7 +441,7 @@ export default function WatchTowerPage() {
         <motion.div
           ref={trailerScrollRef}
           layout
-          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mb-13`}
+          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mb-16`}
         >
           {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
             <TrailerCard
@@ -469,7 +469,7 @@ export default function WatchTowerPage() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className={`${neonGlowPanel} max-w-5xl mx-auto`}
+          className={`${neonGlowPanel} max-w-5xl mx-auto mb-16`}
         >
           <h2 className="text-3xl font-extrabold mb-7 flex items-center gap-3">
             <Film className="w-8 h-8 text-purple-500" />
@@ -526,7 +526,7 @@ export default function WatchTowerPage() {
 
 
       {/* Release Calendar Section */}
-      <section className="mt-16 relative">
+      <section className="mt-16 relative mb-16">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Calendar className="w-8 h-8" /> Release Calendar
         </h2>
@@ -601,7 +601,7 @@ export default function WatchTowerPage() {
       </section>
 
       {/* Top Rated Section */}
-      <section className="mt-16">
+      <section className="mt-16 mb-16">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Star className="w-8 h-8" /> Top Rated {isEast ? "Anime" : "Movies"}
         </h2>
