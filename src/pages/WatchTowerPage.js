@@ -11,9 +11,21 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
+// Import Azonix font (can move to global CSS or head tag)
+const azonixFontLink = "https://fonts.googleapis.com/css2?family=Azonix&display=swap";
+
+if (typeof document !== "undefined") {
+  if (!document.getElementById("azonix-font")) {
+    const link = document.createElement("link");
+    link.id = "azonix-font";
+    link.rel = "stylesheet";
+    link.href = azonixFontLink;
+    document.head.appendChild(link);
+  }
+}
+
 const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY || "<fallback-your-key>";
 
-// Countdown component (unchanged)
 function Countdown({ targetDate }) {
   const [timeLeft, setTimeLeft] = useState(null);
   useEffect(() => {
@@ -36,8 +48,10 @@ function Countdown({ targetDate }) {
     const interval = setInterval(updateCountdown, 1000);
     return () => clearInterval(interval);
   }, [targetDate]);
+
   if (!timeLeft)
     return <span className="text-green-400 font-semibold">Now Showing</span>;
+
   return (
     <span className="font-mono text-sm text-blue-400">
       {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
@@ -45,35 +59,31 @@ function Countdown({ targetDate }) {
   );
 }
 
-// TrailerCard with fallback poster thumbnail and click to open modal
 function TrailerCard({ title, youtubeKey, poster, onClick }) {
-  // Poster fallback if iframe can't load immediately
-  // We'll show poster image, and on click open modal with iframe
-
   return (
     <motion.div
       layout
-      whileHover={{ scale: 1.05, boxShadow: "0 0 15px rgba(150, 50, 250, 0.8)" }}
+      whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(255, 0, 255, 0.7)" }}
       onClick={onClick}
-      className="relative min-w-[280px] h-[158px] rounded-xl cursor-pointer overflow-hidden border border-white/20 shadow-lg bg-black/70 backdrop-blur-md flex flex-col justify-center items-center transition-shadow duration-300"
+      className="relative min-w-[280px] h-[158px] rounded-lg cursor-pointer neon-glow border border-white/70 bg-black/20 hover:bg-black/40 p-4 transition overflow-hidden"
       title={title}
     >
       {poster ? (
         <img
           src={poster}
           alt={`${title} poster`}
-          className="absolute inset-0 w-full h-full object-cover brightness-75"
+          className="absolute inset-0 w-full h-full object-cover brightness-75 rounded-lg"
           draggable={false}
           loading="lazy"
           decoding="async"
         />
       ) : (
-        <div className="bg-zinc-800 w-full h-full flex items-center justify-center text-zinc-500 select-none">
+        <div className="bg-zinc-800 w-full h-full flex items-center justify-center text-zinc-500 select-none rounded-lg">
           No Poster
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-      <div className="absolute bottom-0 w-full p-2 bg-gradient-to-t from-black/90 text-white font-semibold text-center text-sm leading-tight line-clamp-2 select-none drop-shadow-lg">
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-lg" />
+      <div className="absolute bottom-0 w-full p-2 bg-gradient-to-t from-black/90 text-white font-semibold text-center text-sm leading-tight line-clamp-2 select-none drop-shadow-lg rounded-b-lg">
         {title}
       </div>
       <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
@@ -83,7 +93,6 @@ function TrailerCard({ title, youtubeKey, poster, onClick }) {
   );
 }
 
-// Modal for showing YouTube trailer video
 function TrailerModal({ youtubeKey, title, onClose }) {
   return (
     <AnimatePresence>
@@ -124,6 +133,39 @@ function TrailerModal({ youtubeKey, title, onClose }) {
   );
 }
 
+function HeroFeatured({ trailer, countdownDate, onPlay }) {
+  return (
+    <section
+      className="relative w-full h-[60vh] md:h-[70vh] rounded-xl overflow-hidden mb-12 neon-glow border border-white/70 bg-black/20 hover:bg-black/40 cursor-pointer select-none"
+      onClick={onPlay}
+      aria-label={`Play trailer for ${trailer.title}`}
+    >
+      <img
+        src={trailer.poster}
+        alt={`Featured trailer poster for ${trailer.title}`}
+        className="absolute inset-0 w-full h-full object-cover brightness-75"
+        loading="lazy"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
+      <div className="absolute bottom-8 left-8 text-white max-w-lg">
+        <h1
+          className="text-5xl md:text-6xl font-azonix font-extrabold drop-shadow-lg"
+          style={{ fontFamily: "'Azonix', sans-serif" }}
+        >
+          {trailer.title}
+        </h1>
+        <div className="mt-4 flex items-center gap-4 font-mono text-lg text-blue-400">
+          <TimerReset />
+          <Countdown targetDate={countdownDate} />
+        </div>
+      </div>
+      <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+        <PlayCircle className="w-24 h-24 text-purple-500 drop-shadow-lg animate-pulse" />
+      </div>
+    </section>
+  );
+}
+
 export default function WatchTowerPage() {
   const [isEast, setIsEast] = useState(true);
   const [eastList, setEastList] = useState([]);
@@ -138,7 +180,6 @@ export default function WatchTowerPage() {
 
   const [selectedGenre, setSelectedGenre] = useState(null);
 
-  // Modal state
   const [modalTrailer, setModalTrailer] = useState(null);
 
   // Fetch Anime (East)
@@ -159,7 +200,6 @@ export default function WatchTowerPage() {
                 site
                 thumbnail
               }
-
             }
           }
         }
@@ -183,7 +223,6 @@ export default function WatchTowerPage() {
           image: item.coverImage.large,
           genres: item.genres,
           score: item.averageScore,
-          // AniList trailer object is sometimes null, fallback to a placeholder YouTube ID:
           trailerYoutubeKey:
             item.trailer && item.trailer.site === "youtube"
               ? item.trailer.id
@@ -192,7 +231,6 @@ export default function WatchTowerPage() {
         }));
         setEastList(list);
         setErrorEast(null);
-        // Use the trailers from the above with YouTube keys:
         setEastTrailers(
           list
             .filter((i) => i.trailerYoutubeKey)
@@ -230,7 +268,7 @@ export default function WatchTowerPage() {
           image: movie.poster_path
             ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
             : "",
-          genres: [], // Can add genre names if needed
+          genres: [], // Optionally fill genres here if you want
           score: null,
         }));
         setWestList(list);
@@ -286,111 +324,73 @@ export default function WatchTowerPage() {
   const filteredTrailers = useMemo(() => {
     if (!selectedGenre) return isEast ? eastTrailers : westTrailers;
     return (isEast ? eastTrailers : westTrailers).filter((t) => {
-      // Find the item in eastList or westList by title to check genre
       const list = isEast ? eastList : westList;
       const item = list.find((i) => i.title === t.title);
       return item?.genres?.includes(selectedGenre);
     });
   }, [selectedGenre, eastTrailers, westTrailers, eastList, westList, isEast]);
 
-  const loading = loadingEast || loadingWest;
-  const error = isEast ? errorEast : errorWest;
+  // Featured trailer for Hero and Spotlight
+  const featuredTrailer = useMemo(() => {
+    if (isEast && eastTrailers.length > 0) return eastTrailers[0];
+    if (!isEast && westTrailers.length > 0) return westTrailers[0];
+    return null;
+  }, [eastTrailers, westTrailers, isEast]);
 
-  // Styles for iconic design theme
-  const panelBaseStyle =
-    "bg-black/70 backdrop-blur-md border border-white/20 rounded-2xl shadow-[0_0_15px_rgba(150,50,250,0.7)]";
+  // Featured trailer date for countdown
+  const featuredDate = useMemo(() => {
+    if (isEast && eastList.length > 0) return eastList[0].date;
+    if (!isEast && westList.length > 0) return westList[0].date;
+    return null;
+  }, [eastList, westList, isEast]);
 
-  const buttonBaseStyle =
-    "text-white font-semibold px-4 py-2 rounded-full transition focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2";
-
-  const buttonActiveStyle =
-    "bg-gradient-to-r from-purple-700 to-pink-600 shadow-lg hover:from-purple-600 hover:to-pink-500";
-
-  const genreButtonStyle = (active) =>
-    `px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
-      active
-        ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
-        : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
-    }`;
+  const neonGlowPanel = "neon-glow border border-white/70 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden";
 
   return (
-    <div className="min-h-screen bg-black text-white px-6 py-10 font-sans max-w-7xl mx-auto select-none">
-      {/* Toggle Switch */}
-      <div className="flex justify-center mb-8">
-        <label className="relative inline-flex items-center cursor-pointer">
+    <div
+      className="min-h-screen bg-black text-white px-6 py-8 font-sans max-w-7xl mx-auto select-none relative"
+      style={{ fontFamily: "'Azonix', sans-serif" }}
+    >
+      {/* Toggle Switch fixed top-right */}
+      <div className="fixed top-6 right-6 z-50 bg-black/70 p-1 rounded-full shadow-lg">
+        <label className="relative inline-flex items-center cursor-pointer select-none">
           <input
             type="checkbox"
             className="sr-only"
             checked={!isEast}
             onChange={() => setIsEast((prev) => !prev)}
           />
-          <div
-            className={`${
-              isEast ? "bg-purple-700" : "bg-purple-700"
-            } w-16 h-8 rounded-full transition-colors duration-300`}
-          />
+          <div className={`w-14 h-7 rounded-full transition-colors duration-300 ${isEast ? "bg-purple-700" : "bg-pink-600"}`} />
           <span
-            className={`absolute left-1 top-1 bg-white w-6 h-6 rounded-full shadow-md transition-transform duration-300 ${
-              isEast ? "translate-x-0" : "translate-x-8"
+            className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full shadow-md transition-transform duration-300 ${
+              isEast ? "translate-x-0" : "translate-x-7"
             }`}
           />
-          <span className="absolute left-1 top-10 text-sm text-purple-400 font-semibold select-none">
-            East
-          </span>
-          <span className="absolute right-1 top-10 text-sm text-purple-400 font-semibold select-none">
-            West
-          </span>
         </label>
+        <div className="flex justify-between mt-1 text-xs text-purple-400 font-semibold">
+          <span>East</span>
+          <span>West</span>
+        </div>
       </div>
 
-      {/* Section Title */}
-      <h2
-        className={`text-4xl font-extrabold tracking-wide mb-6 text-center ${
-          isEast
-            ? "text-purple-400 drop-shadow-[0_0_8px_rgba(180,100,255,0.9)] font-japanese"
-            : "text-purple-400 drop-shadow-[0_0_8px_rgba(180,100,255,0.9)] font-ackno"
-        }`}
-      >
-        Trending {isEast ? "Anime" : "Movies"} Trailers
-      </h2>
-
-      {/* Trailer Cards Container */}
-      {loading ? (
-        <div className="text-center text-zinc-400 text-sm animate-pulse mb-12">
-          Loading trailers...
-        </div>
-      ) : error ? (
-        <div className="text-center text-red-600 font-semibold mb-12">
-          Error loading trailers: {error}
-        </div>
-      ) : filteredTrailers.length === 0 ? (
-        <div className="text-center text-zinc-400 font-semibold mb-12">
-          No trailers found for this genre.
-        </div>
-      ) : (
-        <motion.div
-          layout
-          className={`${panelBaseStyle} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black`}
-        >
-          {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
-            <TrailerCard
-              key={`${title}-${i}`}
-              title={title}
-              youtubeKey={youtubeKey}
-              poster={poster}
-              onClick={() =>
-                setModalTrailer({ youtubeKey, title })
-              }
-            />
-          ))}
-        </motion.div>
+      {/* Hero Featured Trailer */}
+      {featuredTrailer && featuredDate && (
+        <HeroFeatured
+          trailer={featuredTrailer}
+          countdownDate={featuredDate}
+          onPlay={() => setModalTrailer(featuredTrailer)}
+        />
       )}
 
       {/* Genre Filter Buttons */}
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
+      <div className="mb-8 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
-          className={genreButtonStyle(selectedGenre === null)}
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
+            selectedGenre === null
+              ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
+              : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
+          }`}
         >
           All Genres
         </button>
@@ -398,7 +398,11 @@ export default function WatchTowerPage() {
           <button
             key={genre}
             onClick={() => setSelectedGenre(genre)}
-            className={genreButtonStyle(selectedGenre === genre)}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
+              selectedGenre === genre
+                ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
+                : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
+            }`}
           >
             <Tag className="inline w-4 h-4 mr-1 -mt-0.5" />
             {genre}
@@ -406,111 +410,141 @@ export default function WatchTowerPage() {
         ))}
       </div>
 
-      {/* Countdown & Release Calendar Panel */}
-      <div className="mt-12 grid md:grid-cols-2 gap-8">
-        {/* Upcoming Releases Panel */}
-        <div className={`${panelBaseStyle} p-6`}>
-          <h3 className="text-2xl font-bold mb-4 text-purple-300 drop-shadow-lg flex items-center gap-2">
-            <TimerReset className="w-6 h-6" /> Upcoming Releases
-          </h3>
-          <div className="space-y-4 max-h-[420px] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black">
-            {(isEast ? eastList : westList)
-              .slice(0, 10)
-              .map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 border-b border-purple-800 pb-3 last:border-none"
-                >
-                  {item.image ? (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-16 h-24 object-cover rounded-lg shadow-md"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-16 h-24 bg-purple-900 rounded-lg flex items-center justify-center text-purple-600 select-none">
-                      No Image
-                    </div>
-                  )}
-                  <div>
-                    <h4 className="font-semibold text-white line-clamp-2">
-                      {item.title}
-                    </h4>
-                    <Countdown targetDate={item.date} />
-                  </div>
-                </div>
-              ))}
+      {/* Spotlight Section (Big image with countdown overlay + gradient) */}
+      {featuredTrailer && featuredDate && (
+        <section
+          className={`${neonGlowPanel} relative mb-12 cursor-pointer select-none`}
+          onClick={() => setModalTrailer(featuredTrailer)}
+        >
+          <img
+            src={featuredTrailer.poster}
+            alt={`Spotlight on ${featuredTrailer.title}`}
+            className="w-full h-64 md:h-80 lg:h-96 object-cover rounded-lg brightness-75"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent rounded-lg" />
+          <div className="absolute bottom-6 left-6 text-white max-w-xl">
+            <h2
+              className="text-4xl font-azonix font-extrabold mb-2"
+              style={{ fontFamily: "'Azonix', sans-serif" }}
+            >
+              Spotlight: {featuredTrailer.title}
+            </h2>
+            <div className="flex items-center gap-4 font-mono text-lg text-blue-400">
+              <TimerReset />
+              <Countdown targetDate={featuredDate} />
+            </div>
           </div>
-        </div>
+          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+            <PlayCircle className="w-20 h-20 text-purple-500 drop-shadow-lg animate-pulse" />
+          </div>
+        </section>
+      )}
 
-        {/* Release Calendar Panel */}
-        <div className={`${panelBaseStyle} p-6`}>
-          <h3 className="text-2xl font-bold mb-4 text-purple-300 drop-shadow-lg flex items-center gap-2">
-            <Calendar className="w-6 h-6" /> Release Calendar
-          </h3>
-          <div className="flex space-x-4 overflow-x-auto scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black py-2 px-2">
-            {(isEast ? eastList : westList)
-              .slice(0, 15)
-              .sort(
-                (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-              )
-              .map((item) => {
-                const dateObj = new Date(item.date);
-                const day = dateObj.getDate();
-                const month = dateObj.toLocaleString("default", { month: "short" });
-                return (
-                  <div
-                    key={item.id}
-                    className="min-w-[140px] bg-purple-900/60 rounded-xl p-3 flex flex-col items-center shadow-lg"
-                  >
-                    <div className="text-purple-400 font-bold text-xl">{day}</div>
-                    <div className="text-purple-600 uppercase text-sm mb-2">{month}</div>
-                    {item.image ? (
+      {/* Trailer Cards Section */}
+      <motion.div
+        layout
+        className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black`}
+      >
+        {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
+          <TrailerCard
+            key={`${title}-${i}`}
+            title={title}
+            youtubeKey={youtubeKey}
+            poster={poster}
+            onClick={() => setModalTrailer({ youtubeKey, title })}
+          />
+        ))}
+      </motion.div>
+
+      {/* Release Calendar Section */}
+      <section className="mt-16">
+        <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
+          <Calendar className="w-8 h-8" /> Release Calendar
+        </h2>
+
+        {/* Calendar horizontal scroll with date cards */}
+        <div className="flex overflow-x-auto space-x-4 px-2 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black">
+          {(isEast ? eastList : westList)
+            .sort((a, b) => new Date(a.date) - new Date(b.date))
+            .map(({ id, title, date, image }) => {
+              const d = new Date(date);
+              const day = d.toLocaleString("en-US", { day: "numeric" });
+              const month = d.toLocaleString("en-US", { month: "short" });
+              const year = d.getFullYear();
+
+              return (
+                <motion.div
+                  key={id}
+                  className={`${neonGlowPanel} flex-shrink-0 w-36 cursor-pointer hover:shadow-[0_0_20px_rgba(180,100,255,0.8)] transition`}
+                  onClick={() => {
+                    // Show trailer if available or just alert title
+                    const trailer = (isEast ? eastTrailers : westTrailers).find(
+                      (t) => t.title === title
+                    );
+                    if (trailer) setModalTrailer(trailer);
+                    else alert(`${title} is releasing on ${month} ${day}, ${year}`);
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="text-center text-white font-mono font-bold text-lg">
+                      {day}
+                    </div>
+                    <div className="text-center text-purple-400 font-semibold text-sm uppercase tracking-wide">
+                      {month}
+                    </div>
+                    {image ? (
                       <img
-                        src={item.image}
-                        alt={item.title}
-                        className="w-full h-28 object-cover rounded-lg mb-2"
+                        src={image}
+                        alt={title}
+                        className="w-full h-24 object-cover rounded-lg"
                         loading="lazy"
                       />
                     ) : (
-                      <div className="w-full h-28 bg-purple-800 rounded-lg mb-2 flex items-center justify-center text-purple-600">
+                      <div className="w-full h-24 bg-purple-900 rounded-lg flex items-center justify-center text-purple-600 select-none">
                         No Image
                       </div>
                     )}
-                    <p className="text-white text-center text-sm font-semibold line-clamp-2">
-                      {item.title}
-                    </p>
+                    <div className="text-center text-sm mt-1 font-semibold line-clamp-2">
+                      {title}
+                    </div>
                   </div>
-                );
-              })}
-          </div>
+                </motion.div>
+              );
+            })}
         </div>
-      </div>
+      </section>
 
       {/* Top Rated Section */}
-      <div className="mt-12">
+      <section className="mt-16">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Star className="w-8 h-8" /> Top Rated {isEast ? "Anime" : "Movies"}
         </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {(isEast
-            ? [...eastList].sort((a, b) => (b.score || 0) - (a.score || 0)).slice(0, 6)
-            : [...westList].slice(0, 6)
+            ? [...eastList].filter((i) => i.score).sort((a, b) => b.score - a.score).slice(0, 6)
+            : [...westList]
           ).map((item) => (
             <div
               key={item.id}
-              className={`${panelBaseStyle} p-4 cursor-pointer hover:shadow-[0_0_20px_rgba(180,100,255,0.8)] transition`}
+              className={`${neonGlowPanel} cursor-pointer hover:shadow-[0_0_20px_rgba(180,100,255,0.8)] transition`}
+              onClick={() => {
+                const trailer = (isEast ? eastTrailers : westTrailers).find(
+                  (t) => t.title === item.title
+                );
+                if (trailer) setModalTrailer(trailer);
+                else alert(item.title);
+              }}
             >
               {item.image ? (
                 <img
                   src={item.image}
                   alt={item.title}
-                  className="w-full h-56 object-cover rounded-xl mb-3"
+                  className="w-full h-56 object-cover rounded-lg mb-3"
                   loading="lazy"
                 />
               ) : (
-                <div className="w-full h-56 bg-purple-900 rounded-xl mb-3 flex items-center justify-center text-purple-600">
+                <div className="w-full h-56 bg-purple-900 rounded-lg mb-3 flex items-center justify-center text-purple-600">
                   No Image
                 </div>
               )}
@@ -519,15 +553,13 @@ export default function WatchTowerPage() {
                 {item.title}
               </h3>
               {item.score && (
-                <p className="text-purple-400 font-mono font-bold text-lg">
-                  ⭐ {item.score.toFixed(1)}
-                </p>
+                <p className="text-purple-400 font-mono font-bold text-lg">⭐ {item.score.toFixed(1)}</p>
               )}
               <Countdown targetDate={item.date} />
             </div>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Trailer Modal */}
       <TrailerModal
