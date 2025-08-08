@@ -464,7 +464,7 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Spotlight section */}
-      <div className="mb-14">
+      <div className="mb-14 mt-16">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
