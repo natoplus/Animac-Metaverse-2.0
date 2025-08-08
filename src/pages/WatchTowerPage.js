@@ -158,7 +158,6 @@ export default function WatchTowerPage() {
                 id
                 site
                 thumbnail
-                url
               }
 
             }
