@@ -429,7 +429,7 @@ export default function WatchTowerPage() {
 
 
       {/* Trailer Cards Section */}
-      <div className="relative mb-13 mt-18">
+      <div className="relative mb-13">
         <button
           aria-label="Scroll trailers left"
           onClick={scrollTrailerLeft}
@@ -441,7 +441,7 @@ export default function WatchTowerPage() {
         <motion.div
           ref={trailerScrollRef}
           layout
-          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mb-16`}
+          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black mb-16 mt-17`}
         >
           {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
             <TrailerCard
