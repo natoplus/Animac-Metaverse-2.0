@@ -9,7 +9,7 @@ const PortraitSlideshow = () => {
   // Update these with your actual local images and captions
   const slides = [
     {
-      src: '/assets/buzzfeed-slides/slide1.jpg',
+      src: '/assets/east-poster-animac-website.jpg',
       alt: 'Anime trends',
       caption: 'Discover the latest anime trends',
       link: '/buzzfeed/east',
@@ -63,7 +63,7 @@ const PortraitSlideshow = () => {
       </AnimatePresence>
 
       {/* Navigation dots */}
-      <div className="absolute mt-6 bottom-4 left-0 right-0 flex justify-center space-x-2">
+      <div className="absolute bottom-7 left-0 right-0 flex justify-center space-x-2">
         {slides.map((_, idx) => (
           <button
             key={idx}
