@@ -113,7 +113,7 @@ function TrailerModal({ youtubeKey, title, onClose }) {
             <button
               aria-label="Close trailer"
               onClick={onClose}
-              className="absolute top-3 right-3 p-2 rounded-full bg-purple-700/80 hover:bg-purple-700 text-white transition"
+              className="absolute top-3 right-3 p-2 border-white rounded-full bg-purple-700/80 hover:bg-purple-700 text-white transition"
             >
               <X size={24} />
             </button>
@@ -158,8 +158,9 @@ export default function WatchTowerPage() {
                 id
                 site
                 thumbnail
-                trailerUrl
+                url
               }
+
             }
           }
         }
