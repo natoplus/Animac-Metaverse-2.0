@@ -1,51 +1,142 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import HeroSection from '../components/HeroSection';
 import ContentRow from '../components/ContentRow';
 import { useFeaturedContent, useArticles } from '../hooks/useArticles';
+import axios from 'axios';
 
-const UpcomingSeriesPreview = ({ eastArticles, westArticles, loading }) => {
-  const [selectedRegion, setSelectedRegion] = useState('east');
+// Replace with your TMDB API key or fallback
+const TMDB_API_KEY = process.env.REACT_APP_TMDB_API_KEY || 'ccf7d4394367e750c059b477b38f8212';
+
+// WatchTowerPreview component showing trailers with East/West toggle and slideshow
+const WatchTowerPreview = () => {
+  const [isEast, setIsEast] = useState(true);
+  const [eastTrailers, setEastTrailers] = useState([]);
+  const [westTrailers, setWestTrailers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Get the right articles based on region and filter upcoming series only
-  const series = (selectedRegion === 'east' ? eastArticles : westArticles);
-
-  // Slideshow interval for auto change
+  // Fetch East trailers from AniList GraphQL API
   useEffect(() => {
-    if (!loading && series.length > 1) {
-      const interval = setInterval(() => {
-        setCurrentIndex((i) => (i + 1) % series.length);
-      }, 5000); // 5 seconds fade
+    const fetchEastTrailers = async () => {
+      const query = `
+        query {
+          Page(perPage: 15) {
+            media(type: ANIME, sort: SCORE_DESC, status: NOT_YET_RELEASED) {
+              id
+              title { romaji }
+              coverImage { large }
+              trailer {
+                id
+                site
+              }
+            }
+          }
+        }
+      `;
+      try {
+        const response = await fetch('https://graphql.anilist.co', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query }),
+        });
+        if (!response.ok) throw new Error('Failed to fetch east trailers');
+        const { data } = await response.json();
+        const trailers = data.Page.media
+          .filter((m) => m.trailer && m.trailer.site === 'youtube')
+          .map((m) => ({
+            title: m.title.romaji,
+            youtubeKey: m.trailer.id,
+            poster: m.coverImage.large,
+          }));
+        setEastTrailers(trailers);
+      } catch (e) {
+        console.error(e);
+        setEastTrailers([]);
+      }
+    };
+    fetchEastTrailers();
+  }, []);
 
+  // Fetch West trailers from TMDB API
+  useEffect(() => {
+    const fetchWestTrailers = async () => {
+      try {
+        if (!TMDB_API_KEY || TMDB_API_KEY === '<fallback-your-key>') {
+          throw new Error('TMDB API key not set');
+        }
+        const res = await axios.get(
+          `https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`
+        );
+        const trailersData = await Promise.all(
+          res.data.results.slice(0, 15).map(async (movie) => {
+            try {
+              const videosRes = await axios.get(
+                `https://api.themoviedb.org/3/movie/${movie.id}/videos?api_key=${TMDB_API_KEY}&language=en-US`
+              );
+              const ytTrailers = videosRes.data.results.filter(
+                (v) => v.type === 'Trailer' && v.site === 'YouTube'
+              );
+              if (ytTrailers.length > 0) {
+                return {
+                  title: movie.title,
+                  youtubeKey: ytTrailers[0].key,
+                  poster: movie.poster_path
+                    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                    : null,
+                };
+              }
+              return null;
+            } catch {
+              return null;
+            }
+          })
+        );
+        setWestTrailers(trailersData.filter(Boolean));
+      } catch (e) {
+        console.error(e);
+        setWestTrailers([]);
+      }
+    };
+    fetchWestTrailers();
+  }, []);
+
+  const trailers = isEast ? eastTrailers : westTrailers;
+
+  // Slideshow timer to auto cycle
+  useEffect(() => {
+    if (trailers.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentIndex((i) => (i + 1) % trailers.length);
+      }, 5000);
       return () => clearInterval(interval);
     }
-  }, [series, loading]);
+  }, [trailers]);
 
   if (loading) {
-    return <p className="text-center text-gray-400 italic">Loading upcoming series...</p>;
+    return <p className="text-center text-gray-400 italic">Loading trailers...</p>;
   }
 
-  if (series.length === 0) {
-    return <p className="text-center text-gray-400 italic">No upcoming series found.</p>;
+  if (trailers.length === 0) {
+    return <p className="text-center text-gray-400 italic">No trailers found.</p>;
   }
 
-  const currentSeries = series[currentIndex];
+  const currentTrailer = trailers[currentIndex];
 
   return (
-    <div className="my-20 px-6 text-center max-w-6xl mx-auto">
-      {/* Toggle */}
+    <div className="my-20 px-6 text-center max-w-6xl mx-auto select-none">
+      {/* Toggle buttons */}
       <div className="flex justify-center mb-6 space-x-6">
         {['east', 'west'].map((region) => (
           <button
             key={region}
             onClick={() => {
-              setSelectedRegion(region);
-              setCurrentIndex(0); // reset slideshow on toggle change
+              setIsEast(region === 'east');
+              setCurrentIndex(0);
             }}
             className={`px-6 py-2 rounded-full font-semibold transition ${
-              selectedRegion === region
-                ? 'bg-gradient-to-r from-east-500 to-west-500 text-white shadow-lg'
+              (isEast && region === 'east') || (!isEast && region === 'west')
+                ? 'bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg'
                 : 'bg-gray-800 text-gray-400 hover:text-white'
             }`}
           >
@@ -54,12 +145,12 @@ const UpcomingSeriesPreview = ({ eastArticles, westArticles, loading }) => {
         ))}
       </div>
 
-      {/* Slideshow container */}
+      {/* Trailer slideshow */}
       <div className="relative w-[240px] h-[360px] mx-auto rounded-xl overflow-hidden shadow-xl bg-black">
         <AnimatePresence mode="wait">
           <motion.a
-            key={currentSeries.id}
-            href={`/article/${currentSeries.slug}`} // assuming slug
+            key={currentTrailer.youtubeKey}
+            href={`https://www.youtube.com/watch?v=${currentTrailer.youtubeKey}`}
             target="_blank"
             rel="noopener noreferrer"
             initial={{ opacity: 0 }}
@@ -67,11 +158,11 @@ const UpcomingSeriesPreview = ({ eastArticles, westArticles, loading }) => {
             exit={{ opacity: 0 }}
             transition={{ duration: 1 }}
             className="block w-full h-full bg-cover bg-center"
-            style={{ backgroundImage: `url(${currentSeries.cover_image || currentSeries.thumbnail})` }}
-            title={currentSeries.title}
+            style={{ backgroundImage: `url(${currentTrailer.poster})` }}
+            title={currentTrailer.title}
           >
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-transparent p-4 text-white text-center font-semibold text-lg">
-              {currentSeries.title}
+              {currentTrailer.title}
             </div>
           </motion.a>
         </AnimatePresence>
@@ -79,24 +170,24 @@ const UpcomingSeriesPreview = ({ eastArticles, westArticles, loading }) => {
 
       {/* Navigation dots */}
       <div className="flex justify-center mt-4 space-x-2">
-        {series.map((_, idx) => (
+        {trailers.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
             className={`w-3 h-3 rounded-full transition ${
-              idx === currentIndex ? 'bg-east-500' : 'bg-gray-600 hover:bg-gray-400'
+              idx === currentIndex ? 'bg-purple-600' : 'bg-gray-600 hover:bg-gray-400'
             }`}
             aria-label={`Go to slide ${idx + 1}`}
           />
         ))}
       </div>
 
-      {/* Button to WatchTower */}
+      {/* Visit WatchTower button */}
       <motion.a
         href="/watchtower"
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="mt-8 inline-block px-8 py-3 bg-gradient-to-r from-east-600 to-west-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition"
+        className="mt-8 inline-block px-8 py-3 bg-gradient-to-r from-purple-700 to-pink-600 text-white rounded-lg font-semibold shadow-lg hover:shadow-xl transition"
       >
         Visit WatchTower →
       </motion.a>
@@ -122,7 +213,7 @@ const Home = () => {
       <HeroSection featuredContent={featuredContent} />
 
       {/* Buzzfeed Bulletin Ticker */}
-      <div className="bg-gradient-to-r from-east-500 to-west-500 py-2 overflow-hidden">
+      <div className="bg-gradient-to-r from-purple-700 to-pink-600 py-2 overflow-hidden">
         <div className="whitespace-nowrap animate-marquee text-sm md:text-base font-semibold font-mono uppercase">
           {allArticles.slice(0, 10).map((article, i) => (
             <span key={i} className="mx-6">
@@ -183,11 +274,9 @@ const Home = () => {
             <p className="text-center text-gray-400 my-6 italic">No editor picks at the moment.</p>
           )}
 
-          
-
           {/* Spotlight Creator */}
           <div className="my-24 px-6">
-            <div className="max-w-5xl mx-auto bg-gradient-to-br from-east-800 to-west-800 rounded-2xl p-10 shadow-lg text-center">
+            <div className="max-w-5xl mx-auto bg-gradient-to-br from-purple-900 to-pink-900 rounded-2xl p-10 shadow-lg text-center">
               <h3 className="text-3xl md:text-5xl font-bold font-azonix bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-yellow-500 mb-4">
                 🌟 Spotlight Creator
               </h3>
@@ -207,13 +296,8 @@ const Home = () => {
             </div>
           </div>
 
-{/* === REPLACE GENRE SHOWCASE WITH UPCOMING SERIES PREVIEW === */}
-          <UpcomingSeriesPreview
-            eastArticles={eastArticles}
-            westArticles={westArticles}
-            loading={eastLoading || westLoading}
-          />
-
+          {/* === REPLACE UpcomingSeriesPreview with WatchTowerPreview === */}
+          <WatchTowerPreview />
 
           {/* Parallax Animated Banner */}
           <div className="my-24">
@@ -245,7 +329,7 @@ const Home = () => {
             className="py-16 px-4"
           >
             <div className="max-w-4xl mx-auto text-center">
-              <h2 className="font-azonix text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent">
+              <h2 className="font-azonix text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent">
                 Dive Deeper into BUZZFEED
               </h2>
               <p className="text-xl text-gray-300 font-inter mb-8 leading-relaxed">
@@ -258,7 +342,7 @@ const Home = () => {
                   href="/buzzfeed/east"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-east-600 to-east-500 text-white font-montserrat font-semibold rounded-lg hover:from-east-700 hover:to-east-600 transition-all duration-300 hover-glow-east"
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-purple-700 to-purple-600 text-white font-montserrat font-semibold rounded-lg hover:from-purple-800 hover:to-purple-700 transition-all duration-300 hover-glow-east"
                 >
                   Explore EAST Portal <span className="ml-2 text-lg">→</span>
                 </motion.a>
@@ -267,7 +351,7 @@ const Home = () => {
                   href="/buzzfeed/west"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-west-600 to-west-500 text-white font-montserrat font-semibold rounded-lg hover:from-west-700 hover:to-west-600 transition-all duration-300 hover-glow-west"
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-pink-700 to-pink-600 text-white font-montserrat font-semibold rounded-lg hover:from-pink-800 hover:to-pink-700 transition-all duration-300 hover-glow-west"
                 >
                   Explore WEST Portal <span className="ml-2 text-lg">→</span>
                 </motion.a>
