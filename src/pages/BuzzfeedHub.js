@@ -1,9 +1,83 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Users, BookOpen, TrendingUp } from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
 import clsx from 'clsx';
+
+const PortraitSlideshow = () => {
+  // Update these with your actual local images and captions
+  const slides = [
+    {
+      src: '/assets/buzzfeed-slides/slide1.jpg',
+      alt: 'Anime trends',
+      caption: 'Discover the latest anime trends',
+      link: '/buzzfeed/east',
+    },
+    {
+      src: '/assets/buzzfeed-slides/slide2.jpg',
+      alt: 'Western blockbusters',
+      caption: 'Explore blockbuster western movies',
+      link: '/buzzfeed/west',
+    },
+    {
+      src: '/assets/buzzfeed-slides/slide3.jpg',
+      alt: 'Cartoon behind scenes',
+      caption: 'Behind the scenes of your favorite cartoons',
+      link: '/buzzfeed/west',
+    },
+    // Add more slides if needed
+  ];
+
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 5000); // 5 seconds
+
+    return () => clearInterval(interval);
+  }, [slides.length]);
+
+  return (
+    <div className="mx-auto mb-10 w-[300px] h-[450px] rounded-xl overflow-hidden relative shadow-xl cursor-pointer">
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.a
+          key={current}
+          href={slides[current].link}
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1 }}
+          className="block w-full h-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${slides[current].src})` }}
+          aria-label={slides[current].alt}
+          title={slides[current].caption}
+        >
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-transparent p-4 text-white text-center font-semibold text-lg">
+            {slides[current].caption}
+          </div>
+        </motion.a>
+      </AnimatePresence>
+
+      {/* Navigation dots */}
+      <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+        {slides.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => setCurrent(idx)}
+            className={`w-3 h-3 rounded-full transition ${
+              idx === current ? 'bg-east-500' : 'bg-gray-600 hover:bg-gray-400'
+            }`}
+            aria-label={`Go to slide ${idx + 1}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const BuzzfeedHub = () => {
   const { articles: eastArticles } = useArticles('east');
@@ -68,6 +142,9 @@ const BuzzfeedHub = () => {
             transition={{ duration: 0.8 }}
             className="text-center max-w-4xl mx-auto"
           >
+            {/* Portrait slideshow inserted here */}
+            <PortraitSlideshow />
+
             <img
               src="/assets/buzzfeed-logo.svg"
               alt="Buzzfeed logo"
