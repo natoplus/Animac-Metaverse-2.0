@@ -138,7 +138,7 @@ function TrailerModal({ youtubeKey, title, onClose }) {
 function HeroFeatured({ trailer, countdownDate, onPlay }) {
   return (
     <section
-      className="relative w-full h-[60vh] md:h-[70vh] rounded-xl overflow-hidden mb-12 neon-glow border border-white/70 bg-black/20 hover:bg-black/40 cursor-pointer select-none"
+      className="mb-16 mt-18 relative w-full h-[60vh] md:h-[70vh] rounded-xl overflow-hidden mb-12 neon-glow border border-white/70 bg-black/20 hover:bg-black/40 cursor-pointer select-none"
       onClick={onPlay}
       aria-label={`Play trailer for ${trailer.title}`}
     >
@@ -367,7 +367,7 @@ export default function WatchTowerPage() {
       style={{ fontFamily: "'Azonix', sans-serif" }}
     >
       {/* Toggle Switch fixed top-right */}
-      <div className="fixed top-6 right-6 z-50 bg-black/70 p-1 rounded-full shadow-lg">
+      <div className="fixed top-6 right-6 z-50 bg-black/0 p-1 rounded-full shadow-lg">
         <label className="relative inline-flex items-center cursor-pointer select-none">
           <input
             type="checkbox"
@@ -389,16 +389,18 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Hero Featured Trailer */}
-      {featuredTrailer && featuredDate && (
-        <HeroFeatured
-          trailer={featuredTrailer}
-          countdownDate={featuredDate}
-          onPlay={() => setModalTrailer(featuredTrailer)}
-        />
-      )}
+      <div className="mb-18 mt-18">
+        {featuredTrailer && featuredDate && (
+          <HeroFeatured
+            trailer={featuredTrailer}
+            countdownDate={featuredDate}
+            onPlay={() => setModalTrailer(featuredTrailer)}
+          />
+        )}
+      </div>
 
       {/* Genre Filter Buttons */}
-      <div className="mb-11 flex flex-wrap justify-center gap-3">
+      <div className="mb-18 mt-18 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
@@ -427,7 +429,7 @@ export default function WatchTowerPage() {
 
 
       {/* Trailer Cards Section */}
-      <div className="relative mb-13">
+      <div className="relative mb-18 mt-18">
         <button
           aria-label="Scroll trailers left"
           onClick={scrollTrailerLeft}
@@ -462,68 +464,69 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Spotlight section */}
-      <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className={`${neonGlowPanel} max-w-5xl mx-auto`}
-      >
-        <h2 className="text-3xl font-extrabold mb-6 flex items-center gap-3">
-          <Film className="w-8 h-8 text-purple-500" />
-          Spotlight Upcoming {isEast ? "Anime" : "Movies"}
-        </h2>
+      <div className="mb-18 mt-18">
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className={`${neonGlowPanel} max-w-5xl mx-auto`}
+        >
+          <h2 className="text-3xl font-extrabold mb-7 flex items-center gap-3">
+            <Film className="w-8 h-8 text-purple-500" />
+            Spotlight Upcoming {isEast ? "Anime" : "Movies"}
+          </h2>
 
-        {(isEast ? eastList : westList).length === 0 && (
-          <p className="text-red-500 font-semibold">No upcoming titles found.</p>
-        )}
+          {(isEast ? eastList : westList).length === 0 && (
+            <p className="text-red-500 font-semibold">No upcoming titles found.</p>
+          )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {(isEast ? eastList : westList)
-            .filter((item) =>
-              selectedGenre ? item.genres.includes(selectedGenre) : true
-            )
-            .slice(0, 9)
-            .map((item) => (
-              <motion.article
-                key={item.id}
-                whileHover={{ scale: 1.02 }}
-                className="rounded-lg overflow-hidden cursor-pointer bg-black/30 border border-white/50 neon-glow"
-                title={`${item.title} (${new Date(item.date).getFullYear()})`}
-              >
-                <img
-                  src={item.image}
-                  alt={`${item.title} cover`}
-                  loading="lazy"
-                  decoding="async"
-                  className="w-full h-[180px] object-cover rounded-t-lg transition-transform duration-300 hover:scale-105"
-                />
-                <div className="p-4 text-center select-text">
-                  <h3 className="text-lg font-semibold line-clamp-2">{item.title}</h3>
-                  <p className="text-sm mt-1 text-gray-400">
-                    Release:{" "}
-                    {new Date(item.date).toLocaleDateString(undefined, {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                  </p>
-                  {item.score && (
-                    <p className="flex items-center justify-center mt-1 gap-1 text-yellow-400 font-semibold">
-                      <Star className="w-4 h-4" />
-                      {item.score}%
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {(isEast ? eastList : westList)
+              .filter((item) =>
+                selectedGenre ? item.genres.includes(selectedGenre) : true
+              )
+              .slice(0, 9)
+              .map((item) => (
+                <motion.article
+                  key={item.id}
+                  whileHover={{ scale: 1.02 }}
+                  className="rounded-lg overflow-hidden cursor-pointer bg-black/30 border border-white/50 neon-glow"
+                  title={`${item.title} (${new Date(item.date).getFullYear()})`}
+                >
+                  <img
+                    src={item.image}
+                    alt={`${item.title} cover`}
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-[180px] object-cover rounded-t-lg transition-transform duration-300 hover:scale-105"
+                  />
+                  <div className="p-4 text-center select-text">
+                    <h3 className="text-lg font-semibold line-clamp-2">{item.title}</h3>
+                    <p className="text-sm mt-1 text-gray-400">
+                      Release:{" "}
+                      {new Date(item.date).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })}
                     </p>
-                  )}
-                </div>
-              </motion.article>
-            ))}
-        </div>
-      </motion.section>
-
+                    {item.score && (
+                      <p className="flex items-center justify-center mt-1 gap-1 text-yellow-400 font-semibold">
+                        <Star className="w-4 h-4" />
+                        {item.score}%
+                      </p>
+                    )}
+                  </div>
+                </motion.article>
+              ))}
+          </div>
+        </motion.section>
+      </div>
       
 
 
       {/* Release Calendar Section */}
-      <section className="mt-16 relative">
+      <section className="mt-18 mb-18 relative">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Calendar className="w-8 h-8" /> Release Calendar
         </h2>
