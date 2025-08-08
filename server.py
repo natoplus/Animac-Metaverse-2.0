@@ -306,13 +306,16 @@ async def get_comments_for_article(article_id: str, request: Request):
     if not session_id:
         raise HTTPException(status_code=400, detail="Session ID required")
 
-    # 1. Fetch ALL comments for this article
+    # 1. Fetch all comments for this article
     res = supabase.table("comments") \
         .select("*") \
         .eq("article_id", article_id) \
         .order("created_at", desc=False) \
         .execute()
     flat_comments = res.data or []
+
+    if not flat_comments:
+        return []
 
     # 2. Fetch likes/dislikes for this session
     liked_res = supabase.table("comment_likes") \
@@ -327,33 +330,37 @@ async def get_comments_for_article(article_id: str, request: Request):
         .execute()
     disliked_ids = {item["comment_id"] for item in disliked_res.data or []}
 
-    # 3. Build nested comment tree with reply_count
-    comment_map = {c["id"]: {**c, "replies": [], "reply_count": 0} for c in flat_comments}
-
+    # 3. Build reply count mapping
+    reply_count_map = {}
     for c in flat_comments:
         parent_id = c.get("parent_id")
+        if parent_id:
+            reply_count_map[parent_id] = reply_count_map.get(parent_id, 0) + 1
+
+    # 4. Attach flags and counts
+    for comment in flat_comments:
+        comment["liked_by_user"] = comment["id"] in liked_ids
+        comment["disliked_by_user"] = comment["id"] in disliked_ids
+        comment["reply_count"] = reply_count_map.get(comment["id"], 0)
+
+    # 5. Return nested tree
+    return build_comment_tree(flat_comments, liked_ids, disliked_ids)
+
+
+def build_comment_tree(comments, liked_ids=None, disliked_ids=None):
+    """Builds a nested comment tree from a flat list."""
+    comment_map = {c["id"]: {**c, "replies": []} for c in comments}
+
+    root_comments = []
+    for comment in comments:
+        parent_id = comment.get("parent_id")
         if parent_id and parent_id in comment_map:
-            comment_map[parent_id]["replies"].append(comment_map[c["id"]])
-            comment_map[parent_id]["reply_count"] += 1
+            comment_map[parent_id]["replies"].append(comment_map[comment["id"]])
+        else:
+            root_comments.append(comment_map[comment["id"]])
 
-    # Only return top-level comments, but with nested replies already attached
-    top_level_comments = [
-        comment_map[c["id"]]
-        for c in flat_comments
-        if not c.get("parent_id")
-    ]
+    return root_comments
 
-    # 4. Mark liked/disliked for this session
-    def mark_votes(comment):
-        comment["liked_by_session"] = comment["id"] in liked_ids
-        comment["disliked_by_session"] = comment["id"] in disliked_ids
-        for reply in comment["replies"]:
-            mark_votes(reply)
-
-    for comment in top_level_comments:
-        mark_votes(comment)
-
-    return top_level_comments
 
 
 
