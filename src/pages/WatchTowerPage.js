@@ -10,7 +10,6 @@ import {
   X,
 } from "lucide-react";
 import axios from "axios";
-import LoadingScreen from "./LoadingScreen"; // Adjust path if needed
 import { ChevronRight, ChevronLeft } from "lucide-react";
 
 
