@@ -400,7 +400,7 @@ export default function WatchTowerPage() {
       <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full"></div>
 
       {/* Genre Filter Buttons */}
-      <div className="mb-16 flex flex-wrap justify-center gap-3">
+      <div className="mb-16 mt-16 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${

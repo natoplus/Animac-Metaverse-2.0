@@ -185,12 +185,7 @@ const Home = () => {
             <p className="text-center text-gray-400 my-6 italic">No editor picks at the moment.</p>
           )}
 
-          {/* === REPLACE GENRE SHOWCASE WITH UPCOMING SERIES PREVIEW === */}
-          <UpcomingSeriesPreview
-            eastArticles={eastArticles}
-            westArticles={westArticles}
-            loading={eastLoading || westLoading}
-          />
+          
 
           {/* Spotlight Creator */}
           <div className="my-24 px-6">
@@ -214,6 +209,14 @@ const Home = () => {
             </div>
           </div>
 
+{/* === REPLACE GENRE SHOWCASE WITH UPCOMING SERIES PREVIEW === */}
+          <UpcomingSeriesPreview
+            eastArticles={eastArticles}
+            westArticles={westArticles}
+            loading={eastLoading || westLoading}
+          />
+
+          
           {/* Parallax Animated Banner */}
           <div className="my-24">
             <div className="relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-2xl">
