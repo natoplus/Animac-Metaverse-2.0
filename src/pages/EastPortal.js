@@ -33,7 +33,7 @@ const EastPortal = () => {
     >
       {/* East Portal Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-east-900/30 via-netflix-dark to-netflix-black">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1615592389070-bcc97e05ad01')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-[url('https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/Z-WHgqd_TeJxSuha8aZ5WpyLcX8/AAAABfrlSgfIEw-hX0imXlnY3qlZQoHl7Sx1z4CVxkWNdRMltLiGO6lkciwA1XsDjZto2aQJP9X7ulUOHfspuCwAdhfCngH7SZzsPZZn.jpg?r=551')] bg-cover bg-center opacity-20" />
         
         <div className="relative z-10 container mx-auto px-4 py-16">
           <motion.div

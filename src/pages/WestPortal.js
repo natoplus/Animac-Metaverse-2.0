@@ -33,7 +33,7 @@ const WestPortal = () => {
     >
       {/* West Portal Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-west-900/30 via-netflix-dark to-netflix-black">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1717395948943-f2a38e2e41f4')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-[url('https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/13572496/SpiderVerse_cropped.jpg?quality=90&strip=all&crop=0,0,100,100')] bg-cover bg-center opacity-20" />
         
         <div className="relative z-10 container mx-auto px-4 py-16">
           <motion.div
