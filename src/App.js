@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 
 // Layout Components
 import Header from './components/Header';
@@ -23,6 +24,29 @@ import useSupabaseAuth from './hooks/useSupabaseAuth';
 // Styles
 import './App.css';
 
+// ScrollToTop component
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [pathname]);
+  return null;
+};
+
+// PageWrapper with fade and slight slide up animation
+const PageWrapper = ({ children }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: 20 }}
+    transition={{ duration: 0.5 }}
+    style={{ minHeight: '100vh' }}
+  >
+    {children}
+  </motion.div>
+);
+
+// AnimatedRoutes now uses PageWrapper and includes ScrollToTop
 const AnimatedRoutes = ({ setIsLoading }) => {
   const location = useLocation();
 
@@ -33,17 +57,20 @@ const AnimatedRoutes = ({ setIsLoading }) => {
   }, [location.pathname]);
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Home />} />
-        <Route path="/buzzfeed" element={<BuzzfeedHub />} />
-        <Route path="/buzzfeed/east" element={<EastPortal />} />
-        <Route path="/buzzfeed/west" element={<WestPortal />} />
-        <Route path="/article/:id" element={<ArticlePage />} />
-        <Route path="/watch-tower" element={<WatchTowerPage />} />
-        <Route path="/admin/*" element={<AdminDashboard />} />
-      </Routes>
-    </AnimatePresence>
+    <>
+      <ScrollToTop />
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<PageWrapper><Home /></PageWrapper>} />
+          <Route path="/buzzfeed" element={<PageWrapper><BuzzfeedHub /></PageWrapper>} />
+          <Route path="/buzzfeed/east" element={<PageWrapper><EastPortal /></PageWrapper>} />
+          <Route path="/buzzfeed/west" element={<PageWrapper><WestPortal /></PageWrapper>} />
+          <Route path="/article/:id" element={<PageWrapper><ArticlePage /></PageWrapper>} />
+          <Route path="/watch-tower" element={<PageWrapper><WatchTowerPage /></PageWrapper>} />
+          <Route path="/admin/*" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
+        </Routes>
+      </AnimatePresence>
+    </>
   );
 };
 
