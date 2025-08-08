@@ -101,6 +101,20 @@ CommentResponse.update_forward_refs()
 def slugify(text: str) -> str:
     return text.lower().replace(" ", "-").replace(".", "").replace(",", "")
 
+def build_comment_tree(comments):
+    """Builds a threaded comment tree from a flat list."""
+    comment_map = {c["id"]: {**c, "replies": []} for c in comments}
+    root_comments = []
+
+    for c in comment_map.values():
+        parent_id = c.get("parent_id")
+        if parent_id and parent_id in comment_map:
+            comment_map[parent_id]["replies"].append(c)
+        else:
+            root_comments.append(c)
+
+    return root_comments
+
 # ---------- Routes ----------
 @app.get("/")
 async def root():
@@ -261,38 +275,46 @@ async def get_comments_for_article(article_id: str, request: Request):
     if not session_id:
         raise HTTPException(status_code=400, detail="Session ID required")
 
-    res = supabase.table("comments").select("*").eq("article_id", article_id).order("created_at", desc=False).execute()
+    # 1. Fetch ALL comments for this article
+    res = supabase.table("comments") \
+        .select("*") \
+        .eq("article_id", article_id) \
+        .order("created_at", desc=False) \
+        .execute()
     flat_comments = res.data or []
 
-    liked_res = supabase.table("comment_likes").select("comment_id").eq("session_id", session_id).execute()
+    # 2. Fetch likes/dislikes for this session
+    liked_res = supabase.table("comment_likes") \
+        .select("comment_id") \
+        .eq("session_id", session_id) \
+        .execute()
     liked_ids = {item["comment_id"] for item in liked_res.data or []}
 
-    disliked_res = supabase.table("comment_dislikes").select("comment_id").eq("session_id", session_id).execute()
+    disliked_res = supabase.table("comment_dislikes") \
+        .select("comment_id") \
+        .eq("session_id", session_id) \
+        .execute()
     disliked_ids = {item["comment_id"] for item in disliked_res.data or []}
 
-    comment_map: dict[str, CommentResponse] = {}
-    root_comments: List[CommentResponse] = []
-
-    for c in flat_comments:
-        comment_obj = CommentResponse(
-            id=c["id"], article_id=c["article_id"], content=c["content"],
-            author=c.get("author", "Anonymous"), created_at=c["created_at"],
-            parent_id=c.get("parent_id"), likes=c.get("likes", 0),
-            dislikes=c.get("dislikes", 0), replies=[],
+    # 3. Return as flat list (no nesting yet)
+    return [
+        CommentResponse(
+            id=c["id"],
+            article_id=c["article_id"],
+            content=c["content"],
+            author=c.get("author", "Anonymous"),
+            created_at=c["created_at"],
+            parent_id=c.get("parent_id"),
+            likes=c.get("likes", 0),
+            dislikes=c.get("dislikes", 0),
+            replies=[],  # frontend will fill this
             liked_by_user=c["id"] in liked_ids,
             is_liked_by_session=c["id"] in liked_ids,
             is_disliked_by_session=c["id"] in disliked_ids
         )
-        comment_map[comment_obj.id] = comment_obj
+        for c in flat_comments
+    ]
 
-    for c in flat_comments:
-        parent_id = c.get("parent_id")
-        if parent_id and parent_id in comment_map:
-            comment_map[parent_id].replies.append(comment_map[c["id"]])
-        else:
-            root_comments.append(comment_map[c["id"]])
-
-    return root_comments
 
 
 @app.get("/api/comments", response_model=List[CommentResponse])
