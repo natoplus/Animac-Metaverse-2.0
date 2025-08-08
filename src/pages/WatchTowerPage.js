@@ -465,7 +465,7 @@ export default function WatchTowerPage() {
         viewport={{ once: true }}
         className={`${neonGlowPanel} max-w-5xl mx-auto`}
       >
-        <h2 className="text-3xl font-extrabold mb-20 flex items-center gap-3">
+        <h2 className="text-3xl font-extrabold mb-6 flex items-center gap-3">
           <Film className="w-8 h-8 text-purple-500" />
           Spotlight Upcoming {isEast ? "Anime" : "Movies"}
         </h2>
