@@ -138,7 +138,7 @@ function TrailerModal({ youtubeKey, title, onClose }) {
 function HeroFeatured({ trailer, countdownDate, onPlay }) {
   return (
     <section
-      className="mb-16 mt-18 relative w-full h-[60vh] md:h-[70vh] rounded-xl overflow-hidden mb-12 neon-glow border border-white/70 bg-black/20 hover:bg-black/40 cursor-pointer select-none"
+      className="relative w-full h-[60vh] md:h-[70vh] rounded-xl overflow-hidden mb-12 neon-glow border border-white/70 bg-black/20 hover:bg-black/40 cursor-pointer select-none"
       onClick={onPlay}
       aria-label={`Play trailer for ${trailer.title}`}
     >
@@ -367,7 +367,7 @@ export default function WatchTowerPage() {
       style={{ fontFamily: "'Azonix', sans-serif" }}
     >
       {/* Toggle Switch fixed top-right */}
-      <div className="fixed top-6 right-6 z-50 bg-black/0 p-1 rounded-full shadow-lg">
+      <div className="fixed top-6 right-6 z-50 bg-black/70 p-1 rounded-full shadow-lg">
         <label className="relative inline-flex items-center cursor-pointer select-none">
           <input
             type="checkbox"
@@ -389,7 +389,7 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Hero Featured Trailer */}
-      <div className="mb-18 mt-18">
+      <div className="mb-14 mt-13">
         {featuredTrailer && featuredDate && (
           <HeroFeatured
             trailer={featuredTrailer}
@@ -400,7 +400,7 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Genre Filter Buttons */}
-      <div className="mb-18 mt-18 flex flex-wrap justify-center gap-3">
+      <div className="mb-15 mt-15 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
@@ -429,7 +429,7 @@ export default function WatchTowerPage() {
 
 
       {/* Trailer Cards Section */}
-      <div className="relative mb-18 mt-18">
+      <div className="relative mb-13">
         <button
           aria-label="Scroll trailers left"
           onClick={scrollTrailerLeft}
@@ -464,7 +464,7 @@ export default function WatchTowerPage() {
       </div>
 
       {/* Spotlight section */}
-      <div className="mb-18 mt-18">
+      <div className="mb-14 mt-13">
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -526,7 +526,7 @@ export default function WatchTowerPage() {
 
 
       {/* Release Calendar Section */}
-      <section className="mt-18 mb-18 relative">
+      <section className="mt-16 relative">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Calendar className="w-8 h-8" /> Release Calendar
         </h2>
