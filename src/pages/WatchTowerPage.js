@@ -422,6 +422,42 @@ export default function WatchTowerPage() {
         ))}
       </div>
 
+
+      {/* Trailer Cards Section */}
+      <div className="relative">
+        <button
+          aria-label="Scroll trailers left"
+          onClick={scrollTrailerLeft}
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/60 rounded-full hover:bg-purple-700 transition text-white"
+        >
+          <ChevronLeft size={24} />
+        </button>
+
+        <motion.div
+          ref={trailerScrollRef}
+          layout
+          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black`}
+        >
+          {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
+            <TrailerCard
+              key={`${title}-${i}`}
+              title={title}
+              youtubeKey={youtubeKey}
+              poster={poster}
+              onClick={() => setModalTrailer({ youtubeKey, title })}
+            />
+          ))}
+        </motion.div>
+
+        <button
+          aria-label="Scroll trailers right"
+          onClick={scrollTrailerRight}
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/60 rounded-full hover:bg-purple-700 transition text-white"
+        >
+          <ChevronRight size={24} />
+        </button>
+      </div>
+
       {/* Spotlight section */}
       <motion.section
         initial={{ opacity: 0, y: 20 }}
@@ -480,45 +516,10 @@ export default function WatchTowerPage() {
         </div>
       </motion.section>
 
-      {/* Trailer Cards Section */}
-      return (
-      <div className="relative">
-        <button
-          aria-label="Scroll trailers left"
-          onClick={scrollTrailerLeft}
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/60 rounded-full hover:bg-purple-700 transition text-white"
-        >
-          <ChevronLeft size={24} />
-        </button>
+      
 
-        <motion.div
-          ref={trailerScrollRef}
-          layout
-          className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black`}
-        >
-          {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
-            <TrailerCard
-              key={`${title}-${i}`}
-              title={title}
-              youtubeKey={youtubeKey}
-              poster={poster}
-              onClick={() => setModalTrailer({ youtubeKey, title })}
-            />
-          ))}
-        </motion.div>
-
-        <button
-          aria-label="Scroll trailers right"
-          onClick={scrollTrailerRight}
-          className="absolute right-0 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/60 rounded-full hover:bg-purple-700 transition text-white"
-        >
-          <ChevronRight size={24} />
-        </button>
-      </div>
-      );
 
       {/* Release Calendar Section */}
-      return (
       <section className="mt-16 relative">
         <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
           <Calendar className="w-8 h-8" /> Release Calendar
@@ -592,7 +593,6 @@ export default function WatchTowerPage() {
           <ChevronRight size={24} />
         </button>
       </section>
-      );
 
       {/* Top Rated Section */}
       <section className="mt-16">
