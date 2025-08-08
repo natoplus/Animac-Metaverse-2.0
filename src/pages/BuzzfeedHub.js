@@ -63,7 +63,7 @@ const PortraitSlideshow = () => {
       </AnimatePresence>
 
       {/* Navigation dots */}
-      <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-2">
+      <div className="absolute mt-6 bottom-4 left-0 right-0 flex justify-center space-x-2">
         {slides.map((_, idx) => (
           <button
             key={idx}
@@ -142,14 +142,17 @@ const BuzzfeedHub = () => {
             transition={{ duration: 0.8 }}
             className="text-center max-w-4xl mx-auto"
           >
-            {/* Portrait slideshow inserted here */}
-            <PortraitSlideshow />
+            
 
             <img
               src="/assets/buzzfeed-logo.svg"
               alt="Buzzfeed logo"
               className="mx-auto h-80 w-auto mb-2"
             />
+
+            {/* Portrait slideshow inserted here */}
+            <PortraitSlideshow />
+
             <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
               Where Culture Meets Commentary
             </p>
