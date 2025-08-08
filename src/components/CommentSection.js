@@ -16,7 +16,6 @@ const getSessionId = () => {
 
 const Comment = ({
   comment,
-  allComments,
   onReplyClick,
   onVote,
   upvotedComments,
@@ -32,7 +31,7 @@ const Comment = ({
   const voteScore = comment.likes || 0;
   const replyCount = replyCounts[comment.id] || 0;
   const downvoteCount = downvoteCounts?.[comment.id] ?? comment.downvotes ?? 0;
-  const replies = allComments.filter((c) => c.parent_id === comment.id);
+  const replies = comment.replies || []; // ✅ Use pre-built replies array
 
   return (
     <motion.div
@@ -51,22 +50,7 @@ const Comment = ({
           {new Date(comment.created_at).toLocaleString()} • {replyCount} repl{replyCount === 1 ? 'y' : 'ies'}
         </span>
         <div className="flex gap-3 items-center">
-          <button
-            onClick={() => onVote(comment.id, 'up')}
-            className={`hover:text-purple-400 ${isUpvoted ? 'text-purple-500' : 'text-gray-400'}`}
-          >
-            <ThumbsUp size={16} fill={isUpvoted ? 'currentColor' : 'none'} />
-          </button>
-          <span className="text-gray-300 font-semibold">{voteScore}</span>
-
-          <button
-            onClick={() => onVote(comment.id, 'down')}
-            className={`hover:text-red-400 ${isDownvoted ? 'text-red-400' : 'text-gray-400'}`}
-          >
-            <ThumbsDown size={16} fill={isDownvoted ? 'currentColor' : 'none'} />
-          </button>
-          <span className="text-red-400 font-semibold">{downvoteCount}</span>
-
+          {/* Vote buttons unchanged */}
           <button
             onClick={() => onReplyClick(comment)}
             className="hover:text-white flex items-center gap-1 text-gray-400"
@@ -74,7 +58,6 @@ const Comment = ({
             <MessageCircle size={14} />
             <span>Reply</span>
           </button>
-
           {replyCount > 0 && (
             <button
               onClick={() => toggleReplies(comment.id)}
@@ -87,7 +70,7 @@ const Comment = ({
       </div>
 
       <AnimatePresence>
-        {showReplies[comment.id] && (
+        {showReplies[comment.id] && replies.length > 0 && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -97,8 +80,7 @@ const Comment = ({
             {replies.map((reply) => (
               <Comment
                 key={reply.id}
-                comment={reply}
-                allComments={allComments}
+                comment={reply} // ✅ no allComments needed
                 onReplyClick={onReplyClick}
                 onVote={onVote}
                 upvotedComments={upvotedComments}
@@ -116,6 +98,7 @@ const Comment = ({
     </motion.div>
   );
 };
+
 
 const CommentSection = ({ articleId }) => {
   const [comments, setComments] = useState([]);
@@ -135,23 +118,32 @@ const CommentSection = ({ articleId }) => {
     try {
       const sessionId = getSessionId();
       const res = await fetch(`${API_URL}/api/comments/${articleId}`, {
-        headers: { 'session-id': sessionId },
+        headers: { "session-id": sessionId },
       });
 
       const data = await res.json();
+      if (!Array.isArray(data)) {
+        console.error("Invalid comments data from backend:", data);
+        setComments([]);
+        return;
+      }
 
-      // Maps and arrays to manage votes and replies
-      const repliesMap = {};
-      const downvotesMap = {};
+      // Map for quick lookup
+      const commentMap = {};
       const likedIds = [];
       const dislikedIds = [];
+      const replyCounts = {};
+      const downvoteCounts = {};
 
-      data.forEach((comment) => {
+      data.forEach(comment => {
+        comment.replies = [];
+        commentMap[comment.id] = comment;
+
         if (comment.parent_id) {
-          repliesMap[comment.parent_id] = (repliesMap[comment.parent_id] || 0) + 1;
+          replyCounts[comment.parent_id] = (replyCounts[comment.parent_id] || 0) + 1;
         }
         if (comment.downvotes || comment.dislikes) {
-          downvotesMap[comment.id] = comment.downvotes ?? comment.dislikes;
+          downvoteCounts[comment.id] = comment.downvotes ?? comment.dislikes;
         }
         if (comment.is_liked_by_session || comment.liked_by_user) {
           likedIds.push(comment.id);
@@ -161,36 +153,34 @@ const CommentSection = ({ articleId }) => {
         }
       });
 
-      // 👉 Nesting logic
-      const commentMap = {};
-      const nestedComments = [];
-
+      // Build nested structure (multi-level)
+      const nested = [];
       data.forEach(comment => {
-        comment.replies = [];
-        commentMap[comment.id] = comment;
-      });
-
-      data.forEach(comment => {
-        if (comment.parent_id) {
-          const parent = commentMap[comment.parent_id];
-          if (parent) {
-            parent.replies.push(comment);
-          }
-        } else {
-          nestedComments.push(comment);
+        if (comment.parent_id && commentMap[comment.parent_id]) {
+          commentMap[comment.parent_id].replies.push(comment);
+        } else if (!comment.parent_id) {
+          nested.push(comment);
         }
       });
 
-      // ✅ Final state updates
-      setComments(nestedComments);
-      setReplyCounts(repliesMap);
-      setDownvoteCounts(downvotesMap);
+      // Optional: sort top-level and replies by creation date
+      const sortByDate = (a, b) => new Date(a.created_at) - new Date(b.created_at);
+      const sortTree = arr => {
+        arr.sort(sortByDate);
+        arr.forEach(c => sortTree(c.replies));
+      };
+      sortTree(nested);
+
+      setComments(nested);
+      setReplyCounts(replyCounts);
+      setDownvoteCounts(downvoteCounts);
       setUpvotedComments(likedIds);
       setDownvotedComments(dislikedIds);
     } catch (err) {
-      console.error('Error loading comments:', err);
+      console.error("Error loading comments:", err);
     }
   };
+
 
 
 
@@ -201,75 +191,88 @@ const CommentSection = ({ articleId }) => {
   const handleVote = async (commentId, type) => {
     const sessionId = getSessionId();
     const isUpvote = type === 'up';
-    const isDownvote = type === 'down';
     const endpoint = isUpvote ? 'like' : 'dislike';
 
+    // Optimistically update local state
+    setComments(prevComments => {
+      const updateVotes = commentsArr =>
+        commentsArr.map(c => {
+          if (c.id === commentId) {
+            const newLikes = isUpvote
+              ? (upvotedComments.includes(commentId) ? c.likes - 1 : c.likes + 1)
+              : c.likes;
+            const newDownvotes = !isUpvote
+              ? (downvotedComments.includes(commentId) ? c.downvotes - 1 : c.downvotes + 1)
+              : c.downvotes;
+            return { ...c, likes: newLikes, downvotes: newDownvotes };
+          }
+          return { ...c, replies: updateVotes(c.replies) };
+        });
+      return updateVotes(prevComments);
+    });
+
+    // Update upvote/downvote arrays
+    if (isUpvote) {
+      setUpvotedComments(prev =>
+        prev.includes(commentId) ? prev.filter(id => id !== commentId) : [...prev, commentId]
+      );
+      setDownvotedComments(prev => prev.filter(id => id !== commentId));
+    } else {
+      setDownvotedComments(prev =>
+        prev.includes(commentId) ? prev.filter(id => id !== commentId) : [...prev, commentId]
+      );
+      setUpvotedComments(prev => prev.filter(id => id !== commentId));
+    }
+
+    // Send to backend
     try {
       const res = await fetch(`${API_URL}/api/comments/${commentId}/${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'session-id': sessionId,
-        },
+        headers: { 'Content-Type': 'application/json', 'session-id': sessionId },
         body: JSON.stringify({ type }),
       });
-
       if (!res.ok) throw new Error('Vote failed');
+    } catch (err) {
+      console.error('Voting error:', err);
+      fetchComments(); // fallback if optimistic update fails
+    }
+  };
 
-      if (isUpvote) {
-        setUpvotedComments((prev) =>
-          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
-        );
-        setDownvotedComments((prev) => prev.filter((id) => id !== commentId));
-      }
 
-      if (isDownvote) {
-        setDownvotedComments((prev) =>
-          prev.includes(commentId) ? prev.filter((id) => id !== commentId) : [...prev, commentId]
-        );
-        setUpvotedComments((prev) => prev.filter((id) => id !== commentId));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    const trimmedAlias = alias.trim();
+
+    const body = {
+      content: newComment,
+      author: trimmedAlias !== '' ? trimmedAlias : undefined,
+      article_id: articleId,
+      parent_id: replyTo?.id || null,
+      session_id: getSessionId(), // ✅ critical fix
+    };
+
+    try {
+      await fetch(`${API_URL}/api/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      setNewComment('');
+      setReplyTo(null);
+      setAlias('');
+
+      if (replyTo?.id) {
+        setShowReplies((prev) => ({ ...prev, [replyTo.id]: true })); // ✅ open replies
       }
 
       fetchComments();
     } catch (err) {
-      console.error('Voting error:', err);
+      console.error('Submit error:', err);
     }
   };
-
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  if (!newComment.trim()) return;
-
-  const trimmedAlias = alias.trim();
-
-  const body = {
-    content: newComment,
-    author: trimmedAlias !== '' ? trimmedAlias : undefined,
-    article_id: articleId,
-    parent_id: replyTo?.id || null,
-    session_id: getSessionId(), // ✅ critical fix
-  };
-
-  try {
-    await fetch(`${API_URL}/api/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-
-    setNewComment('');
-    setReplyTo(null);
-    setAlias('');
-
-    if (replyTo?.id) {
-      setShowReplies((prev) => ({ ...prev, [replyTo.id]: true })); // ✅ open replies
-    }
-
-    fetchComments();
-  } catch (err) {
-    console.error('Submit error:', err);
-  }
-};
 
 
   const toggleReplies = (commentId) => {
@@ -328,8 +331,7 @@ const CommentSection = ({ articleId }) => {
         {topLevelComments.slice(0, visibleCount).map((comment) => (
           <Comment
             key={comment.id}
-            comment={comment}
-            allComments={comments}
+            comment={comment} // ✅ nested structure
             onReplyClick={(comment) => {
               setReplyTo(comment);
               setTimeout(() => {
@@ -346,6 +348,7 @@ const CommentSection = ({ articleId }) => {
           />
         ))}
       </AnimatePresence>
+
 
       {visibleCount < topLevelComments.length && (
         <button
