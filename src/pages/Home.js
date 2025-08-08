@@ -9,9 +9,7 @@ const UpcomingSeriesPreview = ({ eastArticles, westArticles, loading }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Get the right articles based on region and filter upcoming series only
-  const series = (selectedRegion === 'east' ? eastArticles : westArticles).filter(
-    (article) => article.isUpcoming // Assuming you have a field like this to mark upcoming series
-  );
+  const series = (selectedRegion === 'east' ? eastArticles : westArticles);
 
   // Slideshow interval for auto change
   useEffect(() => {
@@ -216,7 +214,7 @@ const Home = () => {
             loading={eastLoading || westLoading}
           />
 
-          
+
           {/* Parallax Animated Banner */}
           <div className="my-24">
             <div className="relative h-[300px] sm:h-[400px] md:h-[500px] overflow-hidden rounded-2xl">
