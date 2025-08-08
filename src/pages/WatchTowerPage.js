@@ -32,7 +32,8 @@ function Countdown({ targetDate }) {
     return () => clearInterval(interval);
   }, [targetDate]);
 
-  if (!timeLeft) return <span className="text-green-400 font-semibold">Now Showing</span>;
+  if (!timeLeft)
+    return <span className="text-green-400 font-semibold">Now Showing</span>;
 
   return (
     <span className="font-mono text-sm text-blue-400">
@@ -45,8 +46,12 @@ export default function WatchTowerPage() {
   const [isEast, setIsEast] = useState(true);
   const [eastList, setEastList] = useState([]);
   const [westList, setWestList] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingEast, setLoadingEast] = useState(true);
+  const [loadingWest, setLoadingWest] = useState(true);
+  const [errorEast, setErrorEast] = useState(null);
+  const [errorWest, setErrorWest] = useState(null);
 
+  // Fetch Anime from AniList
   useEffect(() => {
     const fetchAnime = async () => {
       const query = `
@@ -62,54 +67,80 @@ export default function WatchTowerPage() {
           }
         }
       `;
+
       try {
         const response = await fetch("https://graphql.anilist.co", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
         });
+
+        if (!response.ok) {
+          throw new Error(`AniList fetch error: ${response.statusText}`);
+        }
+
         const { data } = await response.json();
+
         const list = data.Page.media.map((item) => ({
           title: item.title.romaji,
           date: `${item.startDate.year}-${String(item.startDate.month).padStart(2, "0")}-${String(item.startDate.day).padStart(2, "0")}T00:00:00Z`,
           image: item.coverImage.large,
           genres: item.genres,
         }));
-        console.log("✅ Anime fetched:", list);
+
         setEastList(list);
+        setErrorEast(null);
       } catch (error) {
         console.error("❌ Failed to fetch anime:", error);
+        setErrorEast(error.message || "Unknown error fetching anime");
+        setEastList([]);
+      } finally {
+        setLoadingEast(false);
       }
     };
 
     fetchAnime();
   }, []);
 
+  // Fetch Movies from TMDB
   useEffect(() => {
     const fetchMovies = async () => {
       try {
+        if (!TMDB_API_KEY || TMDB_API_KEY === "<fallback-your-key>") {
+          throw new Error("TMDB API key not set");
+        }
+
         const { data } = await axios.get(
           `https://api.themoviedb.org/3/movie/upcoming?api_key=${TMDB_API_KEY}&language=en-US&page=1`
         );
+
         const list = data.results.slice(0, 10).map((movie) => ({
           title: movie.title,
           date: movie.release_date + "T00:00:00Z",
-          image: `https://image.tmdb.org/t/p/w500${movie.poster_path}`,
+          image: movie.poster_path
+            ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            : "",
           genres: [], // You can map genre_ids if needed
         }));
-        console.log("✅ Movies fetched:", list);
+
         setWestList(list);
+        setErrorWest(null);
       } catch (error) {
         console.error("❌ Failed to fetch movies:", error);
+        setErrorWest(error.message || "Unknown error fetching movies");
+        setWestList([]);
       } finally {
-        setLoading(false);
+        setLoadingWest(false);
       }
     };
 
     fetchMovies();
   }, []);
 
+  const loading = loadingEast || loadingWest;
+
   const displayedList = isEast ? eastList : westList;
+  const error = isEast ? errorEast : errorWest;
 
   return (
     <div className="min-h-screen bg-black text-white px-6 py-10 font-sans">
@@ -140,6 +171,14 @@ export default function WatchTowerPage() {
         <div className="text-center text-zinc-400 text-sm animate-pulse">
           Loading upcoming titles...
         </div>
+      ) : error ? (
+        <div className="text-center text-red-500 font-semibold">
+          Error loading {isEast ? "Anime" : "Movies"}: {error}
+        </div>
+      ) : displayedList.length === 0 ? (
+        <div className="text-center text-zinc-400 font-semibold">
+          No upcoming {isEast ? "Anime" : "Movies"} releases found.
+        </div>
       ) : (
         <AnimatePresence mode="wait">
           <motion.div
@@ -155,11 +194,18 @@ export default function WatchTowerPage() {
                 key={index}
                 className="bg-zinc-900/70 border border-zinc-700 backdrop-blur-md p-4 rounded-2xl shadow-xl hover:shadow-glow transition duration-300"
               >
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-56 object-cover rounded-xl mb-3 shadow-md"
-                />
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-56 object-cover rounded-xl mb-3 shadow-md"
+                  />
+                ) : (
+                  <div className="w-full h-56 bg-zinc-700 rounded-xl mb-3 flex items-center justify-center text-zinc-400">
+                    No Image
+                  </div>
+                )}
+
                 <h2 className="text-xl font-semibold mb-1 flex items-center gap-2 text-white drop-shadow-sm">
                   <Film className="w-5 h-5 text-yellow-400" />
                   {item.title}
