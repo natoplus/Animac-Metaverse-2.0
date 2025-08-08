@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
-// Import Azonix font (can move to global CSS or head tag)
 const azonixFontLink = "https://fonts.googleapis.com/css2?family=Azonix&display=swap";
 
 if (typeof document !== "undefined") {
@@ -53,7 +52,7 @@ function Countdown({ targetDate }) {
     return <span className="text-green-400 font-semibold">Now Showing</span>;
 
   return (
-    <span className="font-mono text-sm text-blue-400">
+    <span className="font-mono text-sm text-blue-400 tabular-nums">
       {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
     </span>
   );
@@ -63,26 +62,31 @@ function TrailerCard({ title, youtubeKey, poster, onClick }) {
   return (
     <motion.div
       layout
-      whileHover={{ scale: 1.05, boxShadow: "0 0 20px rgba(255, 0, 255, 0.7)" }}
+      whileHover={{ scale: 1.07, boxShadow: "0 0 30px rgba(255, 0, 255, 0.85)" }}
       onClick={onClick}
-      className="relative min-w-[280px] h-[158px] rounded-lg cursor-pointer neon-glow border border-white/70 bg-black/20 hover:bg-black/40 p-4 transition overflow-hidden"
+      className="relative min-w-[300px] h-[170px] rounded-lg cursor-pointer neon-glow border border-white/70 bg-black/20 hover:bg-black/50 p-4 transition overflow-hidden"
       title={title}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
     >
       {poster ? (
         <img
           src={poster}
           alt={`${title} poster`}
-          className="absolute inset-0 w-full h-full object-cover brightness-75 rounded-lg"
+          className="absolute inset-0 w-full h-full object-cover brightness-75 rounded-lg transition-transform duration-300 hover:scale-105"
           draggable={false}
           loading="lazy"
           decoding="async"
+          srcSet={`${poster.replace(/w780|w500/, "w780")} 780w, ${poster.replace(/w780|w500/, "original")} 1280w`}
+          sizes="(max-width: 768px) 280px, 300px"
         />
       ) : (
         <div className="bg-zinc-800 w-full h-full flex items-center justify-center text-zinc-500 select-none rounded-lg">
           No Poster
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-lg" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent rounded-lg" />
       <div className="absolute bottom-0 w-full p-2 bg-gradient-to-t from-black/90 text-white font-semibold text-center text-sm leading-tight line-clamp-2 select-none drop-shadow-lg rounded-b-lg">
         {title}
       </div>
@@ -106,10 +110,10 @@ function TrailerModal({ youtubeKey, title, onClose }) {
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.8 }}
+            initial={{ scale: 0.85 }}
             animate={{ scale: 1 }}
-            exit={{ scale: 0.8 }}
-            className="relative w-[90vw] max-w-4xl aspect-video rounded-xl shadow-2xl"
+            exit={{ scale: 0.85 }}
+            className="relative w-[90vw] max-w-5xl aspect-video rounded-xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <iframe
@@ -135,16 +139,21 @@ function TrailerModal({ youtubeKey, title, onClose }) {
 
 function HeroFeatured({ trailer, countdownDate, onPlay }) {
   return (
-    <section
-      className="relative w-full h-[60vh] md:h-[70vh] rounded-xl overflow-hidden mb-12 neon-glow border border-white/70 bg-black/20 hover:bg-black/40 cursor-pointer select-none"
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="relative w-full h-[65vh] md:h-[75vh] rounded-xl overflow-hidden mb-12 neon-glow border border-white/70 bg-black/20 hover:bg-black/40 cursor-pointer select-none"
       onClick={onPlay}
       aria-label={`Play trailer for ${trailer.title}`}
     >
       <img
         src={trailer.poster}
         alt={`Featured trailer poster for ${trailer.title}`}
-        className="absolute inset-0 w-full h-full object-cover brightness-75"
+        className="absolute inset-0 w-full h-full object-cover brightness-75 transition-transform duration-500 hover:scale-105"
         loading="lazy"
+        srcSet={`${trailer.poster.replace(/w780|w500/, "w780")} 780w, ${trailer.poster.replace(/w780|w500/, "original")} 1280w`}
+        sizes="(max-width: 768px) 100vw, 65vw"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent" />
       <div className="absolute bottom-8 left-8 text-white max-w-lg">
@@ -162,7 +171,7 @@ function HeroFeatured({ trailer, countdownDate, onPlay }) {
       <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
         <PlayCircle className="w-24 h-24 text-purple-500 drop-shadow-lg animate-pulse" />
       </div>
-    </section>
+    </motion.section>
   );
 }
 
@@ -266,7 +275,7 @@ export default function WatchTowerPage() {
           title: movie.title,
           date: movie.release_date + "T00:00:00Z",
           image: movie.poster_path
-            ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+            ? `https://image.tmdb.org/t/p/w780${movie.poster_path}`
             : "",
           genres: [], // Optionally fill genres here if you want
           score: null,
@@ -289,7 +298,7 @@ export default function WatchTowerPage() {
                   title: movie.title,
                   youtubeKey: trailers[0].key,
                   poster: movie.poster_path
-                    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+                    ? `https://image.tmdb.org/t/p/w780${movie.poster_path}`
                     : null,
                 };
               }
@@ -344,7 +353,8 @@ export default function WatchTowerPage() {
     return null;
   }, [eastList, westList, isEast]);
 
-  const neonGlowPanel = "neon-glow border border-white/70 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden";
+  const neonGlowPanel =
+    "neon-glow border border-white/70 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden";
 
   return (
     <div
@@ -360,7 +370,11 @@ export default function WatchTowerPage() {
             checked={!isEast}
             onChange={() => setIsEast((prev) => !prev)}
           />
-          <div className={`w-14 h-7 rounded-full transition-colors duration-300 ${isEast ? "bg-purple-700" : "bg-pink-600"}`} />
+          <div
+            className={`w-14 h-7 rounded-full transition-colors duration-300 ${
+              isEast ? "bg-purple-700" : "bg-pink-600"
+            }`}
+          />
           <span
             className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full shadow-md transition-transform duration-300 ${
               isEast ? "translate-x-0" : "translate-x-7"
@@ -383,7 +397,12 @@ export default function WatchTowerPage() {
       )}
 
       {/* Genre Filter Buttons */}
-      <div className="mb-8 flex flex-wrap justify-center gap-3">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="mb-8 flex flex-wrap justify-center gap-3"
+      >
         <button
           onClick={() => setSelectedGenre(null)}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
@@ -408,165 +427,106 @@ export default function WatchTowerPage() {
             {genre}
           </button>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Spotlight Section (Big image with countdown overlay + gradient) */}
-      {featuredTrailer && featuredDate && (
-        <section
-          className={`${neonGlowPanel} relative mb-12 cursor-pointer select-none`}
-          onClick={() => setModalTrailer(featuredTrailer)}
-        >
-          <img
-            src={featuredTrailer.poster}
-            alt={`Spotlight on ${featuredTrailer.title}`}
-            className="w-full h-64 md:h-80 lg:h-96 object-cover rounded-lg brightness-75"
-            loading="lazy"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent rounded-lg" />
-          <div className="absolute bottom-6 left-6 text-white max-w-xl">
-            <h2
-              className="text-4xl font-azonix font-extrabold mb-2"
-              style={{ fontFamily: "'Azonix', sans-serif" }}
-            >
-              Spotlight: {featuredTrailer.title}
-            </h2>
-            <div className="flex items-center gap-4 font-mono text-lg text-blue-400">
-              <TimerReset />
-              <Countdown targetDate={featuredDate} />
-            </div>
-          </div>
-          <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-            <PlayCircle className="w-20 h-20 text-purple-500 drop-shadow-lg animate-pulse" />
-          </div>
-        </section>
-      )}
-
-      {/* Trailer Cards Section */}
-      <motion.div
-        layout
-        className={`${neonGlowPanel} px-6 py-8 flex overflow-x-auto space-x-6 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black`}
+      {/* Trailer Scroll Section */}
+      <motion.section
+        initial={{ opacity: 0, y: 15 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="flex gap-4 overflow-x-auto scrollbar-thin scrollbar-thumb-purple-600 scrollbar-track-transparent mb-12"
       >
-        {filteredTrailers.map(({ title, youtubeKey, poster }, i) => (
+        {(loadingEast || loadingWest) && (
+          <div className="text-center w-full text-purple-400 font-semibold">
+            Loading trailers...
+          </div>
+        )}
+
+        {!loadingEast && !loadingWest && filteredTrailers.length === 0 && (
+          <div className="text-center w-full text-red-500 font-semibold">
+            No trailers found for selected genre.
+          </div>
+        )}
+
+        {filteredTrailers.map(({ title, youtubeKey, poster }) => (
           <TrailerCard
-            key={`${title}-${i}`}
+            key={youtubeKey || title}
             title={title}
             youtubeKey={youtubeKey}
             poster={poster}
-            onClick={() => setModalTrailer({ youtubeKey, title })}
+            onClick={() =>
+              setModalTrailer({ title, youtubeKey, poster })
+            }
           />
         ))}
-      </motion.div>
+      </motion.section>
 
-      {/* Release Calendar Section */}
-      <section className="mt-16">
-        <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
-          <Calendar className="w-8 h-8" /> Release Calendar
+      {/* Spotlight section */}
+      <motion.section
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className={`${neonGlowPanel} max-w-5xl mx-auto`}
+      >
+        <h2 className="text-3xl font-extrabold mb-6 flex items-center gap-3">
+          <Film className="w-8 h-8 text-purple-500" />
+          Spotlight Upcoming {isEast ? "Anime" : "Movies"}
         </h2>
 
-        {/* Calendar horizontal scroll with date cards */}
-        <div className="flex overflow-x-auto space-x-4 px-2 scrollbar-thin scrollbar-thumb-purple-700 scrollbar-track-black">
+        {(isEast ? eastList : westList).length === 0 && (
+          <p className="text-red-500 font-semibold">No upcoming titles found.</p>
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           {(isEast ? eastList : westList)
-            .sort((a, b) => new Date(a.date) - new Date(b.date))
-            .map(({ id, title, date, image }) => {
-              const d = new Date(date);
-              const day = d.toLocaleString("en-US", { day: "numeric" });
-              const month = d.toLocaleString("en-US", { month: "short" });
-              const year = d.getFullYear();
-
-              return (
-                <motion.div
-                  key={id}
-                  className={`${neonGlowPanel} flex-shrink-0 w-36 cursor-pointer hover:shadow-[0_0_20px_rgba(180,100,255,0.8)] transition`}
-                  onClick={() => {
-                    // Show trailer if available or just alert title
-                    const trailer = (isEast ? eastTrailers : westTrailers).find(
-                      (t) => t.title === title
-                    );
-                    if (trailer) setModalTrailer(trailer);
-                    else alert(`${title} is releasing on ${month} ${day}, ${year}`);
-                  }}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="text-center text-white font-mono font-bold text-lg">
-                      {day}
-                    </div>
-                    <div className="text-center text-purple-400 font-semibold text-sm uppercase tracking-wide">
-                      {month}
-                    </div>
-                    {image ? (
-                      <img
-                        src={image}
-                        alt={title}
-                        className="w-full h-24 object-cover rounded-lg"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-24 bg-purple-900 rounded-lg flex items-center justify-center text-purple-600 select-none">
-                        No Image
-                      </div>
-                    )}
-                    <div className="text-center text-sm mt-1 font-semibold line-clamp-2">
-                      {title}
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-        </div>
-      </section>
-
-      {/* Top Rated Section */}
-      <section className="mt-16">
-        <h2 className="text-3xl font-extrabold text-purple-400 mb-6 text-center drop-shadow-[0_0_12px_rgba(180,100,255,0.9)] flex justify-center items-center gap-2">
-          <Star className="w-8 h-8" /> Top Rated {isEast ? "Anime" : "Movies"}
-        </h2>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {(isEast
-            ? [...eastList].filter((i) => i.score).sort((a, b) => b.score - a.score).slice(0, 6)
-            : [...westList]
-          ).map((item) => (
-            <div
-              key={item.id}
-              className={`${neonGlowPanel} cursor-pointer hover:shadow-[0_0_20px_rgba(180,100,255,0.8)] transition`}
-              onClick={() => {
-                const trailer = (isEast ? eastTrailers : westTrailers).find(
-                  (t) => t.title === item.title
-                );
-                if (trailer) setModalTrailer(trailer);
-                else alert(item.title);
-              }}
-            >
-              {item.image ? (
+            .filter((item) =>
+              selectedGenre ? item.genres.includes(selectedGenre) : true
+            )
+            .slice(0, 9)
+            .map((item) => (
+              <motion.article
+                key={item.id}
+                whileHover={{ scale: 1.02 }}
+                className="rounded-lg overflow-hidden cursor-pointer bg-black/30 border border-white/50 neon-glow"
+                title={`${item.title} (${new Date(item.date).getFullYear()})`}
+              >
                 <img
                   src={item.image}
-                  alt={item.title}
-                  className="w-full h-56 object-cover rounded-lg mb-3"
+                  alt={`${item.title} cover`}
                   loading="lazy"
+                  decoding="async"
+                  className="w-full h-[180px] object-cover rounded-t-lg transition-transform duration-300 hover:scale-105"
                 />
-              ) : (
-                <div className="w-full h-56 bg-purple-900 rounded-lg mb-3 flex items-center justify-center text-purple-600">
-                  No Image
+                <div className="p-4 text-center select-text">
+                  <h3 className="text-lg font-semibold line-clamp-2">{item.title}</h3>
+                  <p className="text-sm mt-1 text-gray-400">
+                    Release:{" "}
+                    {new Date(item.date).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                  {item.score && (
+                    <p className="flex items-center justify-center mt-1 gap-1 text-yellow-400 font-semibold">
+                      <Star className="w-4 h-4" />
+                      {item.score}%
+                    </p>
+                  )}
                 </div>
-              )}
-              <h3 className="text-lg font-semibold mb-1 flex items-center gap-2 text-purple-300">
-                <Film className="w-5 h-5" />
-                {item.title}
-              </h3>
-              {item.score && (
-                <p className="text-purple-400 font-mono font-bold text-lg">⭐ {item.score.toFixed(1)}</p>
-              )}
-              <Countdown targetDate={item.date} />
-            </div>
-          ))}
+              </motion.article>
+            ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Trailer Modal */}
-      <TrailerModal
-        youtubeKey={modalTrailer?.youtubeKey}
-        title={modalTrailer?.title}
-        onClose={() => setModalTrailer(null)}
-      />
+      {modalTrailer && (
+        <TrailerModal
+          youtubeKey={modalTrailer.youtubeKey}
+          title={modalTrailer.title}
+          onClose={() => setModalTrailer(null)}
+        />
+      )}
     </div>
   );
 }
