@@ -6,11 +6,6 @@ import { useArticles } from '../hooks/useArticles';
 import { Link } from 'react-router-dom';
 
 const WestPortal = () => {
-  const pageTitle = "West Portal • Movies & Cartoons Chronicles";
-  const pageDescription = "Dive into Hollywood blockbusters, indie animations, and western cartoon classics with reviews, features, and deep dives.";
-  const pageUrl = "https://animac-metaverse.vercel.app/buzzfeed/west"; // Replace with your actual site URL
-  const previewImage = featuredArticle?.featured_image || "https://animac-metaverse.vercel.app/assets/buzzfeed-west.jpg";
-
   const { articles: westArticles, loading } = useArticles('west');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
@@ -28,6 +23,11 @@ const WestPortal = () => {
 
   // Featured article (first featured or first article)
   const featuredArticle = westArticles.find(article => article.is_featured) || westArticles[0];
+
+  const pageTitle = "West Portal • Movies & Cartoons Chronicles";
+  const pageDescription = "Dive into Hollywood blockbusters, indie animations, and western cartoon classics with reviews, features, and deep dives.";
+  const pageUrl = "https://animac-metaverse.vercel.app/buzzfeed/west"; // Replace with your actual site URL
+  const previewImage = featuredArticle?.featured_image || "https://animac-metaverse.vercel.app/assets/buzzfeed-west.jpg";
 
   return (
     <>
