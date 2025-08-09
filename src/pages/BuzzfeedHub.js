@@ -82,6 +82,12 @@ const PortraitSlideshow = () => {
 const BuzzfeedHub = () => {
   const { articles: eastArticles } = useArticles('east');
   const { articles: westArticles } = useArticles('west');
+  // BuzzfeedHub.js
+  const pageTitle = "Buzzfeed Hub";
+  const pageDescription = "Latest viral trends, news, and entertainment from Buzzfeed Hub.";
+  const pageUrl = "https://yourwebsite.com/buzzfeed-hub";
+  const previewImage = "https://yourwebsite.com/images/buzzfeed-preview.jpg";
+
 
 
   const portalData = [
