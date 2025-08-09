@@ -125,17 +125,17 @@ const Home = () => {
         <meta name="description" content={pageDescription} />
 
         {/* Open Graph / Facebook */}
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        <meta property="og:image" content={previewImage} />
-        <meta property="og:url" content={pageUrl} />
+        <meta property="og:title" content="ANIMAC METAVERSE - Your Mainstream for Anime & Western Entertainment" />
+        <meta property="og:description" content="Dive into curated anime and western entertainment culture on Animac Metaverse." />
+        <meta property="og:image" content="https://animac-metaverse.vercel.app/assets/animac-preview-logo.svg" />
+        <meta property="og:url" content="https://animac-metaverse.vercel.app/" />
         <meta property="og:type" content="website" />
 
-        {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={pageTitle} />
-        <meta name="twitter:description" content={pageDescription} />
-        <meta name="twitter:image" content={previewImage} />
+        <meta name="twitter:title" content="ANIMAC METAVERSE - Your Mainstream for Anime & Western Entertainment" />
+        <meta name="twitter:description" content="Dive into curated anime and western entertainment culture on Animac Metaverse." />
+        <meta name="twitter:image" content="https://animac-metaverse.vercel.app/assets/animac-preview-logo.svg" />
+
       </Helmet>
 
       <motion.div
