@@ -17,7 +17,7 @@ const HeroSection = ({ featuredContent }) => {
       image:
         'https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/Z-WHgqd_TeJxSuha8aZ5WpyLcX8/AAAABfrlSgfIEw-hX0imXlnY3qlZQoHl7Sx1z4CVxkWNdRMltLiGO6lkciwA1XsDjZto2aQJP9X7ulUOHfspuCwAdhfCngH7SZzsPZZn.jpg?r=551',
       imageMobile:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTN-x9sU9Ghc-pt1Ul-dmNOAkgOmSdVuiiIuw&s', // replace with portrait/mobile version
+        'https://i.pinimg.com/736x/0f/06/2e/0f062e74d730cdc4b27922f6eefb9bed.jpg', // replace with portrait/mobile version
       link: '/article/attack-on-titan',
     },
     {
@@ -30,7 +30,7 @@ const HeroSection = ({ featuredContent }) => {
       image:
         'https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/13572496/SpiderVerse_cropped.jpg?quality=90&strip=all&crop=0,0,100,100',
       imageMobile:
-        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXkd-pbsG5ToV9RUIU1qKL7xow2d38oWM3W2y-Hxax-dYpTa-c99sXLlRnQNLQ-3i3HWM&usqp=CAU',
+        'https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/13572496/SpiderVerse_cropped.jpg?quality=90&strip=all&crop=0,0,100,100',
       link: '/article/spider-verse',
     },
     {
