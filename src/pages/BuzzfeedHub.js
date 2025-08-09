@@ -86,7 +86,7 @@ const BuzzfeedHub = () => {
   const pageTitle = "Buzzfeed Hub";
   const pageDescription = "Latest viral trends, news, and entertainment from Buzzfeed Hub.";
   const pageUrl = window.location.href;
-  const previewImage = "https://yourwebsite.com/images/buzzfeed-preview.jpg";
+  const previewImage = "https://animac-metaverse.vercel.app/assets/buzzfeed-redblue.jpg";
 
 
 
