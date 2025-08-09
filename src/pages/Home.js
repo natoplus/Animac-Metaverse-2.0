@@ -68,7 +68,7 @@ const WatchTowerPreview = () => {
     if (trailers.length > 1) {
       const interval = setInterval(() => {
         setCurrentIndex((i) => (i + 1) % trailers.length);
-      }, 5000);
+      }, 50000);
       return () => clearInterval(interval);
     }
   }, [trailers]);
