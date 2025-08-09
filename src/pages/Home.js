@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Helmet } from 'react-helmet';
+import SEO from "../components/SEO";
 import HeroSection from '../components/HeroSection';
 import ContentRow from '../components/ContentRow';
 import { useFeaturedContent, useArticles } from '../hooks/useArticles';
@@ -44,11 +44,10 @@ const UpcomingSeriesPreview = ({ eastArticles, westArticles, loading }) => {
               setSelectedRegion(region);
               setCurrentIndex(0); // reset slideshow on toggle change
             }}
-            className={`px-6 py-2 rounded-full font-semibold transition ${
-              selectedRegion === region
+            className={`px-6 py-2 rounded-full font-semibold transition ${selectedRegion === region
                 ? 'bg-gradient-to-r from-east-500 to-west-500 text-white shadow-lg'
                 : 'bg-gray-800 text-gray-400 hover:text-white'
-            }`}
+              }`}
           >
             {region.toUpperCase()}
           </button>
@@ -84,9 +83,8 @@ const UpcomingSeriesPreview = ({ eastArticles, westArticles, loading }) => {
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
-            className={`w-3 h-3 rounded-full transition ${
-              idx === currentIndex ? 'bg-east-500' : 'bg-gray-600 hover:bg-gray-400'
-            }`}
+            className={`w-3 h-3 rounded-full transition ${idx === currentIndex ? 'bg-east-500' : 'bg-gray-600 hover:bg-gray-400'
+              }`}
             aria-label={`Go to slide ${idx + 1}`}
           />
         ))}
@@ -111,32 +109,15 @@ const Home = () => {
   const { articles: westArticles, loading: westLoading } = useArticles('west');
   const { articles: allArticles, loading: allLoading } = useArticles();
 
-  // Meta data for SEO and social sharing
-  const pageTitle = "ANIMAC METAVERSE- Your Mainstream for Anime & Western Entertainment";
-  const pageDescription = "Dive into curated anime and western entertainment culture on Animac Metaverse.";
-  const pageUrl = "https://animac-metaverse.vercel.app/"; // Replace with your actual site URL
-  const previewImage = "https://animac-metaverse.vercel.app/assets/buzzfeed-preview.jpg"; // Replace with your actual image URL
-
   return (
     <>
       {/* SEO Metadata */}
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
-
-        {/* Open Graph / Facebook */}
-        <meta property="og:title" content="ANIMAC METAVERSE - Your Mainstream for Anime & Western Entertainment" />
-        <meta property="og:description" content="Dive into curated anime and western entertainment culture on Animac Metaverse." />
-        <meta property="og:image" content="https://animac-metaverse.vercel.app/assets/animac-preview-logo.svg" />
-        <meta property="og:url" content="https://animac-metaverse.vercel.app/" />
-        <meta property="og:type" content="website" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="ANIMAC METAVERSE - Your Mainstream for Anime & Western Entertainment" />
-        <meta name="twitter:description" content="Dive into curated anime and western entertainment culture on Animac Metaverse." />
-        <meta name="twitter:image" content="https://animac-metaverse.vercel.app/assets/animac-preview-logo.svg" />
-
-      </Helmet>
+      <SEO
+        title="ANIMAC METAVERSE - Your Mainstream for Anime & Western Entertainment"
+        description="Dive into curated anime and western entertainment culture on Animac Metaverse."
+        url="https://animac-metaverse.vercel.app/"
+        image="https://animac-metaverse.vercel.app/assets/animac-preview-logo.svg"
+      />
 
       <motion.div
         initial={{ opacity: 0 }}
