@@ -85,7 +85,7 @@ const BuzzfeedHub = () => {
   // BuzzfeedHub.js
   const pageTitle = "Buzzfeed Hub";
   const pageDescription = "Latest viral trends, news, and entertainment from Buzzfeed Hub.";
-  const pageUrl = "https://yourwebsite.com/buzzfeed-hub";
+  const pageUrl = window.location.href;
   const previewImage = "https://yourwebsite.com/images/buzzfeed-preview.jpg";
 
 
