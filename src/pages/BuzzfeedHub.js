@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet';
+import SEO from '../components/SEO';
 import { ArrowRight, Users, BookOpen, TrendingUp } from 'lucide-react';
 import { useArticles } from '../hooks/useArticles';
 import clsx from 'clsx';
@@ -83,12 +83,6 @@ const BuzzfeedHub = () => {
   const { articles: eastArticles } = useArticles('east');
   const { articles: westArticles } = useArticles('west');
 
-  // Meta data for SEO and social sharing
-  const pageTitle = "Buzzfeed - Your go too Blog on Anything and Everything west and east Entertainment";
-  const pageDescription = "Dive into curated anime and western entertainment culture on Animac Buzzfeed.";
-  const pageUrl = "https://animac-metaverse.vercel.app/buzzfeed"; // Replace with your actual site URL
-  const previewImage = "https://animac-metaverse.vercel.app/buzzfeed/assets/buzzfeed-preview.jpg"; // Replace with your actual image URL
-
 
   const portalData = [
     {
@@ -133,24 +127,13 @@ const BuzzfeedHub = () => {
 
   return (
     <>
-      {/* SEO Metadata */}
-      <Helmet>
-        <title>{pageTitle}</title>
-        <meta name="description" content={pageDescription} />
+      <SEO
+        title={pageTitle || 'Animac Metaverse - Buzzfeed Hub'}
+        description={pageDescription || 'Explore the latest in anime and western entertainment culture on Animac Metaverse.'}
+        url={pageUrl| '/buzzfeed'}
+        image={previewImage || 'https://animac-metaverse.vercel.app/assets/buzzfeed-redblue.jpg'}
+      />
 
-        {/* Open Graph / Facebook */}
-        <meta property="og:title" content={pageTitle} />
-        <meta property="og:description" content={pageDescription} />
-        <meta property="og:image" content={previewImage} />
-        <meta property="og:url" content={pageUrl} />
-        <meta property="og:type" content="website" />
-
-        {/* Twitter */}
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={pageTitle} />
-        <meta name="twitter:description" content={pageDescription} />
-        <meta name="twitter:image" content={previewImage} />
-      </Helmet>
 
       <motion.div
         initial={{ opacity: 0 }}
@@ -322,9 +305,9 @@ const BuzzfeedHub = () => {
           </motion.div>
         </div>
       </motion.div>
-      
+
     </>
-  );  
+  );
 };
 
-      export default BuzzfeedHub;
+export default BuzzfeedHub;

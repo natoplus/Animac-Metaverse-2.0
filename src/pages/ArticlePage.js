@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { useParams, Link } from 'react-router-dom';
+import SEO from '../components/SEO';
 import LoadingScreen from '../components/LoadingScreen'; // ✅ adjust path if needed
 import axios from 'axios';
 import {
@@ -137,7 +138,7 @@ const ArticlePage = () => {
   }, [article]);
 
   if (loading) {
-      return <LoadingScreen />;
+    return <LoadingScreen />;
   }
 
   if (error || !article) {
@@ -149,130 +150,139 @@ const ArticlePage = () => {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}
-    >
-      {/* Hero */}
-      <div className="relative h-[420px] sm:h-[500px] overflow-hidden">
-        <motion.div
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6 }}
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${article.featured_image || '/default-cover.jpg'})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-10" />
-        <div className="absolute inset-0 z-20 flex items-end justify-center text-center px-6 pb-10">
-          <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
-              {article.title?.trim()}
-            </h1>
-            {article.excerpt && <p className="text-lg text-gray-300 italic">{article.excerpt}</p>}
+    <>
+      <SEO
+        title={article.title}
+        description={article.excerpt || 'Read this amazing article on Animac Metaverse.'}
+        url={`https://animac-metaverse.vercel.app/article/${article.slug || article.id}`}
+        image={article.featured_image || 'https://animac-metaverse.vercel.app/assets/buzzfeed-purple.jpg'}
+      />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className={`min-h-screen bg-gradient-to-b ${theme.gradient} text-gray-200`}
+      >
+        {/* Hero */}
+        <div className="relative h-[420px] sm:h-[500px] overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: `url(${article.featured_image || '/default-cover.jpg'})` }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent z-10" />
+          <div className="absolute inset-0 z-20 flex items-end justify-center text-center px-6 pb-10">
+            <div className="bg-black/40 backdrop-blur-sm p-6 rounded-xl max-w-3xl">
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
+                {article.title?.trim()}
+              </h1>
+              {article.excerpt && <p className="text-lg text-gray-300 italic">{article.excerpt}</p>}
+            </div>
           </div>
         </div>
-      </div>
-
-      
-      <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
-              <span className="top-6xl font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
-                START
-              </span>
-          </div>
 
 
-      {/* Content */}
-      <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
-        <div className="container mx-auto px-4 py-14 max-w-4xl">
-          {/* Meta + Actions */}
-          <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <Link
-                id="back-home-btn"
-                to="/"
-                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium neon-glow backdrop-blur-md bg-black/50 hover:bg-black/70 text-white border ${theme.badge}`}
-              >
-                <ArrowLeft size={18} /> Back to Home
-              </Link>
-              <span className={`px-4 py-2 rounded-full text-sm border ${theme.badge}`}>
-                {article.category?.toUpperCase() || 'FEATURED'}
-              </span>
+        <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
+          <span className="top-6xl font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
+            START
+          </span>
+        </div>
+
+
+        {/* Content */}
+        <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
+          <div className="container mx-auto px-4 py-14 max-w-4xl">
+            {/* Meta + Actions */}
+            <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <Link
+                  id="back-home-btn"
+                  to="/"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium neon-glow backdrop-blur-md bg-black/50 hover:bg-black/70 text-white border ${theme.badge}`}
+                >
+                  <ArrowLeft size={18} /> Back to Home
+                </Link>
+                <span className={`px-4 py-2 rounded-full text-sm border ${theme.badge}`}>
+                  {article.category?.toUpperCase() || 'FEATURED'}
+                </span>
+              </div>
+
+              <div className="text-sm text-gray-400 flex gap-4 mb-6">
+                <span><User size={14} /> {article.author || 'Unknown'}</span>
+                <span><Calendar size={14} /> {new Date(article.created_at).toLocaleDateString()}</span>
+                <span><Clock size={14} /> {readTime} min read</span>
+              </div>
+
+              <div className="flex flex-wrap gap-4 mb-10 text-gray-300">
+                <button onClick={handleLike} disabled={likeProcessing} className="flex items-center gap-1 hover:text-pink-500">
+                  <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
+                </button>
+                <button onClick={handleBookmark} disabled={bookmarkProcessing} className="flex items-center gap-1 hover:text-yellow-400">
+                  <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
+                </button>
+                <button onClick={handleCopyLink} className="flex items-center gap-1 hover:text-blue-400">
+                  <Share2 size={18} /> {copied ? 'Copied' : 'Share'} ({shareCount})
+                </button>
+              </div>
             </div>
 
-            <div className="text-sm text-gray-400 flex gap-4 mb-6">
-              <span><User size={14} /> {article.author || 'Unknown'}</span>
-              <span><Calendar size={14} /> {new Date(article.created_at).toLocaleDateString()}</span>
-              <span><Clock size={14} /> {readTime} min read</span>
-            </div>
-
-            <div className="flex flex-wrap gap-4 mb-10 text-gray-300">
-              <button onClick={handleLike} disabled={likeProcessing} className="flex items-center gap-1 hover:text-pink-500">
-                <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
-              </button>
-              <button onClick={handleBookmark} disabled={bookmarkProcessing} className="flex items-center gap-1 hover:text-yellow-400">
-                <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
-              </button>
-              <button onClick={handleCopyLink} className="flex items-center gap-1 hover:text-blue-400">
-                <Share2 size={18} /> {copied ? 'Copied' : 'Share'} ({shareCount})
-              </button>
-            </div>
-          </div>
-
-          {/* Body */}
-          <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
+            {/* Body */}
+            <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
               <ReactMarkdown>{article.content}</ReactMarkdown>
-          </div>
-
-
-          
-                 {/* END Divider */}
-                    <div className="mt-14 mb-10 relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
-                          <span className="font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-blue-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
-                              END
-                          </span>
-                    </div>
-
-
-          {/* Related Articles */}
-          {related.length > 0 && (
-            <div className="mt-16">
-              <h3 className="text-white font-azonix text-2xl mb-4">Related Articles</h3>
-              <div className="grid gap-6 sm:grid-cols-2">
-                {related.map(rel => (
-                  <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border border-white-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
-                    {rel.featured_image && (
-                      <div className="h-40 bg-cover bg-center rounded-md mb-3" style={{ backgroundImage: `url(${rel.featured_image})` }} />
-                    )}
-                    <h4 className="text-lg font-semibold text-white">{rel.title}</h4>
-                    <p className="text-gray-400 truncate">{rel.excerpt}</p>
-                  </Link>
-                ))}
-              </div>
             </div>
-          )}
 
-          {/* Tags */}
-          {article.tags?.length > 0 && (
+
+
+            {/* END Divider */}
+            <div className="mt-14 mb-10 relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
+              <span className="font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-blue-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
+                END
+              </span>
+            </div>
+
+
+            {/* Related Articles */}
+            {related.length > 0 && (
+              <div className="mt-16">
+                <h3 className="text-white font-azonix text-2xl mb-4">Related Articles</h3>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  {related.map(rel => (
+                    <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border border-white-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
+                      {rel.featured_image && (
+                        <div className="h-40 bg-cover bg-center rounded-md mb-3" style={{ backgroundImage: `url(${rel.featured_image})` }} />
+                      )}
+                      <h4 className="text-lg font-semibold text-white">{rel.title}</h4>
+                      <p className="text-gray-400 truncate">{rel.excerpt}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tags */}
+            {article.tags?.length > 0 && (
+              <div className="mt-12">
+                <h3 className="text-white font-azonix mb-4">Tags</h3>
+                <div className="flex flex-wrap gap-3">
+                  {article.tags.map((tag, i) => (
+                    <span key={i} className={`px-3 py-2 rounded-lg text-sm border ${theme.badge}`}>#{tag}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Comments */}
             <div className="mt-12">
-              <h3 className="text-white font-azonix mb-4">Tags</h3>
-              <div className="flex flex-wrap gap-3">
-                {article.tags.map((tag, i) => (
-                  <span key={i} className={`px-3 py-2 rounded-lg text-sm border ${theme.badge}`}>#{tag}</span>
-                ))}
-              </div>
+              <CommentSection articleId={article.id} />
             </div>
-          )}
-
-          {/* Comments */}
-          <div className="mt-12">
-            <CommentSection articleId={article.id} />
           </div>
         </div>
-      </div>
-    </motion.div>
-  );
+      </motion.div>
+      
+    </>
+  );  
 };
 
 export default ArticlePage;
