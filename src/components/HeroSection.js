@@ -16,6 +16,8 @@ const HeroSection = ({ featuredContent }) => {
       category: 'east',
       image:
         'https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/Z-WHgqd_TeJxSuha8aZ5WpyLcX8/AAAABfrlSgfIEw-hX0imXlnY3qlZQoHl7Sx1z4CVxkWNdRMltLiGO6lkciwA1XsDjZto2aQJP9X7ulUOHfspuCwAdhfCngH7SZzsPZZn.jpg?r=551',
+      imageMobile:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTN-x9sU9Ghc-pt1Ul-dmNOAkgOmSdVuiiIuw&s', // replace with portrait/mobile version
       link: '/article/attack-on-titan',
     },
     {
@@ -27,6 +29,8 @@ const HeroSection = ({ featuredContent }) => {
       category: 'west',
       image:
         'https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/13572496/SpiderVerse_cropped.jpg?quality=90&strip=all&crop=0,0,100,100',
+      imageMobile:
+        'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXkd-pbsG5ToV9RUIU1qKL7xow2d38oWM3W2y-Hxax-dYpTa-c99sXLlRnQNLQ-3i3HWM&usqp=CAU',
       link: '/article/spider-verse',
     },
     {
@@ -38,6 +42,8 @@ const HeroSection = ({ featuredContent }) => {
       category: 'both',
       image:
         'https://static1.cbrimages.com/wordpress/wp-content/uploads/2021/12/deku-and-spider-man.jpg',
+      imageMobile:
+        'https://preview.redd.it/would-spider-man-be-a-good-mentor-teacher-for-deku-v0-pvckixzd370f1.jpeg?auto=webp&s=7233d8e3bffb3fce84d7eb54196f68bf4bf1ba18',
       link: '/buzzfeed',
     },
   ];
@@ -89,10 +95,15 @@ const HeroSection = ({ featuredContent }) => {
           transition={{ duration: 0.8 }}
           className="absolute inset-0"
         >
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: `url(${current.image})` }}
-          />
+          <picture>
+            <source media="(max-width: 768px)" srcSet={current.imageMobile || current.image} />
+            <source media="(min-width: 769px)" srcSet={current.image} />
+            <img
+              src={current.image}
+              alt={current.title}
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+          </picture>
           <div className={`absolute inset-0 bg-gradient-to-r ${getThemeClasses(current.category)}`} />
           <div className="absolute inset-0 bg-gradient-to-t from-netflix-black via-transparent to-transparent" />
         </motion.div>
