@@ -9,11 +9,12 @@ module.exports = {
     extend: {
       fontFamily: {
         azonix: ['AZONIX', 'Arial', 'sans-serif'],
-        japanese: ['"Japanese-3017"', 'sans-serif'],
-        ackno: ['"Acknowledgement"', 'sans-serif'],
+        acknowledge: ['Acknowledgement', 'Arial', 'sans-serif'], // match @font-face
+        japanese: ['Japanese-3017', 'Arial', 'sans-serif'],      // match @font-face
         inter: ['Inter', 'system-ui', 'sans-serif'],
         montserrat: ['Montserrat', 'system-ui', 'sans-serif'],
-      },
+      }, // <-- comma was missing here
+
       colors: {
         // EAST theme (Anime - Neon Red)
         east: {
@@ -41,21 +42,25 @@ module.exports = {
           lightGray: '#564d4d'
         }
       },
+
       boxShadow: {
         'glow-east': '0 0 10px #ff1a1a, 0 0 20px #ff1a1a',
         'glow-west': '0 0 10px #00bfff, 0 0 20px #00bfff',
         neon: '0 0 8px #ff1a1a, 0 0 16px #ff1a1a',
         glow: '0 0 10px #ff1e56, 0 0 20px #ff1e56',
       },
+
       textColor: {
         'glow-red': '#ff1e56',
         'glow-blue': '#00ffff',
       },
+
       animation: {
         'fade-in': 'fadeIn 0.6s ease-in-out',
         'slide-up': 'slideUp 0.8s ease-out',
         glow: 'glow 2s infinite alternate',
       },
+
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
@@ -80,4 +85,4 @@ module.exports = {
   future: {
     hoverOnlyWhenSupported: true,
   },
-}
+};

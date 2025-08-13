@@ -2,17 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ...existing code... */
-@import url('https://fonts.cdnfonts.com/css/acknowledgement');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Load custom fonts */
+@import url('https://fonts.cdnfonts.com/css/acknowledgement'); /* WEST */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'); /* Inter */
 
+/* Load EAST's Japanese-3017 font from local OTF file */
+@font-face {
+  font-family: 'Japanese-3017';
+  src: url('/fonts/Japanese-3017.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Corrected font classes */
 .font-ackno {
-  font-family: 'Ackno', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+  font-family: 'Acknowledgement', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
 }
+
 .font-japanese {
-  font-family: 'japanese', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+  font-family: 'Japanese-3017', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
 }
-/* ...existing code... */
 
 /* Custom scrollbar styling */
 ::-webkit-scrollbar {
@@ -83,7 +92,7 @@ html {
 }
 
 .text-glow-west {
-  text-shadow: 0 0 5px #3b82f680 , 0 0 6px #3b82f680;
+  text-shadow: 0 0 5px #3b82f680, 0 0 6px #3b82f680;
 }
 
 .neon-glow {
