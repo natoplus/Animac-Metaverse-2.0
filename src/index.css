@@ -4,14 +4,14 @@
 
 /* ...existing code... */
 @import url('https://fonts.cdnfonts.com/css/acknowledgement');
-@import url('https://fonts.cdnfonts.com/css/japanese-3017');
+@import url('https://fonts.cdnfonts.com/css/japanese-3017');   
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 .font-ackno {
   font-family: 'acknowledgement', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
 }
 .font-japanese {
-  font-family: 'japanese-3017', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+  font-family: 'Japanese 3017', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
 }
 /* ...existing code... */
 
