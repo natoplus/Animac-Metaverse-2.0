@@ -9,6 +9,8 @@ module.exports = {
     extend: {
       fontFamily: {
         azonix: ['AZONIX', 'Arial', 'sans-serif'],
+        japanese: ['"Japanese-3017"', 'sans-serif'],
+        ackno: ['"Acknowledgement"', 'sans-serif'],
         inter: ['Inter', 'system-ui', 'sans-serif'],
         montserrat: ['Montserrat', 'system-ui', 'sans-serif'],
       },
