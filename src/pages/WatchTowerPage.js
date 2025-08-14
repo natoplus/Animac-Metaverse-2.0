@@ -389,7 +389,7 @@ export default function WatchTowerPage() {
       <div className="relative overflow-hidden bg-gradient-to-br from-netflix-black via-netflix-dark to-netflix-black">
         {/* Background image from public folder */}
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-10"
+          className="absolute inset-0 min-h-screen bg-fixed bg-center opacity-10"
           style={{
             backgroundImage: "url('/assets/watchtower-bg-dreamworks.jpg')",
           }}
@@ -403,13 +403,13 @@ export default function WatchTowerPage() {
             className="text-center max-w-4xl mx-auto"
           >
             {/* Logo from public folder */}
-            <img
+            <motion.img
               src="/assets/animac_logo_transparent-removebg-preview.png"
               alt="Buzzfeed logo"
               className="mx-auto h-40 w-auto mb-16 mt-16"
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 2, ease: "easeOut" }}
             />
 
             <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
