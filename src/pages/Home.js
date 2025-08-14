@@ -154,6 +154,9 @@ const Home = () => {
             {allArticles.slice(0, 10).map((article, i) => (
               <span key={i} className="mx-6">📰 {article.title}</span>
             ))}
+            {allArticles.slice(0, 10).map((article, i) => (
+              <span key={`dup-${i}`} className="mx-6">📰 {article.title}</span>
+            ))}
           </div>
         </div>
 
