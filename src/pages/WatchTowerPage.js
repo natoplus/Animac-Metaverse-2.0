@@ -386,6 +386,34 @@ export default function WatchTowerPage() {
         </div>
       </div>
 
+      {/* Header */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-netflix-black via-netflix-dark to-netflix-black">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1720576127187-12d4b9045d93')] bg-cover bg-center opacity-10" />
+        <div className="relative z-10 container mx-auto px-4 py-20">
+          <motion.div
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            className="text-center max-w-4xl mx-auto"
+          >
+
+
+            <img
+              src="/assets/buzzfeed-logo.svg"
+              alt="Buzzfeed logo"
+              className="mx-auto h-80 w-auto mb-2"
+            />
+
+            <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
+              Where Culture Meets Commentary
+            </p>
+            <p className="text-lg font-inter text-gray-400 leading-relaxed max-w-2xl mx-auto">
+              Choose your journey through our curated content portals. Each side offers unique perspectives on the entertainment that shapes our world.
+            </p>
+          </motion.div>
+        </div>
+      </div>
+
       {/* Hero Featured Trailer */}
       <div className="mb-14 mt-20">
         {featuredTrailer && featuredDate && (
