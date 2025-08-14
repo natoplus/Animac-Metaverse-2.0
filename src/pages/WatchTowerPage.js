@@ -404,7 +404,7 @@ export default function WatchTowerPage() {
           >
             {/* Logo from public folder */}
             <img
-              src="/assets/buzzfeed-logo.svg"
+              src="/assets/animac_logo_transparent-removebg-preview.png"
               alt="Buzzfeed logo"
               className="mx-auto h-80 w-auto mb-2"
             />
