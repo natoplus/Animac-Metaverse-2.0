@@ -391,7 +391,7 @@ export default function WatchTowerPage() {
         <div
           className="absolute inset-0 bg-cover bg-center opacity-10"
           style={{
-            backgroundImage: "url('/watchtower-bg-dreamworks.jpg')",
+            backgroundImage: "url('/assets/watchtower-bg-dreamworks.jpg')",
           }}
         />
 
@@ -404,7 +404,7 @@ export default function WatchTowerPage() {
           >
             {/* Logo from public folder */}
             <img
-              src="/buzzfeed-logo.svg"
+              src="/assets/buzzfeed-logo.svg"
               alt="Buzzfeed logo"
               className="mx-auto h-80 w-auto mb-2"
             />
