@@ -406,7 +406,7 @@ export default function WatchTowerPage() {
             <img
               src="/assets/animac_logo_transparent-removebg-preview.png"
               alt="Buzzfeed logo"
-              className="mx-auto h-80 w-auto mb-2"
+              className="mx-auto h-40 w-auto mb-2"
             />
 
             <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
