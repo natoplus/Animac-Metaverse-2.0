@@ -407,6 +407,9 @@ export default function WatchTowerPage() {
               src="/assets/animac_logo_transparent-removebg-preview.png"
               alt="Buzzfeed logo"
               className="mx-auto h-40 w-auto mb-16 mt-16"
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
             />
 
             <p className="text-2xl md:text-3xl font-montserrat font-medium text-gray-300 mb-8">
