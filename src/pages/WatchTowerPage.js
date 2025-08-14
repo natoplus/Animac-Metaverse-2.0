@@ -388,7 +388,7 @@ export default function WatchTowerPage() {
 
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-netflix-black via-netflix-dark to-netflix-black">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1720576127187-12d4b9045d93')] bg-cover bg-center opacity-10" />
+        <div className="absolute inset-0 bg-[url('/assets/watchtower-bg-dreamworks.jpg')] bg-cover bg-center opacity-10" />
         <div className="relative z-10 container mx-auto px-4 py-20">
           <motion.div
             initial={{ y: 50, opacity: 0 }}
