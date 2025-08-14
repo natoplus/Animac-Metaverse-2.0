@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { ChevronRight, ChevronLeft } from "lucide-react";
-import bgImage from '../assets/watchtower-bg-dreamworks.jpg';
-import buzzLogo from '../assets/buzzfeed-logo.svg';
 
 
 // Import Azonix font (can move to global CSS or head tag)
@@ -389,10 +387,14 @@ export default function WatchTowerPage() {
 
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-netflix-black via-netflix-dark to-netflix-black">
+        {/* Background image from public folder */}
         <div
           className="absolute inset-0 bg-cover bg-center opacity-10"
-          style={{ backgroundImage: `url(${bgImage})` }}
+          style={{
+            backgroundImage: "url('/watchtower-bg-dreamworks.jpg')",
+          }}
         />
+
         <div className="relative z-10 container mx-auto px-4 py-20">
           <motion.div
             initial={{ y: 50, opacity: 0 }}
@@ -400,8 +402,9 @@ export default function WatchTowerPage() {
             transition={{ duration: 0.8 }}
             className="text-center max-w-4xl mx-auto"
           >
+            {/* Logo from public folder */}
             <img
-              src={buzzLogo}
+              src="/buzzfeed-logo.svg"
               alt="Buzzfeed logo"
               className="mx-auto h-80 w-auto mb-2"
             />
@@ -415,6 +418,7 @@ export default function WatchTowerPage() {
           </motion.div>
         </div>
       </div>
+
 
       {/* Hero Featured Trailer */}
       <div className="mb-14 mt-20">
@@ -434,8 +438,8 @@ export default function WatchTowerPage() {
         <button
           onClick={() => setSelectedGenre(null)}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${selectedGenre === null
-              ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
-              : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
+            ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
+            : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
             }`}
         >
           All Genres
@@ -445,8 +449,8 @@ export default function WatchTowerPage() {
             key={genre}
             onClick={() => setSelectedGenre(genre)}
             className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${selectedGenre === genre
-                ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
-                : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
+              ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
+              : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
               }`}
           >
             <Tag className="inline w-4 h-4 mr-1 -mt-0.5" />
