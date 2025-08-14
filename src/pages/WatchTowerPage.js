@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import { ChevronRight, ChevronLeft } from "lucide-react";
+import bgImage from '../assets/watchtower-bg-dreamworks.jpg';
+import buzzLogo from '../assets/buzzfeed-logo.svg';
 
 
 // Import Azonix font (can move to global CSS or head tag)
@@ -192,7 +194,7 @@ export default function WatchTowerPage() {
   const scrollCalendarLeft = () => calendarScrollRef.current?.scrollBy({ left: -300, behavior: "smooth" });
   const scrollCalendarRight = () => calendarScrollRef.current?.scrollBy({ left: 300, behavior: "smooth" });
 
-  
+
 
 
   // Fetch Anime (East)
@@ -375,9 +377,8 @@ export default function WatchTowerPage() {
           />
           <div className={`w-14 h-7 rounded-full transition-colors duration-300 ${isEast ? "bg-purple-700" : "bg-pink-600"}`} />
           <span
-            className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full shadow-md transition-transform duration-300 ${
-              isEast ? "translate-x-0" : "translate-x-7"
-            }`}
+            className={`absolute left-1 top-1 bg-white w-5 h-5 rounded-full shadow-md transition-transform duration-300 ${isEast ? "translate-x-0" : "translate-x-7"
+              }`}
           />
         </label>
         <div className="flex justify-between mt-1 text-xs text-purple-400 font-semibold">
@@ -388,7 +389,10 @@ export default function WatchTowerPage() {
 
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-netflix-black via-netflix-dark to-netflix-black">
-        <div className="absolute inset-0 bg-[url('/assets/watchtower-bg-dreamworks.jpg')] bg-cover bg-center opacity-10" />
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-10"
+          style={{ backgroundImage: `url(${bgImage})` }}
+        />
         <div className="relative z-10 container mx-auto px-4 py-20">
           <motion.div
             initial={{ y: 50, opacity: 0 }}
@@ -396,10 +400,8 @@ export default function WatchTowerPage() {
             transition={{ duration: 0.8 }}
             className="text-center max-w-4xl mx-auto"
           >
-
-
             <img
-              src="/assets/buzzfeed-logo.svg"
+              src={buzzLogo}
               alt="Buzzfeed logo"
               className="mx-auto h-80 w-auto mb-2"
             />
@@ -431,11 +433,10 @@ export default function WatchTowerPage() {
       <div className="mb-16 mt-16 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setSelectedGenre(null)}
-          className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
-            selectedGenre === null
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${selectedGenre === null
               ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
               : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
-          }`}
+            }`}
         >
           All Genres
         </button>
@@ -443,11 +444,10 @@ export default function WatchTowerPage() {
           <button
             key={genre}
             onClick={() => setSelectedGenre(genre)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${
-              selectedGenre === genre
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition border border-purple-700 ${selectedGenre === genre
                 ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
                 : "bg-zinc-900 text-zinc-400 hover:bg-purple-800 hover:text-white"
-            }`}
+              }`}
           >
             <Tag className="inline w-4 h-4 mr-1 -mt-0.5" />
             {genre}
@@ -552,7 +552,7 @@ export default function WatchTowerPage() {
           </div>
         </motion.section>
       </div>
-      
+
       <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full"></div>
 
       {/* Release Calendar Section */}
