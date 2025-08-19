@@ -389,7 +389,7 @@ export default function WatchTowerPage() {
       <div className="relative overflow-hidden bg-gradient-to-br from-netflix-black via-netflix-dark to-netflix-black">
         {/* Background image from public folder */}
         <div
-          className="absolute inset-0 min-h-screen bg-center opacity-10"
+          className="absolute inset-0 min-h-screen bg-fixed bg-center opacity-10"
           style={{
             backgroundImage: "url('/assets/watchtower-bg-dreamworks.jpg')",
           }}
@@ -406,7 +406,7 @@ export default function WatchTowerPage() {
             <motion.img
               src="/assets/animac_logo_transparent-removebg-preview.png"
               alt="Watchtower logo"
-              className="mx-auto h-25 w-auto mb-16 mt-16"
+              className="mx-auto h-30 w-auto mb-16 mt-16"
               initial={{ opacity: 0, y: 50 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 2, ease: "easeOut" }}
