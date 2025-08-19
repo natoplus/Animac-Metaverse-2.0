@@ -196,7 +196,7 @@ const ArticlePage = () => {
           <div className="container mx-auto px-4 py-14 max-w-4xl">
             {/* Meta + Actions */}
             <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
                 <Link
                   id="back-home-btn"
                   to="/"
@@ -209,7 +209,7 @@ const ArticlePage = () => {
                 </span>
               </div>
 
-              <div className="text-sm text-gray-400 flex gap-4 mb-6">
+              <div className="text-sm text-gray-400 flex gap-4 mb-8 mt-8">
                 <span><User size={14} /> {article.author || 'Unknown'}</span>
                 <span><Calendar size={14} /> {new Date(article.created_at).toLocaleDateString()}</span>
                 <span><Clock size={14} /> {readTime} min read</span>
