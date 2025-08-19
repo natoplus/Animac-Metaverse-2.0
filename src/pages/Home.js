@@ -149,7 +149,7 @@ const Home = () => {
         <HeroSection featuredContent={featuredContent} />
 
         {/* === Buzzfeed Ticker === */}
-        <div className="bg-gradient-to-r from-east-500 to-west-500 py-2 overflow-hidden">
+        <div className="bg-gradient-to-r from-east-500 to-west-500 py-2 overflow-hidden mb-8 mt-8">
           <div className="whitespace-nowrap animate-marquee text-sm md:text-base font-semibold font-mono uppercase">
             {allArticles.slice(0, 10).map((article, i) => (
               <span key={i} className="mx-6">📰 {article.title}</span>
