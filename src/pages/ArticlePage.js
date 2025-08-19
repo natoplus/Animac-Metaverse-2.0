@@ -196,7 +196,7 @@ const ArticlePage = () => {
           <div className="container mx-auto px-4 py-14 max-w-4xl">
             {/* Meta + Actions */}
             <div className="bg-grey/60 p-6 rounded-xl max-w-3xl">
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-16">
                 <Link
                   id="back-home-btn"
                   to="/"
