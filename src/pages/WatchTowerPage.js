@@ -446,13 +446,11 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 30, onItemC
 // -----------------------------------------------------------------------------
 // Recommended Grid
 // -----------------------------------------------------------------------------
-function RecommendedGrid({ title, items = [], onItemClick }) {
-  if (!items.length) return null; // nothing to render
-
+function RecommendedGrid({ title = "Recommended", items={recommendedItems}, onItemClick={handleItemClick} }) {
   return (
-    <section className="mt-10">
-      <div className="flex items-center gap-2 mb-4 px-1">
-        <CrownIcon className="w-5 h-5 text-white/90" />
+    <section className="mt-8">
+      <div className="flex items-center gap-2 mb-3 px-1">
+        <FlameIcon className="w-5 h-5 text-white/90" />
         <h3
           className="text-lg md:text-xl tracking-wider"
           style={{ fontFamily: "var(--title-font)" }}
@@ -461,9 +459,13 @@ function RecommendedGrid({ title, items = [], onItemClick }) {
         </h3>
       </div>
 
-      <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-        {items.map((item) => (
-          <PosterCard key={item.id} item={item} onClick={onItemClick} />
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-1">
+        {items.map((item, idx) => (
+          <PosterCard
+            key={`${item.id}-${idx}`}
+            item={item}
+            onClick={onItemClick}
+          />
         ))}
       </div>
     </section>
