@@ -157,6 +157,8 @@ const TMDB_KEY = process.env.REACT_APP_TMDB_API_KEY; // <-- supply via .env
 const TRAKT_BASE = 'https://api.trakt.tv';
 const TRAKT_KEY = process.env.REACT_APP_TRAKT_KEY; // <-- supply via .env
 
+const GIPHY_KEY = process.env.REACT_APP_GIPHY_KEY; // <-- supply via .env
+
 const ANILIST_GRAPHQL = 'https://graphql.anilist.co';
 const JIKAN_BASE = 'https://api.jikan.moe/v4';
 
@@ -655,26 +657,80 @@ function EastWestToggle({ value, onChange }) {
 // Hero Section
 // -----------------------------------------------------------------------------
 function HeroSection({ mode, onPlayTrailer }) {
-  const isEast = mode === 'east';
-  const gif = isEast ? PLACEHOLDER.heroEast : PLACEHOLDER.heroWest;
-  const headline = isEast ? 'ATTACK ON TITAN' : 'SPIDER-VERSE';
-  const subhead = isEast ? 'Survey Corps vs the Titans. Walls will fall.' : 'Into the Spider-Verse. Infinite styles.';
+  const isEast = mode === "east";
+  const [gif, setGif] = useState(null);
+
+  const headline = isEast ? "ATTACK ON TITAN" : "SPIDER-VERSE";
+  const subhead = isEast
+    ? "Survey Corps vs the Titans. Walls will fall."
+    : "Into the Spider-Verse. Infinite styles.";
+
+  useEffect(() => {
+    async function fetchGif() {
+      const apiKey = process.env.REACT_APP_GIPHY_KEY;
+      const query = isEast ? "anime attack on titan" : "spider man movie";
+      const url = `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(
+        query
+      )}&limit=1&rating=pg-13`;
+
+      try {
+        const res = await fetch(url);
+        const json = await res.json();
+        setGif(json.data?.[0]?.images?.original?.url || null);
+      } catch (err) {
+        console.error("Failed to fetch Giphy:", err);
+      }
+    }
+
+    fetchGif();
+  }, [isEast]);
 
   return (
-    <motion.section initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: 'easeOut' }} className="relative w-full overflow-hidden rounded-3xl shadow-2xl">
+    <motion.section
+      initial={{ y: -20, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="relative w-full overflow-hidden rounded-3xl shadow-2xl"
+    >
       <div className="relative h-[52vh] md:h-[62vh] w-full">
-        <img src={gif} alt={headline} className="absolute inset-0 w-full h-full object-cover" loading="eager" />
+        {gif ? (
+          <img
+            src={gif}
+            alt={headline}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="eager"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-white">
+            Loading GIF...
+          </div>
+        )}
+
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-5 md:p-10">
           <div className="max-w-5xl">
-            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl tracking-wider drop-shadow-lg" style={{ fontFamily: 'var(--title-font)' }}>{headline}</h1>
-            <p className="mt-3 md:mt-4 text-sm md:text-base lg:text-lg text-white/90 max-w-2xl" style={{ fontFamily: 'var(--text-font)' }}>{subhead}</p>
+            <h1
+              className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl tracking-wider drop-shadow-lg"
+              style={{ fontFamily: "var(--title-font)" }}
+            >
+              {headline}
+            </h1>
+            <p
+              className="mt-3 md:mt-4 text-sm md:text-base lg:text-lg text-white/90 max-w-2xl"
+              style={{ fontFamily: "var(--text-font)" }}
+            >
+              {subhead}
+            </p>
             <div className="mt-4 md:mt-6 flex items-center gap-3">
-              <button onClick={onPlayTrailer} className="inline-flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold shadow-lg bg-white text-black hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white">
+              <button
+                onClick={onPlayTrailer}
+                className="inline-flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold shadow-lg bg-white text-black hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white"
+              >
                 <PlayIcon className="w-4 h-4 md:w-5 md:h-5" /> Play Trailer
               </button>
-              <button className="inline-flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold shadow-lg bg-white/10 text-white hover:bg白/20 focus:outline-none focus:ring-2 focus:ring-white">
-                <SparklesIcon className="w-4 h-4 md:w-5 md:h-5" /> Add to Watchlist
+              <button className="inline-flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold shadow-lg bg-white/10 text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white">
+                <SparklesIcon className="w-4 h-4 md:w-5 md:h-5" /> Add to
+                Watchlist
               </button>
             </div>
             <div className="mt-4 md:mt-6 flex flex-wrap gap-2">
@@ -682,7 +738,12 @@ function HeroSection({ mode, onPlayTrailer }) {
                 <StarIcon className="w-4 h-4 text-yellow-300" /> Top Rated Pick
               </span>
               <span className="inline-flex items-center gap-1 text-xs md:text-sm px-3 py-1 rounded-full bg-white/10">
-                {isEast ? <TvIcon className="w-4 h-4" /> : <FilmIcon className="w-4 h-4" />} {isEast ? 'Anime' : 'Cinematic'}
+                {isEast ? (
+                  <TvIcon className="w-4 h-4" />
+                ) : (
+                  <FilmIcon className="w-4 h-4" />
+                )}{" "}
+                {isEast ? "Anime" : "Cinematic"}
               </span>
               <span className="inline-flex items-center gap-1 text-xs md:text-sm px-3 py-1 rounded-full bg-white/10">
                 <TimerIcon className="w-4 h-4" /> New & Trending
