@@ -977,7 +977,6 @@ function CalendarCard({ item, onClick }) {
 }
 
 // ========================= Toggle =========================
-import { Sparkles, Film } from "lucide-react"; // East = anime (sparkles), West = movies (film)
 
 function EastWestToggle({ isEast, setIsEast }) {
   return (
