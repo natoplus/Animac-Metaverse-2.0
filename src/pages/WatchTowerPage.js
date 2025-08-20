@@ -635,32 +635,43 @@ function TrailerModal({ open, onClose, title, trailerUrl }) {
 }
 
 // -----------------------------------------------------------------------------
-// East/West Toggle
+// EastWestToggle Component
 // -----------------------------------------------------------------------------
-function EastWestToggle({ value, onChange }) {
-  const isEast = value === 'east';
+function EastWestToggle({ mode, setMode, refresh }) {
   return (
-    <div className="w-full max-w-md mx-auto mt-4">
-      <div className="relative bg-white/10 backdrop-blur rounded-full p-1 flex items-center shadow-lg">
-        <motion.div
-          layout
-          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className={cx(
-            "absolute top-1 bottom-1 rounded-full w-1/2",
-            isEast ? "left-1" : "left-1/2",
-            "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-md"
-          )}
-        />
-        <button onClick={() => onChange('east')} className={cx("relative z-10 flex-1 px-4 py-2 text-center transition-colors", isEast ? "text-white" : "text-white/60 hover:text-white")}> 
-          <span className="font-semibold tracking-wide" style={{ fontFamily: 'var(--text-font)' }}>East (Anime)</span>
+    <div className="flex justify-center mt-6">
+      <div className="inline-flex bg-white/10 rounded-full p-1 shadow-lg">
+        <button
+          onClick={() => {
+            setMode("east");
+            refresh(); // reload east content
+          }}
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            mode === "east"
+              ? "bg-gradient-to-r from-pink-500 to-red-500 text-white shadow-md"
+              : "text-white/70 hover:text-white"
+          }`}
+        >
+          East
         </button>
-        <button onClick={() => onChange('west')} className={cx("relative z-10 flex-1 px-4 py-2 text-center transition-colors", !isEast ? "text-white" : "text-white/60 hover:text-white")}> 
-          <span className="font-semibold tracking-wide" style={{ fontFamily: 'var(--text-font)' }}>West (Movies/TV)</span>
+        <button
+          onClick={() => {
+            setMode("west");
+            refresh(); // reload west content
+          }}
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
+            mode === "west"
+              ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md"
+              : "text-white/70 hover:text-white"
+          }`}
+        >
+          West
         </button>
       </div>
     </div>
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // Hero Section
