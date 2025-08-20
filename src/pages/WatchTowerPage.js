@@ -699,61 +699,23 @@ function HeroSection({ mode, onPlayTrailer }) {
 // -----------------------------------------------------------------------------
 function PosterCard({ item, onClick }) {
   return (
-    <div className="group relative w-[46vw] xs:w-[40vw] sm:w-[30vw] md:w-[220px] lg:w-[240px] xl:w-[260px] 2xl:w-[280px]">
+    <div
+      className="group relative flex-shrink-0 w-[150px] sm:w-[180px] md:w-[200px] lg:w-[240px] xl:w-[260px] 2xl:w-[280px]"
+    >
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl shadow-lg ring-1 ring-white/10 bg-white/5 transform transition-transform duration-500 will-change-transform group-hover:scale-105">
-        {/* Poster image */}
         <img
           src={item.poster}
           alt={item.title}
           loading="lazy"
           className="absolute inset-0 w-full h-full object-cover"
         />
-
-        {/* Gradient overlay for readability */}
         <div className="poster-gradient absolute inset-x-0 bottom-0 h-1/2" />
-
-        {/* Text overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-3">
-          <div className="flex items-center justify-between">
-            <h4
-              className="text-xs sm:text-sm md:text-base font-semibold truncate"
-              style={{ fontFamily: "var(--text-font)" }}
-            >
-              {item.title}
-            </h4>
-            {item.rating !== undefined && (
-              <div className="inline-flex items-center gap-1 text-[10px] sm:text-xs bg-black/60 rounded-full px-2 py-0.5">
-                <StarIcon className="w-3 h-3 text-yellow-300" />
-                <span>
-                  {typeof item.rating === "number"
-                    ? item.rating.toFixed(1)
-                    : item.rating}
-                </span>
-              </div>
-            )}
-          </div>
-          <div className="mt-1 text-[10px] sm:text-xs md:text-sm text-white/80 flex items-center gap-2">
-            <span className="uppercase tracking-wider">{item.type}</span>
-            {item.year && (
-              <>
-                <span>•</span>
-                <span>{item.year}</span>
-              </>
-            )}
-            {item.region && (
-              <>
-                <span>•</span>
-                <span className="capitalize">{item.region}</span>
-              </>
-            )}
-          </div>
+          <h4 className="text-xs sm:text-sm md:text-base font-semibold truncate" style={{ fontFamily: "var(--text-font)" }}>
+            {item.title}
+          </h4>
         </div>
-
-        {/* Hover shadow glow */}
-        <div className="absolute inset-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.45)] opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
-
-      {/* Clickable area for modal */}
       <button
         onClick={() => onClick?.(item)}
         className="absolute inset-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white"
@@ -762,6 +724,7 @@ function PosterCard({ item, onClick }) {
     </div>
   );
 }
+
 
 
 // -----------------------------------------------------------------------------
