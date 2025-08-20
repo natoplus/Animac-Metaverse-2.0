@@ -1,35 +1,6 @@
 // utils/jikan.js
+import { fetchJikan } from "./proxyFetch";
 
-const JIKAN_BASE = "https://api.jikan.moe/v4";
-
-// Simple in-memory cache (avoids hammering Jikan -> 429 errors)
-const cache = new Map();
-
-async function jikanFetch(endpoint) {
-  const key = endpoint;
-  const cached = cache.get(key);
-
-  if (cached && cached.expiry > Date.now()) {
-    return cached.data;
-  }
-
-  const res = await fetch(`${JIKAN_BASE}/${endpoint}`);
-  if (!res.ok) {
-    throw new Error(`${res.status} ${res.statusText} for ${endpoint}`);
-  }
-
-  const data = await res.json();
-
-  // Cache for 5 minutes
-  cache.set(key, {
-    data,
-    expiry: Date.now() + 1000 * 60 * 5,
-  });
-
-  return data;
-}
-
-// Map Jikan anime -> unified format
 function mapJikanAnime(a) {
   const title = a.title_english || a.title || "Untitled";
   const youtubeId = a.trailer?.youtube_id;
@@ -46,9 +17,7 @@ function mapJikanAnime(a) {
       a.images?.jpg?.large_image_url ||
       a.images?.jpg?.image_url ||
       sample(PLACEHOLDER.posters),
-    backdrop:
-      a.trailer?.images?.maximum_image_url ||
-      sample(PLACEHOLDER.backdrops),
+    backdrop: a.trailer?.images?.maximum_image_url || sample(PLACEHOLDER.backdrops),
     type: "anime",
     region: "east",
     synopsis: a.synopsis || "",
@@ -57,18 +26,18 @@ function mapJikanAnime(a) {
   };
 }
 
-// Fetchers
+// ---------------- Fetchers ----------------
 export async function fetchJikanTrending() {
-  const json = await jikanFetch("top/anime?limit=20");
+  const json = await fetchJikan(`/top/anime`, { limit: 20 });
   return (json?.data || []).map(mapJikanAnime);
 }
 
 export async function fetchJikanUpcoming() {
-  const json = await jikanFetch("seasons/upcoming?limit=24");
+  const json = await fetchJikan(`/seasons/upcoming`, { limit: 24 });
   return (json?.data || []).map(mapJikanAnime);
 }
 
 export async function fetchJikanTop() {
-  const json = await jikanFetch("top/anime?limit=24");
+  const json = await fetchJikan(`/top/anime`, { limit: 24 });
   return (json?.data || []).map(mapJikanAnime);
 }
