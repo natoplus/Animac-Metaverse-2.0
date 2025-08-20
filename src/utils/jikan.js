@@ -36,7 +36,11 @@ export async function fetchJikanTopRated() {
   return (json?.data || []).map(mapJikanAnime);
 }
 
-// placeholder (Jikan has no global recommendations API)
-export async function fetchJikanRecommended() {
-  return [];
+// ✅ Real recommendations per anime
+export async function fetchJikanRecommended(malId) {
+  const json = await fetchJikan(`/anime/${malId}/recommendations`);
+  return (json?.data || [])
+    .map(r => r.entry) // recommendation object has an `entry` field
+    .filter(Boolean)
+    .map(mapJikanAnime);
 }

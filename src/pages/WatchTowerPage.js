@@ -446,6 +446,30 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 30, onItemC
 // -----------------------------------------------------------------------------
 // Recommended Grid
 // -----------------------------------------------------------------------------
+
+async function handleItemClick(item) {
+  console.log("Clicked:", item);
+
+  try {
+    let recs = [];
+
+    if (item._meta?.source === "tmdb") {
+      recs = await fetchTmdbRecommended(item._meta.tmdbId, item._meta.tmdbType || "movie");
+    } else if (item._meta?.source === "trakt") {
+      recs = await fetchTraktRecommended(item._meta.traktId, item.type);
+    } else if (item._meta?.source === "anilist") {
+      recs = await fetchAniListRecommended(item._meta.aniListId);
+    } else if (item._meta?.source === "jikan") {
+      recs = await fetchJikanRecommended(item._meta.malId);
+    }
+
+    setRecommended(recs || []);
+  } catch (err) {
+    console.error("Failed to fetch recommendations", err);
+  }
+}
+
+
 function RecommendedGrid({ title = "Recommended", items={recommendedItems}, onItemClick={handleItemClick} }) {
   return (
     <section className="mt-8">
