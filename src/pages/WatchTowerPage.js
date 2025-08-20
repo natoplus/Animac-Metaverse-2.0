@@ -737,6 +737,40 @@ function PosterCard({ item, onClick }) {
   );
 }
 
+// -----------------------------------------------------------------------------
+// RecommendedGrid Component
+// -----------------------------------------------------------------------------
+function RecommendedGrid({ title = "Recommended", items = [], onItemClick }) {
+  return (
+    <section className="mt-8">
+      <div className="flex items-center gap-2 mb-3 px-1">
+        <FlameIcon className="w-5 h-5 text-white/90" />
+        <h3
+          className="text-lg md:text-xl tracking-wider"
+          style={{ fontFamily: "var(--title-font)" }}
+        >
+          {title}
+        </h3>
+      </div>
+
+      <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4 px-1">
+        {items && items.length > 0 ? (
+          items.map((item, idx) => (
+            <PosterCard
+              key={`${item.id}-${idx}`}
+              item={item}
+              onClick={onItemClick}
+            />
+          ))
+        ) : (
+          <p className="text-white/60 col-span-full text-center py-6">
+            No recommendations available.
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
 
 
 // -----------------------------------------------------------------------------
