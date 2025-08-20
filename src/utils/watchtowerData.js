@@ -7,7 +7,7 @@ import {
   fetchAniListUpcoming,
   fetchAniListTopRated,
   fetchAniListRecommended,
-} from "./anilistApi";
+} from "./anilist";
 
 // Jikan
 import {
@@ -15,7 +15,7 @@ import {
   fetchJikanUpcoming,
   fetchJikanTopRated,
   fetchJikanRecommended,
-} from "./jikanApi";
+} from "./jikan";
 
 // TMDB
 import {
@@ -23,7 +23,7 @@ import {
   fetchTMDBUpcoming,
   fetchTMDBTopRated,
   fetchTMDBRecommended,
-} from "./tmdbApi";
+} from "./tmdb";
 
 // Trakt
 import {
@@ -31,7 +31,7 @@ import {
   fetchTraktUpcoming,
   fetchTraktTopRated,
   fetchTraktRecommended,
-} from "./traktApi";
+} from "./trakt";
 
 // -----------------------------------------------------------------------------
 // Hook: useWatchTowerData
