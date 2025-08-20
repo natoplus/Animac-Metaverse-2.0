@@ -152,7 +152,7 @@ const PLACEHOLDER = {
 // -----------------------------------------------------------------------------
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const TMDB_IMG_ORIGIN = 'https://image.tmdb.org/t/p';
-const TMDB_KEY = process.env.REACT_APP_TMDB_KEY; // <-- supply via .env
+const TMDB_KEY = process.env.REACT_APP_TMDB_API_KEY; // <-- supply via .env
 
 const TRAKT_BASE = 'https://api.trakt.tv';
 const TRAKT_KEY = process.env.REACT_APP_TRAKT_KEY; // <-- supply via .env
