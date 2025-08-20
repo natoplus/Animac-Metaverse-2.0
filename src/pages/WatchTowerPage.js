@@ -378,8 +378,9 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItem
     function step() {
       el.scrollLeft += speed;
 
-      // instead of snapping at half, reset earlier invisibly
+      // reset invisibly when halfway through
       if (el.scrollLeft >= el.scrollWidth / 2) {
+        // instead of snapping to 0, shift back by half
         el.scrollLeft -= el.scrollWidth / 2;
       }
 
@@ -388,7 +389,6 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItem
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
   }, [speed]);
-
 
   // Swipe gestures
   const handlers = useSwipeable({
@@ -409,8 +409,15 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItem
     <section className="mt-8">
       {/* Section title */}
       <div className="flex items-center gap-2 mb-3 px-1">
-        {Icon ? <Icon className="w-5 h-5 text-white/90" /> : <FlameIcon className="w-5 h-5 text-white/90" />}
-        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: "var(--title-font)" }}>
+        {Icon ? (
+          <Icon className="w-5 h-5 text-white/90" />
+        ) : (
+          <FlameIcon className="w-5 h-5 text-white/90" />
+        )}
+        <h3
+          className="text-lg md:text-xl tracking-wider"
+          style={{ fontFamily: "var(--title-font)" }}
+        >
           {title}
         </h3>
       </div>
@@ -419,13 +426,13 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItem
       <div className="relative overflow-hidden" {...handlers}>
         <div
           ref={scrollRef}
-          className="flex gap-3 pr-3 overflow-x-scroll scrollbar-hide" // removed scroll-smooth here
+          className="flex gap-3 pr-3 overflow-x-scroll scrollbar-hide" 
+          // 👆 removed scroll-smooth here (prevents glitch on reset)
         >
           {loopItems.map((item, idx) => (
             <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
           ))}
         </div>
-
 
         {/* gradient fades */}
         <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black to-transparent" />
