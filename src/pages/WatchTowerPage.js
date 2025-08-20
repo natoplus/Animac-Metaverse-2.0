@@ -18,6 +18,7 @@
 // -----------------------------------------------------------------------------
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useSwipeable } from "react-swipeable";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -331,7 +332,7 @@ function HeroSection({ mode, onPlayTrailer }) {
 // -----------------------------------------------------------------------------
 function PosterCard({ item, onClick }) {
   return (
-    <div className="group relative w-[46vw] xs:w-[40vw] sm:w-[30vw] md:w-[200px] lg:w-[220px] xl:w-[240px] 2xl:w-[260px]">
+    <div className="group relative flex-shrink-0 w-[150px] sm:w-[180px] md:w-[200px] lg:w-[220px] xl:w-[240px] 2xl:w-[260px]">
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl shadow-lg ring-1 ring-white/10 bg-white/5">
         <img src={item.poster} alt={item.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 will-change-transform group-hover:scale-[1.06]" />
         <div className="poster-gradient absolute inset-x-0 bottom-0 h-1/2" />
@@ -361,32 +362,75 @@ function PosterCard({ item, onClick }) {
 // -----------------------------------------------------------------------------
 // Horizontal Carousel (Infinite loop via marquee duplication)
 // -----------------------------------------------------------------------------
-function HorizontalCarousel({ title, icon: Icon, items, speed = 45, direction = 'left', onItemClick }) {
-  const trackRef = useRef(null);
-  const duration = `${Math.max(20, Math.min(90, speed))}s`;
-  const marqueeClass = direction === 'left' ? 'marquee-left' : 'marquee-right';
-  const loopItems = useMemo(() => { const base = items && items.length ? items : []; return [...base, ...base]; }, [items]);
+
+function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItemClick }) {
+  const scrollRef = useRef(null);
+
+  // Duplicate items for seamless loop
+  const loopItems = useMemo(() => [...items, ...items], [items]);
+
+  // Auto scroll effect
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    let frame;
+    function step() {
+      el.scrollLeft += speed; // scroll right continuously
+      // reset when halfway
+      if (el.scrollLeft >= el.scrollWidth / 2) {
+        el.scrollLeft = 0;
+      }
+      frame = requestAnimationFrame(step);
+    }
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [speed]);
+
+  // Swipe gestures
+  const handlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
+      }
+    },
+    onSwipedRight: () => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
+      }
+    },
+    trackMouse: true,
+  });
 
   return (
     <section className="mt-8">
+      {/* Section title */}
       <div className="flex items-center gap-2 mb-3 px-1">
         {Icon ? <Icon className="w-5 h-5 text-white/90" /> : <FlameIcon className="w-5 h-5 text-white/90" />}
-        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: 'var(--title-font)' }}>{title}</h3>
+        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: "var(--title-font)" }}>
+          {title}
+        </h3>
       </div>
-      <div className="relative overflow-hidden">
-        <div ref={trackRef} style={{ ['--marquee-duration']: duration }} className={cx("marquee-pause thin-scrollbar", marqueeClass)}>
-          <div className="flex gap-3 pr-3 will-change-transform">
-            {loopItems.map((item, idx) => (
-              <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
-            ))}
-          </div>
+
+      {/* Carousel */}
+      <div className="relative overflow-hidden" {...handlers}>
+        <div
+          ref={scrollRef}
+          className="flex gap-3 pr-3 overflow-x-scroll scrollbar-hide scroll-smooth"
+        >
+          {loopItems.map((item, idx) => (
+            <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
+          ))}
         </div>
+
+        {/* gradient fades */}
         <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black to-transparent" />
       </div>
     </section>
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // Recommended Grid
