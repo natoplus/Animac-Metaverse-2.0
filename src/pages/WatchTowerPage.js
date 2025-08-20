@@ -869,7 +869,7 @@ function RecommendedGrid({ title, items, onItemClick }) {
 function HeaderBar({ mode, setMode, onRefresh }) {
   return (
     <header className="sticky top-0 z-40 bg-gradient-to-b from-black/70 to-black/0 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto pt-20 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg flex items-center justify-center">
             <TriangleIcon className="w-5 h-5 text-white rotate-180" />
