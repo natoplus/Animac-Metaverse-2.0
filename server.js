@@ -5,15 +5,12 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// ✅ Parse JSON for AniList POST requests
-app.use(express.json());
-
 // -------- Serve React build --------
 app.use(express.static(path.join(__dirname, "build")));
 
 // -------- Proxy APIs --------
 
-// TMDB
+// TMDB (hide API key in backend)
 app.use(
   "/api/tmdb",
   createProxyMiddleware({
@@ -23,7 +20,7 @@ app.use(
   })
 );
 
-// Trakt
+// Trakt (hide API key in backend)
 app.use(
   "/api/trakt",
   createProxyMiddleware({
@@ -32,39 +29,6 @@ app.use(
     pathRewrite: { "^/api/trakt": "" },
   })
 );
-
-// Jikan
-app.use(
-  "/api/jikan",
-  createProxyMiddleware({
-    target: "https://api.jikan.moe/v4",
-    changeOrigin: true,
-    pathRewrite: { "^/api/jikan": "" },
-  })
-);
-
-// AniList (GraphQL requires POST + JSON body forwarding)
-app.use(
-  "/api/anilist",
-  createProxyMiddleware({
-    target: "https://graphql.anilist.co",
-    changeOrigin: true,
-    pathRewrite: { "^/api/anilist": "" },
-    onProxyReq: (proxyReq, req, res) => {
-      if (req.method === "POST" && req.body) {
-        const bodyData = JSON.stringify(req.body);
-
-        // reset headers + write body
-        proxyReq.setHeader("Content-Type", "application/json");
-        proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
-        proxyReq.write(bodyData);
-        proxyReq.end();
-      }
-    },
-  })
-);
-
-
 
 // -------- React fallback (for client routing) --------
 app.get("*", (req, res) => {

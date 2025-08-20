@@ -1,5 +1,5 @@
 // -----------------------------------------------------------------------------
-// Centralized API fetchers via proxy with retries
+// Centralized API fetchers with retries
 // -----------------------------------------------------------------------------
 
 const TMDB_KEY = process.env.REACT_APP_TMDB_KEY;
@@ -14,7 +14,6 @@ async function fetchWithRetry(url, options, retries = 3, delay = 500) {
     const res = await fetch(url, options);
 
     if (!res.ok) {
-      // Retry only on 429 (Too Many Requests) or 5xx errors
       if ((res.status === 429 || res.status >= 500) && retries > 0) {
         console.warn(`[ProxyFetch] Retry ${3 - retries + 1} for ${url}`);
         await new Promise((r) => setTimeout(r, delay));
@@ -32,16 +31,15 @@ async function fetchWithRetry(url, options, retries = 3, delay = 500) {
       await new Promise((r) => setTimeout(r, delay));
       return fetchWithRetry(url, options, retries - 1, delay * 2);
     }
-    console.error("[WatchTower] Proxy fetch error:", err);
+    console.error("[WatchTower] Fetch error:", err);
     throw err;
   }
 }
 
-// Generic proxy fetch wrapper
+// Generic proxy fetch (used for TMDB/Trakt only)
 async function proxyFetch(path, { method = "GET", headers = {}, body, query } = {}) {
   const url = new URL(`/api${path}`, window.location.origin);
 
-  // Append query params if provided
   if (query) {
     Object.entries(query).forEach(([k, v]) => {
       if (v !== undefined && v !== null) url.searchParams.set(k, v);
@@ -76,16 +74,21 @@ export function fetchTrakt(endpoint, query = {}) {
   });
 }
 
-// ---------------- AniList via Proxy ----------------
-export function fetchAniList(query, variables = {}) {
-  return proxyFetch("/anilist", {
+// ---------------- AniList (Direct API) ----------------
+export async function fetchAniList(query, variables = {}) {
+  return fetchWithRetry("https://graphql.anilist.co", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: { query, variables },
+    body: JSON.stringify({ query, variables }),
   });
 }
 
-// ---------------- Jikan via Proxy ----------------
-export function fetchJikan(endpoint, query = {}) {
-  return proxyFetch(`/jikan${endpoint}`, { query });
+// ---------------- Jikan (Direct API) ----------------
+export async function fetchJikan(endpoint, query = {}) {
+  const url = new URL(`https://api.jikan.moe/v4${endpoint}`);
+  Object.entries(query).forEach(([k, v]) => {
+    if (v !== undefined && v !== null) url.searchParams.set(k, v);
+  });
+
+  return fetchWithRetry(url.toString(), { method: "GET" });
 }
