@@ -87,7 +87,7 @@ const sample = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 function dedupeByKey(items, key = 'id') { const map = new Map(); for (const it of items) { if (!map.has(it[key])) map.set(it[key], it); } return Array.from(map.values()); }
 function mergeDedup(lists, key = 'id') { return dedupeByKey(lists.flat().filter(Boolean), key); }
-function shuffle(array) { const a = array.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function shuffle(array) { const a = array.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1));[a[i], a[j]] = [a[j], a[i]]; } return a; }
 function randomSlice(items, count) { return shuffle(items).slice(0, Math.min(count, items.length)); }
 
 // Simple concurrency limiter to avoid hammering APIs with too many requests at once
@@ -232,7 +232,7 @@ query ($page:Int,$perPage:Int){
   }
 }`;
 
-function mapAniListMedia(m){
+function mapAniListMedia(m) {
   const title = m.title?.english || m.title?.romaji || 'Untitled';
   const trailerUrl = m.trailer?.site?.toLowerCase() === 'youtube' && m.trailer?.id
     ? `https://www.youtube.com/watch?v=${m.trailer.id}`
@@ -241,7 +241,7 @@ function mapAniListMedia(m){
     id: `east-anilist-${m.id}`,
     title,
     year: m.startDate?.year || '—',
-    rating: typeof m.averageScore === 'number' ? +(m.averageScore/10).toFixed(1) : 0,
+    rating: typeof m.averageScore === 'number' ? +(m.averageScore / 10).toFixed(1) : 0,
     poster: m.coverImage?.extraLarge || m.coverImage?.large || sample(PLACEHOLDER.posters),
     backdrop: m.bannerImage || sample(PLACEHOLDER.backdrops),
     type: 'anime',
@@ -252,21 +252,21 @@ function mapAniListMedia(m){
   };
 }
 
-async function fetchAniListTrending(){
+async function fetchAniListTrending() {
   const data = await anilistQuery(GQL_TRENDING, { page: 1, perPage: 20 });
-  return (data?.Page?.media||[]).map(mapAniListMedia);
+  return (data?.Page?.media || []).map(mapAniListMedia);
 }
-async function fetchAniListTop(){
+async function fetchAniListTop() {
   const data = await anilistQuery(GQL_TOP, { page: 1, perPage: 24 });
-  return (data?.Page?.media||[]).map(mapAniListMedia);
+  return (data?.Page?.media || []).map(mapAniListMedia);
 }
-async function fetchAniListUpcoming(){
+async function fetchAniListUpcoming() {
   const data = await anilistQuery(GQL_UPCOMING, { page: 1, perPage: 24 });
-  return (data?.Page?.media||[]).map(mapAniListMedia);
+  return (data?.Page?.media || []).map(mapAniListMedia);
 }
 
 // ---------------- Jikan (REST) ----------------
-function mapJikanAnime(a){
+function mapJikanAnime(a) {
   const title = a.title_english || a.title || 'Untitled';
   const youtubeId = a.trailer?.youtube_id;
   const trailerUrl = youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : (a.trailer?.url || null);
@@ -285,31 +285,31 @@ function mapJikanAnime(a){
   };
 }
 
-async function fetchJikanTrending(){
+async function fetchJikanTrending() {
   const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=20`);
-  return (json?.data||[]).map(mapJikanAnime);
+  return (json?.data || []).map(mapJikanAnime);
 }
-async function fetchJikanUpcoming(){
+async function fetchJikanUpcoming() {
   const json = await safeFetch(`${JIKAN_BASE}/seasons/upcoming?limit=24`);
-  return (json?.data||[]).map(mapJikanAnime);
+  return (json?.data || []).map(mapJikanAnime);
 }
-async function fetchJikanTop(){
+async function fetchJikanTop() {
   const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=24`);
-  return (json?.data||[]).map(mapJikanAnime);
+  return (json?.data || []).map(mapJikanAnime);
 }
 
 // ---------------- TMDB (REST) ----------------
-function tmdbPoster(path, size='w342'){ return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.posters); }
-function tmdbBackdrop(path, size='w1280'){ return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.backdrops); }
+function tmdbPoster(path, size = 'w342') { return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.posters); }
+function tmdbBackdrop(path, size = 'w1280') { return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.backdrops); }
 
-function mapTMDBItem(r){
+function mapTMDBItem(r) {
   const isMovie = r.media_type ? r.media_type === 'movie' : !!r.title;
   const type = isMovie ? 'movie' : 'tv';
   const id = r.id;
   return {
     id: `west-tmdb-${type}-${id}`,
     title: r.title || r.name || 'Untitled',
-    year: (r.release_date || r.first_air_date || '').slice(0,4) || '—',
+    year: (r.release_date || r.first_air_date || '').slice(0, 4) || '—',
     rating: typeof r.vote_average === 'number' ? +r.vote_average.toFixed(1) : 0,
     poster: tmdbPoster(r.poster_path),
     backdrop: tmdbBackdrop(r.backdrop_path),
@@ -320,44 +320,44 @@ function mapTMDBItem(r){
   };
 }
 
-async function fetchTMDB(endpoint, params={}){
+async function fetchTMDB(endpoint, params = {}) {
   const url = new URL(`${TMDB_BASE}${endpoint}`);
-  url.searchParams.set('api_key', TMDB_KEY||'');
+  url.searchParams.set('api_key', TMDB_KEY || '');
   url.searchParams.set('language', 'en-US');
-  for (const [k,v] of Object.entries(params)) url.searchParams.set(k, v);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   return safeFetch(url.toString());
 }
 
-async function fetchTMDBTrending(){
+async function fetchTMDBTrending() {
   const json = await fetchTMDB('/trending/all/day');
-  return (json?.results||[]).map(mapTMDBItem);
+  return (json?.results || []).map(mapTMDBItem);
 }
-async function fetchTMDBUpcoming(){
+async function fetchTMDBUpcoming() {
   // combine upcoming movies and on-the-air tv for a richer row
   const [movies, tv] = await Promise.all([
     fetchTMDB('/movie/upcoming', { page: '1' }),
     fetchTMDB('/tv/on_the_air', { page: '1' })
   ]);
   return mergeDedup([
-    (movies?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'movie' })),
-    (tv?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'tv' })),
+    (movies?.results || []).map(r => mapTMDBItem({ ...r, media_type: 'movie' })),
+    (tv?.results || []).map(r => mapTMDBItem({ ...r, media_type: 'tv' })),
   ]);
 }
-async function fetchTMDBTop(){
+async function fetchTMDBTop() {
   const [movies, tv] = await Promise.all([
     fetchTMDB('/movie/top_rated', { page: '1' }),
     fetchTMDB('/tv/top_rated', { page: '1' })
   ]);
   return mergeDedup([
-    (movies?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'movie' })),
-    (tv?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'tv' })),
+    (movies?.results || []).map(r => mapTMDBItem({ ...r, media_type: 'movie' })),
+    (tv?.results || []).map(r => mapTMDBItem({ ...r, media_type: 'tv' })),
   ]);
 }
 
-async function fetchTMDBTrailer(tmdbId, type){
+async function fetchTMDBTrailer(tmdbId, type) {
   if (!tmdbId) return null;
   const json = await fetchTMDB(`/${type}/${tmdbId}/videos`);
-  const list = json?.results||[];
+  const list = json?.results || [];
   const pick = list.find(v => v.site === 'YouTube' && /Trailer|Teaser/i.test(v.type)) || list.find(v => v.site === 'YouTube');
   return pick ? `https://www.youtube.com/watch?v=${pick.key}` : null;
 }
@@ -365,19 +365,19 @@ async function fetchTMDBTrailer(tmdbId, type){
 // ---------------- Trakt (REST) ----------------
 const traktHeaders = {
   'Content-Type': 'application/json',
-  'trakt-api-key': TRAKT_KEY||'',
+  'trakt-api-key': TRAKT_KEY || '',
   'trakt-api-version': '2',
 };
 
-async function trakt(path, params){
+async function trakt(path, params) {
   const url = new URL(`${TRAKT_BASE}${path}`);
-  if (params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   const res = await fetch(url.toString(), { headers: traktHeaders });
   if (!res.ok) throw new Error(`Trakt ${res.status}`);
   return res.json();
 }
 
-function mapTraktMovie(item){
+function mapTraktMovie(item) {
   const m = item.movie || item;
   return {
     id: `west-trakt-movie-${m?.ids?.trakt}`,
@@ -393,7 +393,7 @@ function mapTraktMovie(item){
     _meta: { source: 'trakt', traktId: m?.ids?.trakt, tmdbId: m?.ids?.tmdb, imdbId: m?.ids?.imdb, tmdbType: 'movie' }
   };
 }
-function mapTraktShow(item){
+function mapTraktShow(item) {
   const s = item.show || item;
   return {
     id: `west-trakt-show-${s?.ids?.trakt}`,
@@ -410,7 +410,7 @@ function mapTraktShow(item){
   };
 }
 
-async function fetchTraktTrending(){
+async function fetchTraktTrending() {
   const [movies, shows] = await Promise.all([
     trakt('/movies/trending', { page: '1', limit: '20', extended: 'full' }),
     trakt('/shows/trending', { page: '1', limit: '20', extended: 'full' })
@@ -421,7 +421,7 @@ async function fetchTraktTrending(){
   ]);
 }
 
-async function fetchTraktPopular(){
+async function fetchTraktPopular() {
   const [movies, shows] = await Promise.all([
     trakt('/movies/popular', { page: '1', limit: '20' }),
     trakt('/shows/popular', { page: '1', limit: '20' })
@@ -433,7 +433,7 @@ async function fetchTraktPopular(){
 }
 
 // Enrich Trakt items with TMDB images & trailers (if tmdbId provided)
-async function enrichTraktWithTMDB(items){
+async function enrichTraktWithTMDB(items) {
   const limit = pLimit(5);
   const tasks = items.map(item => limit(async () => {
     const tmdbId = item._meta?.tmdbId;
@@ -445,8 +445,8 @@ async function enrichTraktWithTMDB(items){
       const backdrop = tmdbBackdrop(detail.backdrop_path);
       const trailerUrl = item.trailerUrl || await fetchTMDBTrailer(tmdbId, tmdbType);
       const overview = detail.overview || item.synopsis;
-      return { ...item, poster, backdrop, trailerUrl, synopsis: overview, title: item.title || detail.title || detail.name, year: item.year || (detail.release_date||detail.first_air_date||'').slice(0,4) };
-    } catch (e){
+      return { ...item, poster, backdrop, trailerUrl, synopsis: overview, title: item.title || detail.title || detail.name, year: item.year || (detail.release_date || detail.first_air_date || '').slice(0, 4) };
+    } catch (e) {
       return item; // keep fallback
     }
   }));
@@ -534,7 +534,7 @@ export const PosterSkeleton = ({ className = "w-[180px] h-[270px] md:w-[190px] m
 // -----------------------------------------------------------------------------
 // Trailer Modal (YouTube/Vimeo, Accessible, Animated)
 // -----------------------------------------------------------------------------
-function toEmbedUrl(url){
+function toEmbedUrl(url) {
   if (!url) return null;
   try {
     const u = new URL(url);
@@ -640,10 +640,10 @@ function EastWestToggle({ value, onChange }) {
             "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-md"
           )}
         />
-        <button onClick={() => onChange('east')} className={cx("relative z-10 flex-1 px-4 py-2 text-center transition-colors", isEast ? "text-white" : "text-white/60 hover:text-white")}> 
+        <button onClick={() => onChange('east')} className={cx("relative z-10 flex-1 px-4 py-2 text-center transition-colors", isEast ? "text-white" : "text-white/60 hover:text-white")}>
           <span className="font-semibold tracking-wide" style={{ fontFamily: 'var(--text-font)' }}>East (Anime)</span>
         </button>
-        <button onClick={() => onChange('west')} className={cx("relative z-10 flex-1 px-4 py-2 text-center transition-colors", !isEast ? "text-white" : "text-white/60 hover:text-white")}> 
+        <button onClick={() => onChange('west')} className={cx("relative z-10 flex-1 px-4 py-2 text-center transition-colors", !isEast ? "text-white" : "text-white/60 hover:text-white")}>
           <span className="font-semibold tracking-wide" style={{ fontFamily: 'var(--text-font)' }}>West (Movies/TV)</span>
         </button>
       </div>
@@ -700,16 +700,16 @@ function HeroSection({ mode, onPlayTrailer }) {
 // -----------------------------------------------------------------------------
 function PosterCard({ item, onClick }) {
   return (
-    <div className="group relative w-[46vw] xs:w-[40vw] sm:w-[30vw] md:w-[220px] lg:w-[240px] xl:w-[260px] 2xl:w-[280px]">
+    <div
+      className="group relative flex-shrink-0 w-[150px] sm:w-[180px] md:w-[200px] lg:w-[240px] xl:w-[260px] 2xl:w-[280px]"
+    >
       <div className="relative aspect-[2/3] overflow-hidden rounded-2xl shadow-lg ring-1 ring-white/10 bg-white/5 transform transition-transform duration-500 will-change-transform group-hover:scale-105">
-        {/* Poster image */}
         <img
           src={item.poster}
           alt={item.title}
           loading="lazy"
           className="absolute inset-0 w-full h-full object-cover"
         />
-
         {/* Gradient overlay for readability */}
         <div className="poster-gradient absolute inset-x-0 bottom-0 h-1/2" />
 
@@ -753,8 +753,6 @@ function PosterCard({ item, onClick }) {
         {/* Hover shadow glow */}
         <div className="absolute inset-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.45)] opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
-
-      {/* Clickable area for modal */}
       <button
         onClick={() => onClick?.(item)}
         className="absolute inset-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white"
@@ -763,7 +761,6 @@ function PosterCard({ item, onClick }) {
     </div>
   );
 }
-
 
 
 // -----------------------------------------------------------------------------
