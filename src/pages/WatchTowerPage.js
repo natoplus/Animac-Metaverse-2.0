@@ -701,29 +701,34 @@ function HeroSection({ mode, onPlayTrailer }) {
 function PosterCard({ item, onClick }) {
   return (
     <div
-      className="relative group cursor-pointer"
-      onClick={() => onClick?.(item)}
+      className="group relative flex-shrink-0 w-[150px] sm:w-[180px] md:w-[200px] lg:w-[240px] xl:w-[260px] 2xl:w-[280px]"
     >
-      {/* Poster */}
-      <img
-        src={item.poster}
-        alt={item.title}
-        className="w-full rounded-xl shadow-md object-cover"
-      />
-
-      {/* Overlay for hover */}
-      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex flex-col justify-end p-2">
-        <h4 className="text-white text-sm font-semibold truncate">
-          {item.title}
-        </h4>
-        <div className="text-xs text-gray-300 flex gap-2">
-          <span>{item.year}</span>
-          {item.rating > 0 && <span>⭐ {item.rating}</span>}
-        </div>
-        <div className="text-[10px] text-gray-400 uppercase tracking-wide">
-          {item.region === "east" ? "Anime" : item.type}
+      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl shadow-lg ring-1 ring-white/10 bg-white/5 transform transition-transform duration-500 will-change-transform group-hover:scale-105">
+        <img
+          src={item.poster}
+          alt={item.title}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="poster-gradient absolute inset-x-0 bottom-0 h-1/2" />
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <h4 className="text-xs sm:text-sm md:text-base font-semibold truncate" style={{ fontFamily: "var(--text-font)" }}>
+            {item.title}
+          </h4>
+          <div className="text-xs text-gray-300 flex gap-2">
+            <span>{item.year}</span>
+            {item.rating > 0 && <span>⭐ {item.rating}</span>}
+          </div>
+          <div className="text-[10px] text-gray-400 uppercase tracking-wide">
+            {item.region === "east" ? "Anime" : item.type}
+          </div>
         </div>
       </div>
+      <button
+        onClick={() => onClick?.(item)}
+        className="absolute inset-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white"
+        aria-label={`Open ${item.title}`}
+      />
     </div>
   );
 }
