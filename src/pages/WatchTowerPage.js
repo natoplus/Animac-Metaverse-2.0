@@ -293,8 +293,6 @@ export async function fetchAniListUpcoming() {
 
 // ---------------- Jikan (REST direct) ----------------
 
-const JIKAN_BASE = "https://api.jikan.moe/v4";
-
 // Simple fetch wrapper
 async function safeFetch(url) {
   const res = await fetch(url);
