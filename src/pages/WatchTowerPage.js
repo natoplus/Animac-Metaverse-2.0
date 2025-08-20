@@ -916,7 +916,8 @@ export default function WatchTowerPage() {
                 <HorizontalCarousel title="Trending Now" icon={FlameIcon} items={trending} speed={42} direction="left" onItemClick={onItemClick} />
                 <HorizontalCarousel title="New Releases & Upcoming" icon={SparklesIcon} items={upcoming} speed={48} direction="right" onItemClick={onItemClick} />
                 <HorizontalCarousel title="Top Rated" icon={StarIcon} items={topRated} speed={40} direction="left" onItemClick={onItemClick} />
-                <RecommendedGrid title="Recommended For You" items={recommended} onItemClick={onItemClick} />
+                <HorizontalCarousel title="Recommend For You" items={recommendedItems} onItemClick={handleItemClick} />
+
               </>
             )}
           </motion.div>
