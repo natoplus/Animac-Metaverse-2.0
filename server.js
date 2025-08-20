@@ -43,7 +43,7 @@ app.use(
   })
 );
 
-// AniList (needs POST support)
+// AniList (GraphQL requires POST + body forwarding)
 app.use(
   "/api/anilist",
   createProxyMiddleware({
@@ -51,19 +51,17 @@ app.use(
     changeOrigin: true,
     pathRewrite: { "^/api/anilist": "" },
     onProxyReq: (proxyReq, req) => {
-      if (req.body && Object.keys(req.body).length) {
+      if (req.method === "POST" && req.body) {
         const bodyData = JSON.stringify(req.body);
 
-        // Set headers
         proxyReq.setHeader("Content-Type", "application/json");
         proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
-
-        // Write body
         proxyReq.write(bodyData);
       }
     },
   })
 );
+
 
 // -------- React fallback (for client routing) --------
 app.get("*", (req, res) => {
