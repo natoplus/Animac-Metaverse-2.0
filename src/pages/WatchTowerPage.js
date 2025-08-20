@@ -467,10 +467,14 @@ function useWatchTowerData(mode /* 'east' | 'west' */) {
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
-      let mergedTrending = [], mergedUpcoming = [], mergedTop = [];
 
-      if (mode === 'east') {
+    try {
+      let mergedTrending = [];
+      let mergedUpcoming = [];
+      let mergedTop = [];
+
+      if (mode === "east") {
+        // AniList + Jikan
         const [aTrend, jTrend, aUp, jUp, aTop, jTop] = await Promise.all([
           fetchAniListTrending(),
           fetchJikanTrending(),
@@ -483,6 +487,7 @@ function useWatchTowerData(mode /* 'east' | 'west' */) {
         mergedUpcoming = mergeDedup([aUp, jUp]);
         mergedTop = mergeDedup([aTop, jTop]);
       } else {
+        // TMDB + Trakt
         const [tTrend, trTrend, tUp, tTop, trPop] = await Promise.all([
           fetchTMDBTrending(),
           fetchTraktTrending(),
@@ -490,35 +495,41 @@ function useWatchTowerData(mode /* 'east' | 'west' */) {
           fetchTMDBTop(),
           fetchTraktPopular(),
         ]);
-        // Enrich Trakt with TMDB artwork & trailers
+
+        // Enrich Trakt items with TMDB artwork & trailers
         const trTrendEnriched = await enrichTraktWithTMDB(trTrend);
         const trPopEnriched = await enrichTraktWithTMDB(trPop);
+
         mergedTrending = mergeDedup([tTrend, trTrendEnriched]);
         mergedUpcoming = mergeDedup([tUp]);
         mergedTop = mergeDedup([tTop, trPopEnriched]);
       }
 
+      // Recommended pool from all categories
       const recPool = mergeDedup([mergedTrending, mergedUpcoming, mergedTop]);
-      const rec = randomSlice(recPool, 24);
+      const rec = recPool.length ? randomSlice(recPool, 24) : [];
 
       setTrending(mergedTrending);
       setUpcoming(mergedUpcoming);
       setTopRated(mergedTop);
       setRecommended(rec);
-    } catch (e) {
-      console.error(e);
-      setError(e);
+    } catch (err) {
+      console.error("❌ useWatchTowerData error:", err);
+      setError(err);
     } finally {
       setLoading(false);
     }
   }, [mode]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   const refresh = useCallback(() => load(), [load]);
 
   return { trending, upcoming, topRated, recommended, loading, error, refresh };
 }
+
 
 // -----------------------------------------------------------------------------
 // Skeleton Loaders
@@ -873,63 +884,76 @@ function LoadingState() {
 }
 
 // -----------------------------------------------------------------------------
-// Main Page Component
+// WatchTowerPage Component
 // -----------------------------------------------------------------------------
 export default function WatchTowerPage() {
-  const [mode, setMode] = useState('east');
-  const { trending, upcoming, topRated, recommended, loading, error, refresh } = useWatchTowerData(mode);
-  const [trailer, setTrailer] = useState({ open: false, item: null });
+  const [mode, setMode] = useState("east"); // east | west
+  const { trending, upcoming, topRated, recommended, loading, error, refresh } =
+    useWatchTowerData(mode);
 
-  const onItemClick = useCallback((item) => { if (item?.trailerUrl) setTrailer({ open: true, item }); }, []);
+  // trailer modal state
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [showTrailer, setShowTrailer] = useState(false);
 
-  const onPlayHeroTrailer = useCallback(() => {
-    const heroItem = {
-      title: mode === 'east' ? 'Attack on Titan' : 'Spider-Verse',
-      trailerUrl: mode === 'east' ? 'https://www.youtube.com/watch?v=MGRm4IzK1SQ' : 'https://www.youtube.com/watch?v=g4Hbz2jLxvQ',
-    };
-    setTrailer({ open: true, item: heroItem });
-  }, [mode]);
-
-  const fadeKey = `mode-${mode}`;
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    setShowTrailer(true);
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <GlobalStyles />
-      <div className="pointer-events-none fixed inset-0 -z-10">
-        <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl opacity-30 bg-indigo-600" />
-        <div className="absolute top-1/2 -right-24 h-72 w-72 rounded-full blur-3xl opacity-30 bg-pink-600" />
-      </div>
+    <div className="min-h-screen bg-gradient-to-b from-black via-black/95 to-black text-white">
+      {/* Hero Section */}
+      <HeroSection mode={mode} />
 
-      <HeaderBar mode={mode} setMode={setMode} onRefresh={refresh} />
+      {/* East/West Toggle */}
+      <EastWestToggle mode={mode} setMode={setMode} refresh={refresh} />
 
-      <main className="max-w-7xl mx-auto px-4 pb-16">
-        <AnimatePresence mode="wait">
-          <motion.div key={fadeKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}>
-            <HeroSection mode={mode} onPlayTrailer={onPlayHeroTrailer} />
+      {/* Loading/Error states */}
+      {loading && <LineSkeleton count={4} />}
+      {error && (
+        <div className="text-red-500 text-center mt-6">
+          Something went wrong loading content.
+        </div>
+      )}
 
-            {error ? (
-              <div className="mt-8"><ErrorState onRetry={refresh} error={error} /></div>
-            ) : loading ? (
-              <div className="mt-8"><LoadingState /></div>
-            ) : (
-              <>
-                <HorizontalCarousel title="Trending Now" icon={FlameIcon} items={trending} speed={42} direction="left" onItemClick={onItemClick} />
-                <HorizontalCarousel title="New Releases & Upcoming" icon={SparklesIcon} items={upcoming} speed={48} direction="right" onItemClick={onItemClick} />
-                <HorizontalCarousel title="Top Rated" icon={StarIcon} items={topRated} speed={40} direction="left" onItemClick={onItemClick} />
-                <HorizontalCarousel title="Recommend For You" items={recommendedItems} onItemClick={handleItemClick} />
+      {!loading && !error && (
+        <>
+          {/* Carousels */}
+          <HorizontalCarousel
+            title="Trending Now"
+            items={trending}
+            onItemClick={handleItemClick}
+          />
+          <HorizontalCarousel
+            title="New Releases & Upcoming"
+            items={upcoming}
+            onItemClick={handleItemClick}
+          />
+          <HorizontalCarousel
+            title="Top Rated"
+            items={topRated}
+            onItemClick={handleItemClick}
+          />
 
-              </>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+          {/* Recommended Grid */}
+          <RecommendedGrid
+            title="Recommended"
+            items={recommended}
+            onItemClick={handleItemClick}
+          />
+        </>
+      )}
 
-      <FooterBar />
-
-      <TrailerModal open={trailer.open} onClose={() => setTrailer({ open: false, item: null })} title={trailer.item?.title} trailerUrl={trailer.item?.trailerUrl} />
+      {/* Trailer Modal */}
+      <TrailerModal
+        open={showTrailer}
+        onClose={() => setShowTrailer(false)}
+        item={selectedItem}
+      />
     </div>
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // Developer Notes & Setup
