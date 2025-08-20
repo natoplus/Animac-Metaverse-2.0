@@ -5,6 +5,9 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ✅ Parse JSON for AniList POST requests
+app.use(express.json());
+
 // -------- Serve React build --------
 app.use(express.static(path.join(__dirname, "build")));
 
@@ -40,13 +43,25 @@ app.use(
   })
 );
 
-// AniList
+// AniList (needs POST support)
 app.use(
   "/api/anilist",
   createProxyMiddleware({
     target: "https://graphql.anilist.co",
     changeOrigin: true,
     pathRewrite: { "^/api/anilist": "" },
+    onProxyReq: (proxyReq, req) => {
+      if (req.body && Object.keys(req.body).length) {
+        const bodyData = JSON.stringify(req.body);
+
+        // Set headers
+        proxyReq.setHeader("Content-Type", "application/json");
+        proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
+
+        // Write body
+        proxyReq.write(bodyData);
+      }
+    },
   })
 );
 
