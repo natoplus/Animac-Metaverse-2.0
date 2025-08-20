@@ -169,15 +169,31 @@ async function safeFetch(url, options) {
   return res.json();
 }
 
-// ---------------- AniList (GraphQL) ----------------
+// ---------------- AniList (GraphQL via proxy) ----------------
+
+// Local client-side cache to reduce spam & 429s
+const anilistCache = new Map();
+
 async function anilistQuery(query, variables) {
-  const res = await fetch(ANILIST_GRAPHQL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+  const cacheKey = JSON.stringify({ query, variables });
+  if (anilistCache.has(cacheKey)) {
+    return anilistCache.get(cacheKey);
+  }
+
+  const res = await fetch("/api/anilist", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ query, variables }),
   });
+
+  if (!res.ok) {
+    throw new Error(`AniList proxy error: ${res.status}`);
+  }
+
   const json = await res.json();
-  if (json.errors) throw new Error('AniList GraphQL error');
+  if (json.errors) throw new Error("AniList GraphQL error");
+
+  anilistCache.set(cacheKey, json.data);
   return json.data;
 }
 
@@ -232,37 +248,44 @@ query ($page:Int,$perPage:Int){
   }
 }`;
 
-function mapAniListMedia(m){
-  const title = m.title?.english || m.title?.romaji || 'Untitled';
-  const trailerUrl = m.trailer?.site?.toLowerCase() === 'youtube' && m.trailer?.id
-    ? `https://www.youtube.com/watch?v=${m.trailer.id}`
-    : null;
+function mapAniListMedia(m) {
+  const title = m.title?.english || m.title?.romaji || "Untitled";
+  const trailerUrl =
+    m.trailer?.site?.toLowerCase() === "youtube" && m.trailer?.id
+      ? `https://www.youtube.com/watch?v=${m.trailer.id}`
+      : null;
   return {
     id: `east-anilist-${m.id}`,
     title,
-    year: m.startDate?.year || '—',
-    rating: typeof m.averageScore === 'number' ? +(m.averageScore/10).toFixed(1) : 0,
-    poster: m.coverImage?.extraLarge || m.coverImage?.large || sample(PLACEHOLDER.posters),
+    year: m.startDate?.year || "—",
+    rating:
+      typeof m.averageScore === "number"
+        ? +(m.averageScore / 10).toFixed(1)
+        : 0,
+    poster:
+      m.coverImage?.extraLarge ||
+      m.coverImage?.large ||
+      sample(PLACEHOLDER.posters),
     backdrop: m.bannerImage || sample(PLACEHOLDER.backdrops),
-    type: 'anime',
-    region: 'east',
-    synopsis: m.description || '',
+    type: "anime",
+    region: "east",
+    synopsis: m.description || "",
     trailerUrl,
-    _meta: { source: 'anilist', anilistId: m.id }
+    _meta: { source: "anilist", anilistId: m.id },
   };
 }
 
-async function fetchAniListTrending(){
+async function fetchAniListTrending() {
   const data = await anilistQuery(GQL_TRENDING, { page: 1, perPage: 20 });
-  return (data?.Page?.media||[]).map(mapAniListMedia);
+  return (data?.Page?.media || []).map(mapAniListMedia);
 }
-async function fetchAniListTop(){
+async function fetchAniListTop() {
   const data = await anilistQuery(GQL_TOP, { page: 1, perPage: 24 });
-  return (data?.Page?.media||[]).map(mapAniListMedia);
+  return (data?.Page?.media || []).map(mapAniListMedia);
 }
-async function fetchAniListUpcoming(){
+async function fetchAniListUpcoming() {
   const data = await anilistQuery(GQL_UPCOMING, { page: 1, perPage: 24 });
-  return (data?.Page?.media||[]).map(mapAniListMedia);
+  return (data?.Page?.media || []).map(mapAniListMedia);
 }
 
 // ---------------- Jikan (REST) ----------------
@@ -474,18 +497,26 @@ function useWatchTowerData(mode /* 'east' | 'west' */) {
       let mergedTop = [];
 
       if (mode === "east") {
-        // AniList + Jikan
-        const [aTrend, jTrend, aUp, jUp, aTop, jTop] = await Promise.all([
-          fetchAniListTrending(),
+        // AniList (proxied) + Jikan fallback
+        let aTrend = [], aUp = [], aTop = [];
+        try {
+          aTrend = await fetchAniListTrending();
+          aUp = await fetchAniListUpcoming();
+          aTop = await fetchAniListTop();
+        } catch (e) {
+          console.warn("⚠️ AniList fetch failed, falling back to Jikan only", e);
+        }
+
+        const [jTrend, jUp, jTop] = await Promise.all([
           fetchJikanTrending(),
-          fetchAniListUpcoming(),
           fetchJikanUpcoming(),
-          fetchAniListTop(),
           fetchJikanTop(),
         ]);
+
         mergedTrending = mergeDedup([aTrend, jTrend]);
         mergedUpcoming = mergeDedup([aUp, jUp]);
         mergedTop = mergeDedup([aTop, jTop]);
+
       } else {
         // TMDB + Trakt
         const [tTrend, trTrend, tUp, tTop, trPop] = await Promise.all([
@@ -496,7 +527,7 @@ function useWatchTowerData(mode /* 'east' | 'west' */) {
           fetchTraktPopular(),
         ]);
 
-        // Enrich Trakt items with TMDB artwork & trailers
+        // Enrich Trakt with TMDB artwork & trailers
         const trTrendEnriched = await enrichTraktWithTMDB(trTrend);
         const trPopEnriched = await enrichTraktWithTMDB(trPop);
 
@@ -505,7 +536,7 @@ function useWatchTowerData(mode /* 'east' | 'west' */) {
         mergedTop = mergeDedup([tTop, trPopEnriched]);
       }
 
-      // Recommended pool from all categories
+      // Build recommendation pool
       const recPool = mergeDedup([mergedTrending, mergedUpcoming, mergedTop]);
       const rec = recPool.length ? randomSlice(recPool, 24) : [];
 
@@ -529,6 +560,7 @@ function useWatchTowerData(mode /* 'east' | 'west' */) {
 
   return { trending, upcoming, topRated, recommended, loading, error, refresh };
 }
+
 
 
 // -----------------------------------------------------------------------------
