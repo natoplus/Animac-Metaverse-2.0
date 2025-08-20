@@ -169,7 +169,9 @@ async function safeFetch(url, options) {
   return res.json();
 }
 
-// ---------------- AniList (GraphQL via proxy) ----------------
+// utils/animeSources.js
+
+// ---------------- AniList (GraphQL direct) ----------------
 
 // Local client-side cache to reduce spam & 429s
 const anilistCache = new Map();
@@ -180,14 +182,14 @@ async function anilistQuery(query, variables) {
     return anilistCache.get(cacheKey);
   }
 
-  const res = await fetch("/api/anilist", {
+  const res = await fetch("https://graphql.anilist.co", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ query, variables }),
   });
 
   if (!res.ok) {
-    throw new Error(`AniList proxy error: ${res.status}`);
+    throw new Error(`AniList error: ${res.status}`);
   }
 
   const json = await res.json();
@@ -254,6 +256,7 @@ function mapAniListMedia(m) {
     m.trailer?.site?.toLowerCase() === "youtube" && m.trailer?.id
       ? `https://www.youtube.com/watch?v=${m.trailer.id}`
       : null;
+
   return {
     id: `east-anilist-${m.id}`,
     title,
@@ -275,20 +278,32 @@ function mapAniListMedia(m) {
   };
 }
 
-async function fetchAniListTrending() {
+export async function fetchAniListTrending() {
   const data = await anilistQuery(GQL_TRENDING, { page: 1, perPage: 20 });
   return (data?.Page?.media || []).map(mapAniListMedia);
 }
-async function fetchAniListTop() {
+export async function fetchAniListTop() {
   const data = await anilistQuery(GQL_TOP, { page: 1, perPage: 24 });
   return (data?.Page?.media || []).map(mapAniListMedia);
 }
-async function fetchAniListUpcoming() {
+export async function fetchAniListUpcoming() {
   const data = await anilistQuery(GQL_UPCOMING, { page: 1, perPage: 24 });
   return (data?.Page?.media || []).map(mapAniListMedia);
 }
 
-// ---------------- Jikan (REST via Proxy) ----------------
+// ---------------- Jikan (REST direct) ----------------
+
+const JIKAN_BASE = "https://api.jikan.moe/v4";
+
+// Simple fetch wrapper
+async function safeFetch(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`${res.status} for ${url}`);
+  }
+  return res.json();
+}
+
 function mapJikanAnime(a) {
   const title = a.title_english || a.title || "Untitled";
   const youtubeId = a.trailer?.youtube_id;
@@ -316,20 +331,21 @@ function mapJikanAnime(a) {
   };
 }
 
-async function fetchJikanTrending() {
-  const json = await safeFetch(`/api/jikan?endpoint=top/anime?limit=20`);
+export async function fetchJikanTrending() {
+  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=20`);
   return (json?.data || []).map(mapJikanAnime);
 }
 
-async function fetchJikanUpcoming() {
-  const json = await safeFetch(`/api/jikan?endpoint=seasons/upcoming?limit=24`);
+export async function fetchJikanUpcoming() {
+  const json = await safeFetch(`${JIKAN_BASE}/seasons/upcoming?limit=24`);
   return (json?.data || []).map(mapJikanAnime);
 }
 
-async function fetchJikanTop() {
-  const json = await safeFetch(`/api/jikan?endpoint=top/anime?limit=24`);
+export async function fetchJikanTop() {
+  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=24`);
   return (json?.data || []).map(mapJikanAnime);
 }
+
 
 // ---------------- TMDB (REST) ----------------
 function tmdbPoster(path, size='w342'){ return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.posters); }
