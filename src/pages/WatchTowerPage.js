@@ -18,7 +18,6 @@
 // -----------------------------------------------------------------------------
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
-import { useSwipeable } from "react-swipeable";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -36,8 +35,6 @@ import {
   Flame as FlameIcon,
   Crown as CrownIcon,
 } from "lucide-react";
-
-import { useWatchTowerData } from "../utils/watchtowerData";
 
 // -----------------------------------------------------------------------------
 // Global Style Injection: Fonts, Keyframes, Reusable CSS
@@ -149,8 +146,378 @@ const PLACEHOLDER = {
  * @property {object=} _meta - optional raw source hints (ids, types)
  */
 
+// -----------------------------------------------------------------------------
+// REAL API FETCHING
+// -----------------------------------------------------------------------------
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const TMDB_IMG_ORIGIN = 'https://image.tmdb.org/t/p';
+const TMDB_KEY = process.env.REACT_APP_TMDB_KEY; // <-- supply via .env
 
+const TRAKT_BASE = 'https://api.trakt.tv';
+const TRAKT_KEY = process.env.REACT_APP_TRAKT_KEY; // <-- supply via .env
 
+const ANILIST_GRAPHQL = 'https://graphql.anilist.co';
+const JIKAN_BASE = 'https://api.jikan.moe/v4';
+
+if (!TMDB_KEY) console.warn('[WatchTower] Missing REACT_APP_TMDB_KEY');
+if (!TRAKT_KEY) console.warn('[WatchTower] Missing REACT_APP_TRAKT_KEY');
+
+async function safeFetch(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
+  return res.json();
+}
+
+// ---------------- AniList (GraphQL) ----------------
+async function anilistQuery(query, variables) {
+  const res = await fetch(ANILIST_GRAPHQL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (json.errors) throw new Error('AniList GraphQL error');
+  return json.data;
+}
+
+const GQL_TRENDING = `
+query ($page:Int,$perPage:Int){
+  Page(page:$page, perPage:$perPage){
+    media(type:ANIME, sort:TRENDING_DESC){
+      id
+      title{ romaji english }
+      averageScore
+      startDate{ year }
+      format
+      description(asHtml:false)
+      coverImage{ extraLarge large }
+      bannerImage
+      trailer{ id site thumbnail }
+    }
+  }
+}`;
+
+const GQL_TOP = `
+query ($page:Int,$perPage:Int){
+  Page(page:$page, perPage:$perPage){
+    media(type:ANIME, sort:SCORE_DESC){
+      id
+      title{ romaji english }
+      averageScore
+      startDate{ year }
+      format
+      description(asHtml:false)
+      coverImage{ extraLarge large }
+      bannerImage
+      trailer{ id site thumbnail }
+    }
+  }
+}`;
+
+const GQL_UPCOMING = `
+query ($page:Int,$perPage:Int){
+  Page(page:$page, perPage:$perPage){
+    media(type:ANIME, sort:START_DATE, status_not_in:[FINISHED, CANCELLED]){
+      id
+      title{ romaji english }
+      averageScore
+      startDate{ year }
+      format
+      description(asHtml:false)
+      coverImage{ extraLarge large }
+      bannerImage
+      trailer{ id site thumbnail }
+    }
+  }
+}`;
+
+function mapAniListMedia(m){
+  const title = m.title?.english || m.title?.romaji || 'Untitled';
+  const trailerUrl = m.trailer?.site?.toLowerCase() === 'youtube' && m.trailer?.id
+    ? `https://www.youtube.com/watch?v=${m.trailer.id}`
+    : null;
+  return {
+    id: `east-anilist-${m.id}`,
+    title,
+    year: m.startDate?.year || '—',
+    rating: typeof m.averageScore === 'number' ? +(m.averageScore/10).toFixed(1) : 0,
+    poster: m.coverImage?.extraLarge || m.coverImage?.large || sample(PLACEHOLDER.posters),
+    backdrop: m.bannerImage || sample(PLACEHOLDER.backdrops),
+    type: 'anime',
+    region: 'east',
+    synopsis: m.description || '',
+    trailerUrl,
+    _meta: { source: 'anilist', anilistId: m.id }
+  };
+}
+
+async function fetchAniListTrending(){
+  const data = await anilistQuery(GQL_TRENDING, { page: 1, perPage: 20 });
+  return (data?.Page?.media||[]).map(mapAniListMedia);
+}
+async function fetchAniListTop(){
+  const data = await anilistQuery(GQL_TOP, { page: 1, perPage: 24 });
+  return (data?.Page?.media||[]).map(mapAniListMedia);
+}
+async function fetchAniListUpcoming(){
+  const data = await anilistQuery(GQL_UPCOMING, { page: 1, perPage: 24 });
+  return (data?.Page?.media||[]).map(mapAniListMedia);
+}
+
+// ---------------- Jikan (REST) ----------------
+function mapJikanAnime(a){
+  const title = a.title_english || a.title || 'Untitled';
+  const youtubeId = a.trailer?.youtube_id;
+  const trailerUrl = youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : (a.trailer?.url || null);
+  return {
+    id: `east-jikan-${a.mal_id}`,
+    title,
+    year: a.year || a.aired?.prop?.from?.year || '—',
+    rating: typeof a.score === 'number' ? +a.score.toFixed(1) : 0,
+    poster: a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || sample(PLACEHOLDER.posters),
+    backdrop: a.trailer?.images?.maximum_image_url || sample(PLACEHOLDER.backdrops),
+    type: 'anime',
+    region: 'east',
+    synopsis: a.synopsis || '',
+    trailerUrl,
+    _meta: { source: 'jikan', malId: a.mal_id }
+  };
+}
+
+async function fetchJikanTrending(){
+  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=20`);
+  return (json?.data||[]).map(mapJikanAnime);
+}
+async function fetchJikanUpcoming(){
+  const json = await safeFetch(`${JIKAN_BASE}/seasons/upcoming?limit=24`);
+  return (json?.data||[]).map(mapJikanAnime);
+}
+async function fetchJikanTop(){
+  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=24`);
+  return (json?.data||[]).map(mapJikanAnime);
+}
+
+// ---------------- TMDB (REST) ----------------
+function tmdbPoster(path, size='w342'){ return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.posters); }
+function tmdbBackdrop(path, size='w1280'){ return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.backdrops); }
+
+function mapTMDBItem(r){
+  const isMovie = r.media_type ? r.media_type === 'movie' : !!r.title;
+  const type = isMovie ? 'movie' : 'tv';
+  const id = r.id;
+  return {
+    id: `west-tmdb-${type}-${id}`,
+    title: r.title || r.name || 'Untitled',
+    year: (r.release_date || r.first_air_date || '').slice(0,4) || '—',
+    rating: typeof r.vote_average === 'number' ? +r.vote_average.toFixed(1) : 0,
+    poster: tmdbPoster(r.poster_path),
+    backdrop: tmdbBackdrop(r.backdrop_path),
+    type,
+    region: 'west',
+    synopsis: r.overview || '',
+    _meta: { source: 'tmdb', tmdbId: id, tmdbType: type }
+  };
+}
+
+async function fetchTMDB(endpoint, params={}){
+  const url = new URL(`${TMDB_BASE}${endpoint}`);
+  url.searchParams.set('api_key', TMDB_KEY||'');
+  url.searchParams.set('language', 'en-US');
+  for (const [k,v] of Object.entries(params)) url.searchParams.set(k, v);
+  return safeFetch(url.toString());
+}
+
+async function fetchTMDBTrending(){
+  const json = await fetchTMDB('/trending/all/day');
+  return (json?.results||[]).map(mapTMDBItem);
+}
+async function fetchTMDBUpcoming(){
+  // combine upcoming movies and on-the-air tv for a richer row
+  const [movies, tv] = await Promise.all([
+    fetchTMDB('/movie/upcoming', { page: '1' }),
+    fetchTMDB('/tv/on_the_air', { page: '1' })
+  ]);
+  return mergeDedup([
+    (movies?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'movie' })),
+    (tv?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'tv' })),
+  ]);
+}
+async function fetchTMDBTop(){
+  const [movies, tv] = await Promise.all([
+    fetchTMDB('/movie/top_rated', { page: '1' }),
+    fetchTMDB('/tv/top_rated', { page: '1' })
+  ]);
+  return mergeDedup([
+    (movies?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'movie' })),
+    (tv?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'tv' })),
+  ]);
+}
+
+async function fetchTMDBTrailer(tmdbId, type){
+  if (!tmdbId) return null;
+  const json = await fetchTMDB(`/${type}/${tmdbId}/videos`);
+  const list = json?.results||[];
+  const pick = list.find(v => v.site === 'YouTube' && /Trailer|Teaser/i.test(v.type)) || list.find(v => v.site === 'YouTube');
+  return pick ? `https://www.youtube.com/watch?v=${pick.key}` : null;
+}
+
+// ---------------- Trakt (REST) ----------------
+const traktHeaders = {
+  'Content-Type': 'application/json',
+  'trakt-api-key': TRAKT_KEY||'',
+  'trakt-api-version': '2',
+};
+
+async function trakt(path, params){
+  const url = new URL(`${TRAKT_BASE}${path}`);
+  if (params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), { headers: traktHeaders });
+  if (!res.ok) throw new Error(`Trakt ${res.status}`);
+  return res.json();
+}
+
+function mapTraktMovie(item){
+  const m = item.movie || item;
+  return {
+    id: `west-trakt-movie-${m?.ids?.trakt}`,
+    title: m?.title || 'Untitled',
+    year: m?.year || '—',
+    rating: typeof m?.rating === 'number' ? +m.rating.toFixed(1) : 0,
+    poster: sample(PLACEHOLDER.posters), // will try to enrich via TMDB below
+    backdrop: sample(PLACEHOLDER.backdrops),
+    type: 'movie',
+    region: 'west',
+    trailerUrl: m?.trailer || null,
+    synopsis: '',
+    _meta: { source: 'trakt', traktId: m?.ids?.trakt, tmdbId: m?.ids?.tmdb, imdbId: m?.ids?.imdb, tmdbType: 'movie' }
+  };
+}
+function mapTraktShow(item){
+  const s = item.show || item;
+  return {
+    id: `west-trakt-show-${s?.ids?.trakt}`,
+    title: s?.title || 'Untitled',
+    year: s?.year || '—',
+    rating: typeof s?.rating === 'number' ? +s.rating.toFixed(1) : 0,
+    poster: sample(PLACEHOLDER.posters),
+    backdrop: sample(PLACEHOLDER.backdrops),
+    type: 'tv',
+    region: 'west',
+    trailerUrl: s?.trailer || null,
+    synopsis: '',
+    _meta: { source: 'trakt', traktId: s?.ids?.trakt, tmdbId: s?.ids?.tmdb, imdbId: s?.ids?.imdb, tmdbType: 'tv' }
+  };
+}
+
+async function fetchTraktTrending(){
+  const [movies, shows] = await Promise.all([
+    trakt('/movies/trending', { page: '1', limit: '20', extended: 'full' }),
+    trakt('/shows/trending', { page: '1', limit: '20', extended: 'full' })
+  ]);
+  return mergeDedup([
+    movies.map(mapTraktMovie),
+    shows.map(mapTraktShow)
+  ]);
+}
+
+async function fetchTraktPopular(){
+  const [movies, shows] = await Promise.all([
+    trakt('/movies/popular', { page: '1', limit: '20' }),
+    trakt('/shows/popular', { page: '1', limit: '20' })
+  ]);
+  return mergeDedup([
+    movies.map(mapTraktMovie),
+    shows.map(mapTraktShow)
+  ]);
+}
+
+// Enrich Trakt items with TMDB images & trailers (if tmdbId provided)
+async function enrichTraktWithTMDB(items){
+  const limit = pLimit(5);
+  const tasks = items.map(item => limit(async () => {
+    const tmdbId = item._meta?.tmdbId;
+    const tmdbType = item._meta?.tmdbType || (item.type === 'movie' ? 'movie' : 'tv');
+    if (!tmdbId) return item;
+    try {
+      const detail = await fetchTMDB(`/${tmdbType}/${tmdbId}`);
+      const poster = tmdbPoster(detail.poster_path);
+      const backdrop = tmdbBackdrop(detail.backdrop_path);
+      const trailerUrl = item.trailerUrl || await fetchTMDBTrailer(tmdbId, tmdbType);
+      const overview = detail.overview || item.synopsis;
+      return { ...item, poster, backdrop, trailerUrl, synopsis: overview, title: item.title || detail.title || detail.name, year: item.year || (detail.release_date||detail.first_air_date||'').slice(0,4) };
+    } catch (e){
+      return item; // keep fallback
+    }
+  }));
+  return Promise.all(tasks);
+}
+
+// -----------------------------------------------------------------------------
+// Data Hook: useWatchTowerData
+// -----------------------------------------------------------------------------
+function useWatchTowerData(mode /* 'east' | 'west' */) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [trending, setTrending] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [topRated, setTopRated] = useState([]);
+  const [recommended, setRecommended] = useState([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let mergedTrending = [], mergedUpcoming = [], mergedTop = [];
+
+      if (mode === 'east') {
+        const [aTrend, jTrend, aUp, jUp, aTop, jTop] = await Promise.all([
+          fetchAniListTrending(),
+          fetchJikanTrending(),
+          fetchAniListUpcoming(),
+          fetchJikanUpcoming(),
+          fetchAniListTop(),
+          fetchJikanTop(),
+        ]);
+        mergedTrending = mergeDedup([aTrend, jTrend]);
+        mergedUpcoming = mergeDedup([aUp, jUp]);
+        mergedTop = mergeDedup([aTop, jTop]);
+      } else {
+        const [tTrend, trTrend, tUp, tTop, trPop] = await Promise.all([
+          fetchTMDBTrending(),
+          fetchTraktTrending(),
+          fetchTMDBUpcoming(),
+          fetchTMDBTop(),
+          fetchTraktPopular(),
+        ]);
+        // Enrich Trakt with TMDB artwork & trailers
+        const trTrendEnriched = await enrichTraktWithTMDB(trTrend);
+        const trPopEnriched = await enrichTraktWithTMDB(trPop);
+        mergedTrending = mergeDedup([tTrend, trTrendEnriched]);
+        mergedUpcoming = mergeDedup([tUp]);
+        mergedTop = mergeDedup([tTop, trPopEnriched]);
+      }
+
+      const recPool = mergeDedup([mergedTrending, mergedUpcoming, mergedTop]);
+      const rec = randomSlice(recPool, 24);
+
+      setTrending(mergedTrending);
+      setUpcoming(mergedUpcoming);
+      setTopRated(mergedTop);
+      setRecommended(rec);
+    } catch (e) {
+      console.error(e);
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [mode]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const refresh = useCallback(() => load(), [load]);
+
+  return { trending, upcoming, topRated, recommended, loading, error, refresh };
+}
 
 // -----------------------------------------------------------------------------
 // Skeleton Loaders
@@ -332,37 +699,36 @@ function HeroSection({ mode, onPlayTrailer }) {
 // -----------------------------------------------------------------------------
 function PosterCard({ item, onClick }) {
   return (
-    <div className="group relative flex-shrink-0 w-[150px] sm:w-[180px] md:w-[200px] lg:w-[220px] xl:w-[240px] 2xl:w-[260px]">
-      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl shadow-lg ring-1 ring-white/10 bg-white/5">
-        <img src={item.poster} alt={item.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 will-change-transform group-hover:scale-[1.06]" />
+    <div
+      className="group relative flex-shrink-0 w-[150px] sm:w-[180px] md:w-[200px] lg:w-[240px] xl:w-[260px] 2xl:w-[280px]"
+    >
+      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl shadow-lg ring-1 ring-white/10 bg-white/5 transform transition-transform duration-500 will-change-transform group-hover:scale-105">
+        <img
+          src={item.poster}
+          alt={item.title}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
         <div className="poster-gradient absolute inset-x-0 bottom-0 h-1/2" />
         <div className="absolute bottom-0 left-0 right-0 p-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs sm:text-sm font-semibold truncate" style={{ fontFamily: 'var(--text-font)' }}>{item.title}</h4>
-            <div className="inline-flex items-center gap-1 text-[10px] sm:text-xs bg-black/60 rounded-full px-2 py-0.5">
-              <StarIcon className="w-3 h-3 text-yellow-300" />
-              <span>{(item.rating ?? 0).toFixed ? item.rating.toFixed(1) : item.rating}</span>
-            </div>
-          </div>
-          <div className="mt-1 text-[10px] sm:text-xs text-white/80 flex items-center gap-2">
-            <span className="uppercase tracking-wider">{item.type}</span>
-            <span>•</span>
-            <span>{item.year}</span>
-            <span>•</span>
-            <span className="capitalize">{item.region}</span>
-          </div>
+          <h4 className="text-xs sm:text-sm md:text-base font-semibold truncate" style={{ fontFamily: "var(--text-font)" }}>
+            {item.title}
+          </h4>
         </div>
-        <div className="absolute inset-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.45)] opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
-      <button onClick={() => onClick?.(item)} className="absolute inset-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white" aria-label={`Open ${item.title}`} />
+      <button
+        onClick={() => onClick?.(item)}
+        className="absolute inset-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white"
+        aria-label={`Open ${item.title}`}
+      />
     </div>
   );
 }
 
+
 // -----------------------------------------------------------------------------
 // Horizontal Carousel (Infinite loop via marquee duplication)
 // -----------------------------------------------------------------------------
-
 function HorizontalCarousel({ title, icon: Icon, items = [], speed = 30, onItemClick }) {
   // speed = pixels per second
   const scrollRef = useRef(null);
@@ -441,61 +807,24 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 30, onItemC
   );
 }
 
-
-
 // -----------------------------------------------------------------------------
 // Recommended Grid
 // -----------------------------------------------------------------------------
-
-async function handleItemClick(item) {
-  console.log("Clicked:", item);
-
-  try {
-    let recs = [];
-
-    if (item._meta?.source === "tmdb") {
-      recs = await fetchTmdbRecommended(item._meta.tmdbId, item._meta.tmdbType || "movie");
-    } else if (item._meta?.source === "trakt") {
-      recs = await fetchTraktRecommended(item._meta.traktId, item.type);
-    } else if (item._meta?.source === "anilist") {
-      recs = await fetchAniListRecommended(item._meta.aniListId);
-    } else if (item._meta?.source === "jikan") {
-      recs = await fetchJikanRecommended(item._meta.malId);
-    }
-
-    setRecommended(recs || []);
-  } catch (err) {
-    console.error("Failed to fetch recommendations", err);
-  }
-}
-
-
-function RecommendedGrid({ title = "Recommended", items={recommendedItems}, onItemClick={handleItemClick} }) {
+function RecommendedGrid({ title, items, onItemClick }) {
   return (
-    <section className="mt-8">
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <FlameIcon className="w-5 h-5 text-white/90" />
-        <h3
-          className="text-lg md:text-xl tracking-wider"
-          style={{ fontFamily: "var(--title-font)" }}
-        >
-          {title}
-        </h3>
+    <section className="mt-10">
+      <div className="flex items-center gap-2 mb-4 px-1">
+        <CrownIcon className="w-5 h-5 text-white/90" />
+        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: 'var(--title-font)' }}>{title}</h3>
       </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-1">
-        {items.map((item, idx) => (
-          <PosterCard
-            key={`${item.id}-${idx}`}
-            item={item}
-            onClick={onItemClick}
-          />
+      <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+        {items.map((item) => (
+          <PosterCard key={item.id} item={item} onClick={onItemClick} />
         ))}
       </div>
     </section>
   );
 }
-
 
 // -----------------------------------------------------------------------------
 // Page Chrome: Header, Footer, Utility Bars
