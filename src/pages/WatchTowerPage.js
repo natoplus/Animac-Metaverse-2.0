@@ -8,7 +8,6 @@
 // ========================= Imports =========================
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Film, Tv, Sparkles } from "lucide-react"; // icons
 import {
   Film,
   Star,
