@@ -1,5 +1,6 @@
 // utils/tmdb.js
 import { fetchTMDB } from "./proxyFetch";
+import { sample, PLACEHOLDER } from "./placeholders";
 
 function mapTMDBItem(r) {
   const isMovie = r.media_type ? r.media_type === "movie" : !!r.title;
@@ -11,12 +12,8 @@ function mapTMDBItem(r) {
     title: r.title || r.name || "Untitled",
     year: (r.release_date || r.first_air_date || "").slice(0, 4) || "—",
     rating: typeof r.vote_average === "number" ? +r.vote_average.toFixed(1) : 0,
-    poster: r.poster_path
-      ? `https://image.tmdb.org/t/p/w500${r.poster_path}`
-      : null,
-    backdrop: r.backdrop_path
-      ? `https://image.tmdb.org/t/p/w780${r.backdrop_path}`
-      : null,
+    poster: r.poster_path,
+    backdrop: r.backdrop_path,
     type,
     region: "west",
     synopsis: r.overview || "",
@@ -24,7 +21,6 @@ function mapTMDBItem(r) {
   };
 }
 
-// ---------------- Fetchers ----------------
 export async function fetchTMDBTrending() {
   const json = await fetchTMDB("/trending/all/day");
   return (json?.results || []).map(mapTMDBItem);
@@ -46,11 +42,7 @@ export async function fetchTMDBTopRated() {
   return [...(movies?.results || []), ...(tv?.results || [])].map(mapTMDBItem);
 }
 
+// placeholder (requires id-based fetch for recs)
 export async function fetchTMDBRecommended() {
-  // TMDB doesn’t expose a global recommended list, so fallback to "popular"
-  const [movies, tv] = await Promise.all([
-    fetchTMDB("/movie/popular", { page: "1" }),
-    fetchTMDB("/tv/popular", { page: "1" }),
-  ]);
-  return [...(movies?.results || []), ...(tv?.results || [])].map(mapTMDBItem);
+  return [];
 }

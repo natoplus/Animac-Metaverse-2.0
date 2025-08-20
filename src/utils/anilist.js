@@ -1,24 +1,20 @@
 // utils/anilist.js
 import { fetchAniList } from "./proxyFetch";
+import { sample, PLACEHOLDER } from "./placeholders";
 
 const anilistCache = new Map();
 
-// Wrapper for AniList queries with caching
 async function anilistQuery(query, variables = {}) {
   const cacheKey = JSON.stringify({ query, variables });
-  if (anilistCache.has(cacheKey)) {
-    return anilistCache.get(cacheKey);
-  }
+  if (anilistCache.has(cacheKey)) return anilistCache.get(cacheKey);
 
   const json = await fetchAniList(query, variables);
-
   if (json.errors) throw new Error("AniList GraphQL error");
 
   anilistCache.set(cacheKey, json.data);
   return json.data;
 }
 
-// ---------------- GraphQL Queries ----------------
 const GQL_TRENDING = `
 query ($page:Int,$perPage:Int){
   Page(page:$page, perPage:$perPage){
@@ -44,7 +40,6 @@ query ($page:Int,$perPage:Int){
       title{ romaji english }
       averageScore
       startDate{ year }
-      format
       description(asHtml:false)
       coverImage{ extraLarge large }
       bannerImage
@@ -61,7 +56,6 @@ query ($page:Int,$perPage:Int){
       title{ romaji english }
       averageScore
       startDate{ year }
-      format
       description(asHtml:false)
       coverImage{ extraLarge large }
       bannerImage
@@ -70,67 +64,40 @@ query ($page:Int,$perPage:Int){
   }
 }`;
 
-// Recommended = use "POPULARITY_DESC" as proxy
-const GQL_RECOMMENDED = `
-query ($page:Int,$perPage:Int){
-  Page(page:$page, perPage:$perPage){
-    media(type:ANIME, sort:POPULARITY_DESC){
-      id
-      title{ romaji english }
-      averageScore
-      startDate{ year }
-      format
-      description(asHtml:false)
-      coverImage{ extraLarge large }
-      bannerImage
-      trailer{ id site thumbnail }
-    }
-  }
-}`;
-
-// ---------------- Mapper ----------------
-function mapAniListMedia(m) {
-  const title = m.title?.english || m.title?.romaji || "Untitled";
-  const trailerUrl =
-    m.trailer?.site?.toLowerCase() === "youtube" && m.trailer?.id
-      ? `https://www.youtube.com/watch?v=${m.trailer.id}`
-      : null;
+function mapAniListAnime(a) {
+  const title = a.title?.english || a.title?.romaji || a.title?.native || "Untitled";
 
   return {
-    id: `east-anilist-${m.id}`,
+    id: `east-anilist-${a.id}`,
     title,
-    year: m.startDate?.year || "—",
-    rating:
-      typeof m.averageScore === "number"
-        ? +(m.averageScore / 10).toFixed(1)
-        : 0,
-    poster: m.coverImage?.extraLarge || m.coverImage?.large,
-    backdrop: m.bannerImage || null,
+    year: a.startDate?.year || "—",
+    rating: typeof a.averageScore === "number" ? +(a.averageScore / 10).toFixed(1) : 0,
+    poster: a.coverImage?.extraLarge || a.coverImage?.large || sample(PLACEHOLDER.posters),
+    backdrop: a.bannerImage || sample(PLACEHOLDER.backdrops),
     type: "anime",
     region: "east",
-    synopsis: m.description || "",
-    trailerUrl,
-    _meta: { source: "anilist", anilistId: m.id },
+    synopsis: a.description || "",
+    trailerUrl: a.trailer?.site === "youtube" ? `https://www.youtube.com/watch?v=${a.trailer.id}` : null,
+    _meta: { source: "anilist", aniListId: a.id },
   };
 }
 
-// ---------------- Fetchers ----------------
 export async function fetchAniListTrending() {
-  const data = await anilistQuery(GQL_TRENDING, { page: 1, perPage: 20 });
-  return (data?.Page?.media || []).map(mapAniListMedia);
-}
-
-export async function fetchAniListTopRated() {
-  const data = await anilistQuery(GQL_TOP, { page: 1, perPage: 24 });
-  return (data?.Page?.media || []).map(mapAniListMedia);
+  const json = await fetchAniList(`query { Page(page:1, perPage:20) { media(sort: TRENDING_DESC, type: ANIME) { id title { romaji english native } startDate { year } averageScore coverImage { large extraLarge } bannerImage description trailer { id site } } } }`);
+  return (json?.data?.Page?.media || []).map(mapAniListAnime);
 }
 
 export async function fetchAniListUpcoming() {
-  const data = await anilistQuery(GQL_UPCOMING, { page: 1, perPage: 24 });
-  return (data?.Page?.media || []).map(mapAniListMedia);
+  const json = await fetchAniList(`query { Page(page:1, perPage:20) { media(sort: START_DATE, type: ANIME, status: NOT_YET_RELEASED) { id title { romaji english native } startDate { year } averageScore coverImage { large extraLarge } bannerImage description trailer { id site } } } }`);
+  return (json?.data?.Page?.media || []).map(mapAniListAnime);
 }
 
+export async function fetchAniListTopRated() {
+  const json = await fetchAniList(`query { Page(page:1, perPage:20) { media(sort: SCORE_DESC, type: ANIME) { id title { romaji english native } startDate { year } averageScore coverImage { large extraLarge } bannerImage description trailer { id site } } } }`);
+  return (json?.data?.Page?.media || []).map(mapAniListAnime);
+}
+
+// placeholder (AniList has recommendations per-id, not global)
 export async function fetchAniListRecommended() {
-  const data = await anilistQuery(GQL_RECOMMENDED, { page: 1, perPage: 24 });
-  return (data?.Page?.media || []).map(mapAniListMedia);
+  return [];
 }
