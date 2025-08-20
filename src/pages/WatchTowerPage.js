@@ -363,45 +363,48 @@ function PosterCard({ item, onClick }) {
 // Horizontal Carousel (Infinite loop via marquee duplication)
 // -----------------------------------------------------------------------------
 
-function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItemClick }) {
+function HorizontalCarousel({ title, icon: Icon, items = [], speed = 30, onItemClick }) {
+  // speed = pixels per second
   const scrollRef = useRef(null);
+  const isPaused = useRef(false);
 
-  // Duplicate items for seamless loop
   const loopItems = useMemo(() => [...items, ...items], [items]);
 
-  // Auto scroll effect
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
 
     let frame;
-    function step() {
-      el.scrollLeft += speed;
+    let lastTime = performance.now();
 
-      // reset invisibly when halfway through
-      if (el.scrollLeft >= el.scrollWidth / 2) {
-        // instead of snapping to 0, shift back by half
-        el.scrollLeft -= el.scrollWidth / 2;
+    function step(now) {
+      const dt = (now - lastTime) / 1000; // seconds
+      lastTime = now;
+
+      if (!isPaused.current) {
+        el.scrollLeft += speed * dt;
+        if (el.scrollLeft >= el.scrollWidth / 2) {
+          el.scrollLeft -= el.scrollWidth / 2;
+        }
       }
 
       frame = requestAnimationFrame(step);
     }
+
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
   }, [speed]);
 
-  // Swipe gestures
+  // Pause on hover/touch
+  const handleMouseEnter = () => { isPaused.current = true; };
+  const handleMouseLeave = () => { isPaused.current = false; };
+  const handleTouchStart = () => { isPaused.current = true; };
+  const handleTouchEnd = () => { isPaused.current = false; };
+
+  // Swipe gestures (manual scroll)
   const handlers = useSwipeable({
-    onSwipedLeft: () => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
-      }
-    },
-    onSwipedRight: () => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
-      }
-    },
+    onSwipedLeft: () => scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" }),
+    onSwipedRight: () => scrollRef.current?.scrollBy({ left: -300, behavior: "smooth" }),
     trackMouse: true,
   });
 
@@ -409,26 +412,22 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItem
     <section className="mt-8">
       {/* Section title */}
       <div className="flex items-center gap-2 mb-3 px-1">
-        {Icon ? (
-          <Icon className="w-5 h-5 text-white/90" />
-        ) : (
-          <FlameIcon className="w-5 h-5 text-white/90" />
-        )}
-        <h3
-          className="text-lg md:text-xl tracking-wider"
-          style={{ fontFamily: "var(--title-font)" }}
-        >
+        {Icon ? <Icon className="w-5 h-5 text-white/90" /> : <FlameIcon className="w-5 h-5 text-white/90" />}
+        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: "var(--title-font)" }}>
           {title}
         </h3>
       </div>
 
       {/* Carousel */}
-      <div className="relative overflow-hidden" {...handlers}>
-        <div
-          ref={scrollRef}
-          className="flex gap-3 pr-3 overflow-x-scroll scrollbar-hide" 
-          // 👆 removed scroll-smooth here (prevents glitch on reset)
-        >
+      <div
+        className="relative overflow-hidden"
+        {...handlers}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div ref={scrollRef} className="flex gap-3 pr-3 overflow-x-scroll scrollbar-hide">
           {loopItems.map((item, idx) => (
             <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
           ))}
@@ -441,6 +440,7 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItem
     </section>
   );
 }
+
 
 
 // -----------------------------------------------------------------------------
