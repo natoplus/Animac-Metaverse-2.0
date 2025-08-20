@@ -1,1607 +1,934 @@
 // WatchTowerPage.js
-// Full East/West toggle entertainment hub — Netflix/Hulu/Crunchyroll style
-// Self-contained single file, cyber sleek UI, neon/glassmorphism, responsive
-// APIs: AniList (GraphQL), Jikan (MyAnimeList REST), TMDB (REST), Trakt (REST; optional)
-// Trailer Modal (YouTube embed), Hero with countdown, Multiple carousels with arrows
-// Toggle persists via localStorage. Azonix branding retained.
+// A single-file, fully-featured East (Anime) / West (Movies & TV) content hub
+// Built with React + Tailwind CSS + Framer Motion + lucide-react icons
+// -----------------------------------------------------------------------------
+// REGENERATED: Now wired to REAL APIs with real trailer links.
+//   East  = AniList (GraphQL) + Jikan (REST)
+//   West  = TMDB (REST) + Trakt (REST)
+// - Trailer modal pulls actual YouTube trailers from AniList, Jikan and TMDB; uses Trakt's
+//   trailer URLs when available (YouTube/Vimeo). Fallbacks included.
+// - Uses environment variables for API keys:
+//     REACT_APP_TMDB_KEY  (required)
+//     REACT_APP_TRAKT_KEY (required)
+// - Fully self-contained single-file React component with all sections:
+//     HeroSection, EastWestToggle, HorizontalCarousel, PosterSkeleton, LineSkeleton,
+//     TrailerModal, RecommendedGrid, HeaderBar, FooterBar, plus hooks & utilities.
+// - Infinite autoplaying carousels with hover-scale posters, Netflix-style.
+// - Responsive & mobile-first. Fonts: Azonix (titles), Montserrat (text).
+// -----------------------------------------------------------------------------
 
-// ========================= Imports =========================
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Film,
-  Star,
-  Tag,
-  Calendar,
-  PlayCircle,
-  X,
-  Sparkles,
-  Flame,
-  Rocket,
-  Clock8,
-  ThumbsUp,
-  Compass,
-  Tv,
-  Clapperboard,
-  Medal,
-  ChevronRight,
-  ChevronLeft,
-  Zap,
-  RefreshCcw,
+  Play as PlayIcon,
+  X as XIcon,
+  Star as StarIcon,
+  Film as FilmIcon,
+  Tv as TvIcon,
+  RefreshCw as RefreshIcon,
+  Triangle as TriangleIcon,
+  MonitorSmartphone as MonitorIcon,
+  Smartphone as PhoneIcon,
+  Timer as TimerIcon,
+  Sparkles as SparklesIcon,
+  Flame as FlameIcon,
+  Crown as CrownIcon,
 } from "lucide-react";
-import axios from "axios";
 
-// ========================= Fonts & Global Helpers =========================
-
-// Import Azonix font (can move to global CSS or head tag)
-const AZONIX_FONT_LINK =
-  "https://fonts.googleapis.com/css2?family=Azonix&display=swap";
-
-if (typeof document !== "undefined") {
-  if (!document.getElementById("azonix-font")) {
-    const link = document.createElement("link");
-    link.id = "azonix-font";
-    link.rel = "stylesheet";
-    link.href = AZONIX_FONT_LINK;
-    document.head.appendChild(link);
+// -----------------------------------------------------------------------------
+// Global Style Injection: Fonts, Keyframes, Reusable CSS
+// -----------------------------------------------------------------------------
+const GlobalStyles = () => (
+  <style>{`
+  /* ----------------- Fonts ----------------- */
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+  @font-face {
+    font-family: 'Azonix';
+    src: url('https://fonts.cdnfonts.com/s/15163/Azonix.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
   }
+  :root {
+    --title-font: 'Azonix', 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+    --text-font: 'Montserrat', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  }
+
+  /* ----------------- Marquee Animations for Infinite Rows ----------------- */
+  @keyframes marqueeLeft { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  @keyframes marqueeRight { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+  .marquee-left { animation: marqueeLeft var(--marquee-duration, 45s) linear infinite; }
+  .marquee-right { animation: marqueeRight var(--marquee-duration, 45s) linear infinite; }
+  .marquee-pause:hover { animation-play-state: paused; }
+
+  /* ----------------- Scrollbar styling (subtle) ----------------- */
+  .thin-scrollbar::-webkit-scrollbar { height: 8px; width: 8px; }
+  .thin-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 9999px; }
+  .thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+
+  /* Gradient overlay for poster readability */
+  .poster-gradient { background: linear-gradient(to top, rgba(0,0,0,0.8), rgba(0,0,0,0.0) 60%); }
+  .focus-ring { outline: none; box-shadow: 0 0 0 3px rgba(59,130,246,0.6); }
+  img { image-rendering: auto; }
+  .will-change-transform { will-change: transform; }
+  `}</style>
+);
+
+// -----------------------------------------------------------------------------
+// Utility Helpers
+// -----------------------------------------------------------------------------
+const cx = (...classes) => classes.filter(Boolean).join(" ");
+
+function debounce(fn, wait = 150) { let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); }; }
+const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+const sample = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+function dedupeByKey(items, key = 'id') { const map = new Map(); for (const it of items) { if (!map.has(it[key])) map.set(it[key], it); } return Array.from(map.values()); }
+function mergeDedup(lists, key = 'id') { return dedupeByKey(lists.flat().filter(Boolean), key); }
+function shuffle(array) { const a = array.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function randomSlice(items, count) { return shuffle(items).slice(0, Math.min(count, items.length)); }
+
+// Simple concurrency limiter to avoid hammering APIs with too many requests at once
+function pLimit(concurrency) {
+  let activeCount = 0;
+  const queue = [];
+  const next = () => {
+    activeCount--;
+    if (queue.length > 0) {
+      const fn = queue.shift();
+      fn();
+    }
+  };
+  const run = (fn, resolve, ...args) => {
+    activeCount++;
+    const result = fn(...args);
+    Promise.resolve(result).then(resolve).then(next, next);
+  };
+  return (fn, ...args) => new Promise((resolve) => {
+    const task = run.bind(null, fn, resolve, ...args);
+    if (activeCount < concurrency) task(); else queue.push(task);
+  });
 }
 
-// ======= API Keys (read from env; fallbacks allowed but features may reduce)
-const TMDB_API_KEY =
-  process.env.REACT_APP_TMDB_API_KEY || "<YOUR_TMDB_API_KEY_HERE>";
-// Trakt requires a (public) API key (a.k.a. client id) in header "trakt-api-key"
-const TRAKT_API_KEY =
-  process.env.REACT_APP_TRAKT_API_KEY || "<OPTIONAL_TRAKT_CLIENT_ID>";
+// -----------------------------------------------------------------------------
+// Placeholder Media Assets (for hero GIFs & fallback images)
+// -----------------------------------------------------------------------------
+const PLACEHOLDER = {
+  heroEast: "https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExYzl3a3BqYmk2dzhjM2dvbHh3MnNmOHg0NmR1YWN2eHR0cGhkbjhhcCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/3oEdv1G8vz9p8GmGgQ/giphy.gif", // Attack on Titan vibe
+  heroWest: "https://media3.giphy.com/media/v1.Y2lkPTc5MGI3NjExaHhwd3B0Y3UxaG9iNnhsenQwY3E3djk4cDk1Y2l1eDltcWQ2bWZnaCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/KQ8a0OZ7dZK00/giphy.gif", // Spider-Verse vibe
+  posters: [
+    "https://picsum.photos/342/513?random=101",
+    "https://picsum.photos/342/513?random=102",
+    "https://picsum.photos/342/513?random=103",
+  ],
+  backdrops: [
+    "https://picsum.photos/1280/720?random=201",
+    "https://picsum.photos/1280/720?random=202",
+  ],
+};
 
-// ========================= Utility & Types =========================
-
+// -----------------------------------------------------------------------------
+// Types
+// -----------------------------------------------------------------------------
 /**
- * Normalized media item type for both East and West:
- * {
- *   id: string|number
- *   source: 'anilist'|'jikan'|'tmdb'|'trakt'
- *   title: string
- *   altTitles?: string[]
- *   overview?: string
- *   poster: string|null
- *   backdrop?: string|null
- *   trailerKey?: string|null   // YouTube key
- *   trailerSite?: 'YouTube'|'Vimeo'|null
- *   genres: string[]
- *   score?: number|null        // 0-100 or 0-10 scale normalized to 0-100
- *   popularity?: number|null
- *   type: 'movie'|'series'|'anime'
- *   releaseDate?: string|null  // ISO string
- *   year?: number|null
- *   runtime?: number|null
- *   episodes?: number|null
- * }
+ * @typedef {Object} MediaItem
+ * @property {string} id - unique id with source prefix
+ * @property {string} title
+ * @property {number|string} year
+ * @property {number} rating - 0-10 (normalized)
+ * @property {string} poster
+ * @property {string} backdrop
+ * @property {string} type - 'movie' | 'tv' | 'anime'
+ * @property {string} region - 'east' | 'west'
+ * @property {string=} trailerUrl - YouTube/Vimeo url
+ * @property {string=} synopsis
+ * @property {object=} _meta - optional raw source hints (ids, types)
  */
 
-const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
-const toISODate = (y, m, d) => {
-  if (!y || !m || !d) return null;
-  try {
-    const mm = String(m).padStart(2, "0");
-    const dd = String(d).padStart(2, "0");
-    return `${y}-${mm}-${dd}T00:00:00Z`;
-  } catch {
-    return null;
-  }
-};
+// -----------------------------------------------------------------------------
+// REAL API FETCHING
+// -----------------------------------------------------------------------------
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const TMDB_IMG_ORIGIN = 'https://image.tmdb.org/t/p';
+const TMDB_KEY = process.env.REACT_APP_TMDB_KEY; // <-- supply via .env
 
-const pick = (obj, keys) =>
-  keys.reduce((acc, k) => {
-    if (obj && Object.prototype.hasOwnProperty.call(obj, k)) acc[k] = obj[k];
-    return acc;
-  }, {});
+const TRAKT_BASE = 'https://api.trakt.tv';
+const TRAKT_KEY = process.env.REACT_APP_TRAKT_KEY; // <-- supply via .env
 
-// Human friendly date
-const prettyDate = (dateStr) => {
-  if (!dateStr) return "TBA";
-  const d = new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return "TBA";
-  return d.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
+const ANILIST_GRAPHQL = 'https://graphql.anilist.co';
+const JIKAN_BASE = 'https://api.jikan.moe/v4';
+
+if (!TMDB_KEY) console.warn('[WatchTower] Missing REACT_APP_TMDB_KEY');
+if (!TRAKT_KEY) console.warn('[WatchTower] Missing REACT_APP_TRAKT_KEY');
+
+async function safeFetch(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText} for ${url}`);
+  return res.json();
+}
+
+// ---------------- AniList (GraphQL) ----------------
+async function anilistQuery(query, variables) {
+  const res = await fetch(ANILIST_GRAPHQL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ query, variables }),
   });
+  const json = await res.json();
+  if (json.errors) throw new Error('AniList GraphQL error');
+  return json.data;
+}
+
+const GQL_TRENDING = `
+query ($page:Int,$perPage:Int){
+  Page(page:$page, perPage:$perPage){
+    media(type:ANIME, sort:TRENDING_DESC){
+      id
+      title{ romaji english }
+      averageScore
+      startDate{ year }
+      format
+      description(asHtml:false)
+      coverImage{ extraLarge large }
+      bannerImage
+      trailer{ id site thumbnail }
+    }
+  }
+}`;
+
+const GQL_TOP = `
+query ($page:Int,$perPage:Int){
+  Page(page:$page, perPage:$perPage){
+    media(type:ANIME, sort:SCORE_DESC){
+      id
+      title{ romaji english }
+      averageScore
+      startDate{ year }
+      format
+      description(asHtml:false)
+      coverImage{ extraLarge large }
+      bannerImage
+      trailer{ id site thumbnail }
+    }
+  }
+}`;
+
+const GQL_UPCOMING = `
+query ($page:Int,$perPage:Int){
+  Page(page:$page, perPage:$perPage){
+    media(type:ANIME, sort:START_DATE, status_not_in:[FINISHED, CANCELLED]){
+      id
+      title{ romaji english }
+      averageScore
+      startDate{ year }
+      format
+      description(asHtml:false)
+      coverImage{ extraLarge large }
+      bannerImage
+      trailer{ id site thumbnail }
+    }
+  }
+}`;
+
+function mapAniListMedia(m){
+  const title = m.title?.english || m.title?.romaji || 'Untitled';
+  const trailerUrl = m.trailer?.site?.toLowerCase() === 'youtube' && m.trailer?.id
+    ? `https://www.youtube.com/watch?v=${m.trailer.id}`
+    : null;
+  return {
+    id: `east-anilist-${m.id}`,
+    title,
+    year: m.startDate?.year || '—',
+    rating: typeof m.averageScore === 'number' ? +(m.averageScore/10).toFixed(1) : 0,
+    poster: m.coverImage?.extraLarge || m.coverImage?.large || sample(PLACEHOLDER.posters),
+    backdrop: m.bannerImage || sample(PLACEHOLDER.backdrops),
+    type: 'anime',
+    region: 'east',
+    synopsis: m.description || '',
+    trailerUrl,
+    _meta: { source: 'anilist', anilistId: m.id }
+  };
+}
+
+async function fetchAniListTrending(){
+  const data = await anilistQuery(GQL_TRENDING, { page: 1, perPage: 20 });
+  return (data?.Page?.media||[]).map(mapAniListMedia);
+}
+async function fetchAniListTop(){
+  const data = await anilistQuery(GQL_TOP, { page: 1, perPage: 24 });
+  return (data?.Page?.media||[]).map(mapAniListMedia);
+}
+async function fetchAniListUpcoming(){
+  const data = await anilistQuery(GQL_UPCOMING, { page: 1, perPage: 24 });
+  return (data?.Page?.media||[]).map(mapAniListMedia);
+}
+
+// ---------------- Jikan (REST) ----------------
+function mapJikanAnime(a){
+  const title = a.title_english || a.title || 'Untitled';
+  const youtubeId = a.trailer?.youtube_id;
+  const trailerUrl = youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : (a.trailer?.url || null);
+  return {
+    id: `east-jikan-${a.mal_id}`,
+    title,
+    year: a.year || a.aired?.prop?.from?.year || '—',
+    rating: typeof a.score === 'number' ? +a.score.toFixed(1) : 0,
+    poster: a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || sample(PLACEHOLDER.posters),
+    backdrop: a.trailer?.images?.maximum_image_url || sample(PLACEHOLDER.backdrops),
+    type: 'anime',
+    region: 'east',
+    synopsis: a.synopsis || '',
+    trailerUrl,
+    _meta: { source: 'jikan', malId: a.mal_id }
+  };
+}
+
+async function fetchJikanTrending(){
+  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=20`);
+  return (json?.data||[]).map(mapJikanAnime);
+}
+async function fetchJikanUpcoming(){
+  const json = await safeFetch(`${JIKAN_BASE}/seasons/upcoming?limit=24`);
+  return (json?.data||[]).map(mapJikanAnime);
+}
+async function fetchJikanTop(){
+  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=24`);
+  return (json?.data||[]).map(mapJikanAnime);
+}
+
+// ---------------- TMDB (REST) ----------------
+function tmdbPoster(path, size='w342'){ return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.posters); }
+function tmdbBackdrop(path, size='w1280'){ return path ? `${TMDB_IMG_ORIGIN}/${size}${path}` : sample(PLACEHOLDER.backdrops); }
+
+function mapTMDBItem(r){
+  const isMovie = r.media_type ? r.media_type === 'movie' : !!r.title;
+  const type = isMovie ? 'movie' : 'tv';
+  const id = r.id;
+  return {
+    id: `west-tmdb-${type}-${id}`,
+    title: r.title || r.name || 'Untitled',
+    year: (r.release_date || r.first_air_date || '').slice(0,4) || '—',
+    rating: typeof r.vote_average === 'number' ? +r.vote_average.toFixed(1) : 0,
+    poster: tmdbPoster(r.poster_path),
+    backdrop: tmdbBackdrop(r.backdrop_path),
+    type,
+    region: 'west',
+    synopsis: r.overview || '',
+    _meta: { source: 'tmdb', tmdbId: id, tmdbType: type }
+  };
+}
+
+async function fetchTMDB(endpoint, params={}){
+  const url = new URL(`${TMDB_BASE}${endpoint}`);
+  url.searchParams.set('api_key', TMDB_KEY||'');
+  url.searchParams.set('language', 'en-US');
+  for (const [k,v] of Object.entries(params)) url.searchParams.set(k, v);
+  return safeFetch(url.toString());
+}
+
+async function fetchTMDBTrending(){
+  const json = await fetchTMDB('/trending/all/day');
+  return (json?.results||[]).map(mapTMDBItem);
+}
+async function fetchTMDBUpcoming(){
+  // combine upcoming movies and on-the-air tv for a richer row
+  const [movies, tv] = await Promise.all([
+    fetchTMDB('/movie/upcoming', { page: '1' }),
+    fetchTMDB('/tv/on_the_air', { page: '1' })
+  ]);
+  return mergeDedup([
+    (movies?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'movie' })),
+    (tv?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'tv' })),
+  ]);
+}
+async function fetchTMDBTop(){
+  const [movies, tv] = await Promise.all([
+    fetchTMDB('/movie/top_rated', { page: '1' }),
+    fetchTMDB('/tv/top_rated', { page: '1' })
+  ]);
+  return mergeDedup([
+    (movies?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'movie' })),
+    (tv?.results||[]).map(r => mapTMDBItem({ ...r, media_type: 'tv' })),
+  ]);
+}
+
+async function fetchTMDBTrailer(tmdbId, type){
+  if (!tmdbId) return null;
+  const json = await fetchTMDB(`/${type}/${tmdbId}/videos`);
+  const list = json?.results||[];
+  const pick = list.find(v => v.site === 'YouTube' && /Trailer|Teaser/i.test(v.type)) || list.find(v => v.site === 'YouTube');
+  return pick ? `https://www.youtube.com/watch?v=${pick.key}` : null;
+}
+
+// ---------------- Trakt (REST) ----------------
+const traktHeaders = {
+  'Content-Type': 'application/json',
+  'trakt-api-key': TRAKT_KEY||'',
+  'trakt-api-version': '2',
 };
 
-// ========================= Small UI Primitives =========================
+async function trakt(path, params){
+  const url = new URL(`${TRAKT_BASE}${path}`);
+  if (params) Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString(), { headers: traktHeaders });
+  if (!res.ok) throw new Error(`Trakt ${res.status}`);
+  return res.json();
+}
 
-function Countdown({ targetDate }) {
-  const [timeLeft, setTimeLeft] = useState(null);
+function mapTraktMovie(item){
+  const m = item.movie || item;
+  return {
+    id: `west-trakt-movie-${m?.ids?.trakt}`,
+    title: m?.title || 'Untitled',
+    year: m?.year || '—',
+    rating: typeof m?.rating === 'number' ? +m.rating.toFixed(1) : 0,
+    poster: sample(PLACEHOLDER.posters), // will try to enrich via TMDB below
+    backdrop: sample(PLACEHOLDER.backdrops),
+    type: 'movie',
+    region: 'west',
+    trailerUrl: m?.trailer || null,
+    synopsis: '',
+    _meta: { source: 'trakt', traktId: m?.ids?.trakt, tmdbId: m?.ids?.tmdb, imdbId: m?.ids?.imdb, tmdbType: 'movie' }
+  };
+}
+function mapTraktShow(item){
+  const s = item.show || item;
+  return {
+    id: `west-trakt-show-${s?.ids?.trakt}`,
+    title: s?.title || 'Untitled',
+    year: s?.year || '—',
+    rating: typeof s?.rating === 'number' ? +s.rating.toFixed(1) : 0,
+    poster: sample(PLACEHOLDER.posters),
+    backdrop: sample(PLACEHOLDER.backdrops),
+    type: 'tv',
+    region: 'west',
+    trailerUrl: s?.trailer || null,
+    synopsis: '',
+    _meta: { source: 'trakt', traktId: s?.ids?.trakt, tmdbId: s?.ids?.tmdb, imdbId: s?.ids?.imdb, tmdbType: 'tv' }
+  };
+}
+
+async function fetchTraktTrending(){
+  const [movies, shows] = await Promise.all([
+    trakt('/movies/trending', { page: '1', limit: '20', extended: 'full' }),
+    trakt('/shows/trending', { page: '1', limit: '20', extended: 'full' })
+  ]);
+  return mergeDedup([
+    movies.map(mapTraktMovie),
+    shows.map(mapTraktShow)
+  ]);
+}
+
+async function fetchTraktPopular(){
+  const [movies, shows] = await Promise.all([
+    trakt('/movies/popular', { page: '1', limit: '20' }),
+    trakt('/shows/popular', { page: '1', limit: '20' })
+  ]);
+  return mergeDedup([
+    movies.map(mapTraktMovie),
+    shows.map(mapTraktShow)
+  ]);
+}
+
+// Enrich Trakt items with TMDB images & trailers (if tmdbId provided)
+async function enrichTraktWithTMDB(items){
+  const limit = pLimit(5);
+  const tasks = items.map(item => limit(async () => {
+    const tmdbId = item._meta?.tmdbId;
+    const tmdbType = item._meta?.tmdbType || (item.type === 'movie' ? 'movie' : 'tv');
+    if (!tmdbId) return item;
+    try {
+      const detail = await fetchTMDB(`/${tmdbType}/${tmdbId}`);
+      const poster = tmdbPoster(detail.poster_path);
+      const backdrop = tmdbBackdrop(detail.backdrop_path);
+      const trailerUrl = item.trailerUrl || await fetchTMDBTrailer(tmdbId, tmdbType);
+      const overview = detail.overview || item.synopsis;
+      return { ...item, poster, backdrop, trailerUrl, synopsis: overview, title: item.title || detail.title || detail.name, year: item.year || (detail.release_date||detail.first_air_date||'').slice(0,4) };
+    } catch (e){
+      return item; // keep fallback
+    }
+  }));
+  return Promise.all(tasks);
+}
+
+// -----------------------------------------------------------------------------
+// Data Hook: useWatchTowerData
+// -----------------------------------------------------------------------------
+function useWatchTowerData(mode /* 'east' | 'west' */) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [trending, setTrending] = useState([]);
+  const [upcoming, setUpcoming] = useState([]);
+  const [topRated, setTopRated] = useState([]);
+  const [recommended, setRecommended] = useState([]);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      let mergedTrending = [], mergedUpcoming = [], mergedTop = [];
+
+      if (mode === 'east') {
+        const [aTrend, jTrend, aUp, jUp, aTop, jTop] = await Promise.all([
+          fetchAniListTrending(),
+          fetchJikanTrending(),
+          fetchAniListUpcoming(),
+          fetchJikanUpcoming(),
+          fetchAniListTop(),
+          fetchJikanTop(),
+        ]);
+        mergedTrending = mergeDedup([aTrend, jTrend]);
+        mergedUpcoming = mergeDedup([aUp, jUp]);
+        mergedTop = mergeDedup([aTop, jTop]);
+      } else {
+        const [tTrend, trTrend, tUp, tTop, trPop] = await Promise.all([
+          fetchTMDBTrending(),
+          fetchTraktTrending(),
+          fetchTMDBUpcoming(),
+          fetchTMDBTop(),
+          fetchTraktPopular(),
+        ]);
+        // Enrich Trakt with TMDB artwork & trailers
+        const trTrendEnriched = await enrichTraktWithTMDB(trTrend);
+        const trPopEnriched = await enrichTraktWithTMDB(trPop);
+        mergedTrending = mergeDedup([tTrend, trTrendEnriched]);
+        mergedUpcoming = mergeDedup([tUp]);
+        mergedTop = mergeDedup([tTop, trPopEnriched]);
+      }
+
+      const recPool = mergeDedup([mergedTrending, mergedUpcoming, mergedTop]);
+      const rec = randomSlice(recPool, 24);
+
+      setTrending(mergedTrending);
+      setUpcoming(mergedUpcoming);
+      setTopRated(mergedTop);
+      setRecommended(rec);
+    } catch (e) {
+      console.error(e);
+      setError(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [mode]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const refresh = useCallback(() => load(), [load]);
+
+  return { trending, upcoming, topRated, recommended, loading, error, refresh };
+}
+
+// -----------------------------------------------------------------------------
+// Skeleton Loaders
+// -----------------------------------------------------------------------------
+export const LineSkeleton = ({ className = "" }) => (
+  <div className={cx("animate-pulse rounded-full bg-white/10", className)} />
+);
+
+export const PosterSkeleton = ({ className = "w-[180px] h-[270px] md:w-[190px] md:h-[285px] rounded-2xl" }) => (
+  <div className={cx("animate-pulse bg-white/10", className)} />
+);
+
+// -----------------------------------------------------------------------------
+// Trailer Modal (YouTube/Vimeo, Accessible, Animated)
+// -----------------------------------------------------------------------------
+function toEmbedUrl(url){
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    if (u.hostname.includes('youtube.com')) {
+      // watch?v= -> embed/
+      const vid = u.searchParams.get('v');
+      return vid ? `https://www.youtube.com/embed/${vid}` : url;
+    }
+    if (u.hostname.includes('youtu.be')) {
+      const vid = u.pathname.replace('/', '');
+      return `https://www.youtube.com/embed/${vid}`;
+    }
+    if (u.hostname.includes('vimeo.com')) {
+      const vid = u.pathname.split('/').filter(Boolean)[0];
+      return vid ? `https://player.vimeo.com/video/${vid}` : url;
+    }
+    return url;
+  } catch { return url; }
+}
+
+function TrailerModal({ open, onClose, title, trailerUrl }) {
+  const overlayRef = useRef(null);
 
   useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      const target = new Date(targetDate);
-      const diff = target - now;
-      if (Number.isNaN(target.getTime()) || diff <= 0) {
-        setTimeLeft(null);
-      } else {
-        setTimeLeft({
-          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
-          minutes: Math.floor((diff / 1000 / 60) % 60),
-          seconds: Math.floor((diff / 1000) % 60),
-        });
-      }
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [targetDate]);
+    function onKey(e) { if (e.key === 'Escape') onClose?.(); }
+    if (open) document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
 
-  if (!targetDate) return <span className="text-zinc-400">TBA</span>;
-  if (!timeLeft)
-    return (
-      <span className="text-green-400 font-semibold flex items-center gap-1">
-        <Zap className="w-4 h-4" /> Now Showing
-      </span>
-    );
+  if (!open) return null;
+  const embed = toEmbedUrl(trailerUrl || '');
 
-  return (
-    <span className="font-mono text-sm text-blue-300">
-      {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-    </span>
-  );
-}
-
-function NeonPill({ children, active }) {
-  return (
-    <span
-      className={[
-        "px-3 py-1 rounded-full border text-xs font-semibold tracking-wide",
-        active
-          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-white/20 shadow-[0_0_20px_rgba(255,0,255,0.35)]"
-          : "bg-black/30 text-zinc-300 border-white/10",
-      ].join(" ")}
-    >
-      {children}
-    </span>
-  );
-}
-
-function SectionHeader({ icon: Icon, title, subtitle, right }) {
-  return (
-    <div className="flex items-end justify-between mb-4">
-      <div>
-        <div className="flex items-center gap-3">
-          <Icon className="w-7 h-7 text-purple-400 drop-shadow-[0_0_12px_rgba(180,100,255,0.75)]" />
-          <h2 className="text-2xl md:text-3xl font-extrabold">
-            <span className="bg-gradient-to-r from-fuchsia-400 to-purple-300 bg-clip-text text-transparent drop-shadow">
-              {title}
-            </span>
-          </h2>
-        </div>
-        {subtitle && (
-          <p className="text-sm text-zinc-400 mt-1 ml-10">{subtitle}</p>
-        )}
-      </div>
-      <div>{right}</div>
-    </div>
-  );
-}
-
-function ArrowButton({ direction = "left", onClick, aria }) {
-  return (
-    <button
-      aria-label={aria || `Scroll ${direction}`}
-      onClick={onClick}
-      className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-black/70 hover:bg-purple-700 transition text-white border border-white/10 shadow-lg"
-    >
-      {direction === "left" ? (
-        <ChevronLeft className="w-6 h-6" />
-      ) : (
-        <ChevronRight className="w-6 h-6" />
-      )}
-    </button>
-  );
-}
-
-// ========================= Trailer + Hero =========================
-
-function TrailerCard({ item, onClick }) {
-  const { title, poster, trailerKey } = item;
-  return (
-    <motion.div
-      layout
-      whileHover={{
-        scale: 1.04,
-        boxShadow: "0 0 24px rgba(255, 0, 255, 0.6)",
-      }}
-      onClick={() => trailerKey && onClick?.(item)}
-      className="relative min-w-[240px] sm:min-w-[280px] h-[150px] sm:h-[158px] rounded-xl cursor-pointer neon-glow border border-white/10 bg-white/5 hover:bg-white/10 p-3 transition overflow-hidden"
-      title={title}
-    >
-      {poster ? (
-        <img
-          src={poster}
-          alt={`${title} poster`}
-          className="absolute inset-0 w-full h-full object-cover brightness-75 rounded-xl"
-          draggable={false}
-          loading="lazy"
-          decoding="async"
-        />
-      ) : (
-        <div className="bg-zinc-900/60 w-full h-full flex items-center justify-center text-zinc-500 select-none rounded-xl">
-          No Poster
-        </div>
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent rounded-xl" />
-      <div className="absolute bottom-0 w-full p-2 bg-gradient-to-t from-black/90 text-white font-semibold text-center text-sm leading-tight line-clamp-2 select-none drop-shadow-lg rounded-b-xl">
-        {title}
-      </div>
-      <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-        <PlayCircle className="w-14 h-14 text-purple-400 drop-shadow-lg" />
-      </div>
-    </motion.div>
-  );
-}
-
-function TrailerModal({ youtubeKey, title, onClose }) {
-  return (
+  const content = (
     <AnimatePresence>
-      {youtubeKey && (
+      {open && (
         <motion.div
-          key="modal"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/90 flex justify-center items-center z-[999]"
-          onClick={onClose}
+          transition={{ duration: 0.2 }}
+          ref={overlayRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${title || 'Trailer'} modal`}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4"
+          onMouseDown={(e) => { if (e.target === overlayRef.current) onClose?.(); }}
         >
           <motion.div
-            initial={{ scale: 0.86 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0.9 }}
-            className="relative w-[92vw] md:w-[86vw] max-w-5xl aspect-video rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black"
-            onClick={(e) => e.stopPropagation()}
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 20 }}
+            className="relative w-full max-w-4xl aspect-video rounded-2xl overflow-hidden shadow-2xl bg-black"
           >
-            <iframe
-              title={title}
-              src={`https://www.youtube.com/embed/${youtubeKey}?autoplay=1&rel=0`}
-              allow="autoplay; encrypted-media; fullscreen"
-              allowFullScreen
-              className="w-full h-full"
-            />
+            {embed ? (
+              <iframe
+                title={title || 'Trailer'}
+                src={embed}
+                className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="no-referrer"
+                allowFullScreen
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-center p-6">
+                <div>
+                  <div className="text-lg font-semibold" style={{ fontFamily: 'var(--text-font)' }}>Trailer not available</div>
+                  <div className="mt-2 text-white/70 text-sm">Try another title or switch regions.</div>
+                </div>
+              </div>
+            )}
+
             <button
-              aria-label="Close trailer"
               onClick={onClose}
-              className="absolute top-3 right-3 p-2 rounded-full bg-purple-700/80 hover:bg-purple-700 text-white transition border border-white/20"
+              className="absolute top-3 right-3 inline-flex items-center justify-center rounded-full bg-black/70 hover:bg-black/80 focus:ring-2 focus:ring-white p-2"
+              aria-label="Close trailer"
             >
-              <X size={22} />
+              <XIcon className="w-5 h-5 text-white" />
             </button>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }
 
-function HeroFeatured({ item, onPlay }) {
-  if (!item) return null;
-  const { title, backdrop, poster, releaseDate } = item;
-  const bg = backdrop || poster;
+// -----------------------------------------------------------------------------
+// East/West Toggle
+// -----------------------------------------------------------------------------
+function EastWestToggle({ value, onChange }) {
+  const isEast = value === 'east';
+  return (
+    <div className="w-full max-w-md mx-auto mt-4">
+      <div className="relative bg-white/10 backdrop-blur rounded-full p-1 flex items-center shadow-lg">
+        <motion.div
+          layout
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          className={cx(
+            "absolute top-1 bottom-1 rounded-full w-1/2",
+            isEast ? "left-1" : "left-1/2",
+            "bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 shadow-md"
+          )}
+        />
+        <button onClick={() => onChange('east')} className={cx("relative z-10 flex-1 px-4 py-2 text-center transition-colors", isEast ? "text-white" : "text-white/60 hover:text-white")}> 
+          <span className="font-semibold tracking-wide" style={{ fontFamily: 'var(--text-font)' }}>East (Anime)</span>
+        </button>
+        <button onClick={() => onChange('west')} className={cx("relative z-10 flex-1 px-4 py-2 text-center transition-colors", !isEast ? "text-white" : "text-white/60 hover:text-white")}> 
+          <span className="font-semibold tracking-wide" style={{ fontFamily: 'var(--text-font)' }}>West (Movies/TV)</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Hero Section
+// -----------------------------------------------------------------------------
+function HeroSection({ mode, onPlayTrailer }) {
+  const isEast = mode === 'east';
+  const gif = isEast ? PLACEHOLDER.heroEast : PLACEHOLDER.heroWest;
+  const headline = isEast ? 'ATTACK ON TITAN' : 'SPIDER-VERSE';
+  const subhead = isEast ? 'Survey Corps vs the Titans. Walls will fall.' : 'Into the Spider-Verse. Infinite styles.';
 
   return (
-    <section
-      className="relative w-full h-[60vh] md:h-[72vh] rounded-2xl overflow-hidden mb-12 neon-glow border border-white/10 bg-white/5 hover:bg-white/10 cursor-pointer select-none"
-      onClick={() => item.trailerKey && onPlay?.(item)}
-      aria-label={`Play trailer for ${title}`}
-    >
-      {bg ? (
-        <img
-          src={bg}
-          alt={`Featured ${title}`}
-          className="absolute inset-0 w-full h-full object-cover brightness-[0.65]"
-          loading="eager"
-        />
-      ) : (
-        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-purple-900/40 to-fuchsia-900/30" />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-      <div className="absolute bottom-8 left-8 right-8 md:left-12 md:right-12 flex flex-col md:flex-row md:items-end gap-6 md:gap-10">
-        <div className="max-w-2xl">
-          <h1
-            className="text-4xl md:text-6xl font-extrabold drop-shadow-lg"
-            style={{ fontFamily: "'Azonix', sans-serif" }}
-          >
-            {title}
-          </h1>
-          <div className="mt-3 flex items-center gap-3">
-            <NeonPill active>Featured</NeonPill>
-            <NeonPill>Spotlight</NeonPill>
-          </div>
-          <div className="mt-4 flex items-center gap-3 font-mono text-base text-blue-300">
-            <Clock8 className="w-5 h-5" />
-            <Countdown targetDate={releaseDate} />
-            <span className="text-zinc-400">•</span>
-            <span className="text-zinc-300">{prettyDate(releaseDate)}</span>
-          </div>
-        </div>
-        <div className="flex-1 md:flex md:justify-end md:items-end">
-          <div className="hidden md:flex items-center gap-3">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPlay?.(item);
-              }}
-              className="px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-[0_8px_30px_rgba(180,100,255,0.35)] hover:opacity-95 border border-white/10"
-            >
-              <div className="flex items-center gap-2">
-                <PlayCircle className="w-5 h-5" />
-                Play Trailer
-              </div>
-            </button>
+    <motion.section initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.8, ease: 'easeOut' }} className="relative w-full overflow-hidden rounded-3xl shadow-2xl">
+      <div className="relative h-[52vh] md:h-[62vh] w-full">
+        <img src={gif} alt={headline} className="absolute inset-0 w-full h-full object-cover" loading="eager" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-5 md:p-10">
+          <div className="max-w-5xl">
+            <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl tracking-wider drop-shadow-lg" style={{ fontFamily: 'var(--title-font)' }}>{headline}</h1>
+            <p className="mt-3 md:mt-4 text-sm md:text-base lg:text-lg text-white/90 max-w-2xl" style={{ fontFamily: 'var(--text-font)' }}>{subhead}</p>
+            <div className="mt-4 md:mt-6 flex items-center gap-3">
+              <button onClick={onPlayTrailer} className="inline-flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold shadow-lg bg-white text-black hover:bg-white/90 focus:outline-none focus:ring-2 focus:ring-white">
+                <PlayIcon className="w-4 h-4 md:w-5 md:h-5" /> Play Trailer
+              </button>
+              <button className="inline-flex items-center gap-2 rounded-full px-4 py-2 md:px-6 md:py-3 text-sm md:text-base font-semibold shadow-lg bg-white/10 text-white hover:bg白/20 focus:outline-none focus:ring-2 focus:ring-white">
+                <SparklesIcon className="w-4 h-4 md:w-5 md:h-5" /> Add to Watchlist
+              </button>
+            </div>
+            <div className="mt-4 md:mt-6 flex flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1 text-xs md:text-sm px-3 py-1 rounded-full bg-white/10">
+                <StarIcon className="w-4 h-4 text-yellow-300" /> Top Rated Pick
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs md:text-sm px-3 py-1 rounded-full bg-white/10">
+                {isEast ? <TvIcon className="w-4 h-4" /> : <FilmIcon className="w-4 h-4" />} {isEast ? 'Anime' : 'Cinematic'}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs md:text-sm px-3 py-1 rounded-full bg-white/10">
+                <TimerIcon className="w-4 h-4" /> New & Trending
+              </span>
+            </div>
           </div>
         </div>
       </div>
+    </motion.section>
+  );
+}
 
-      <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
-        <PlayCircle className="w-24 h-24 text-purple-400/80 drop-shadow-[0_0_30px_rgba(180,100,255,0.75)] animate-pulse" />
+// -----------------------------------------------------------------------------
+// Poster Card
+// -----------------------------------------------------------------------------
+function PosterCard({ item, onClick }) {
+  return (
+    <div className="group relative w-[46vw] xs:w-[40vw] sm:w-[30vw] md:w-[200px] lg:w-[220px] xl:w-[240px] 2xl:w-[260px]">
+      <div className="relative aspect-[2/3] overflow-hidden rounded-2xl shadow-lg ring-1 ring-white/10 bg-white/5">
+        <img src={item.poster} alt={item.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 will-change-transform group-hover:scale-[1.06]" />
+        <div className="poster-gradient absolute inset-x-0 bottom-0 h-1/2" />
+        <div className="absolute bottom-0 left-0 right-0 p-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs sm:text-sm font-semibold truncate" style={{ fontFamily: 'var(--text-font)' }}>{item.title}</h4>
+            <div className="inline-flex items-center gap-1 text-[10px] sm:text-xs bg-black/60 rounded-full px-2 py-0.5">
+              <StarIcon className="w-3 h-3 text-yellow-300" />
+              <span>{(item.rating ?? 0).toFixed ? item.rating.toFixed(1) : item.rating}</span>
+            </div>
+          </div>
+          <div className="mt-1 text-[10px] sm:text-xs text-white/80 flex items-center gap-2">
+            <span className="uppercase tracking-wider">{item.type}</span>
+            <span>•</span>
+            <span>{item.year}</span>
+            <span>•</span>
+            <span className="capitalize">{item.region}</span>
+          </div>
+        </div>
+        <div className="absolute inset-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.45)] opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+      <button onClick={() => onClick?.(item)} className="absolute inset-0 rounded-2xl focus:outline-none focus:ring-2 focus:ring-white" aria-label={`Open ${item.title}`} />
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Horizontal Carousel (Infinite loop via marquee duplication)
+// -----------------------------------------------------------------------------
+function HorizontalCarousel({ title, icon: Icon, items, speed = 45, direction = 'left', onItemClick }) {
+  const trackRef = useRef(null);
+  const duration = `${Math.max(20, Math.min(90, speed))}s`;
+  const marqueeClass = direction === 'left' ? 'marquee-left' : 'marquee-right';
+  const loopItems = useMemo(() => { const base = items && items.length ? items : []; return [...base, ...base]; }, [items]);
+
+  return (
+    <section className="mt-8">
+      <div className="flex items-center gap-2 mb-3 px-1">
+        {Icon ? <Icon className="w-5 h-5 text-white/90" /> : <FlameIcon className="w-5 h-5 text-white/90" />}
+        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: 'var(--title-font)' }}>{title}</h3>
+      </div>
+      <div className="relative overflow-hidden">
+        <div ref={trackRef} style={{ ['--marquee-duration']: duration }} className={cx("marquee-pause thin-scrollbar", marqueeClass)}>
+          <div className="flex gap-3 pr-3 will-change-transform">
+            {loopItems.map((item, idx) => (
+              <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
+            ))}
+          </div>
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black to-transparent" />
       </div>
     </section>
   );
 }
 
-// ========================= Carousel =========================
-
-function HorizontalCarousel({
-  items,
-  renderItem,
-  ariaPrefix = "carousel",
-  className = "",
-}) {
-  const ref = useRef(null);
-
-  const scrollBy = (dir) => {
-    const node = ref.current;
-    if (!node) return;
-    const delta = dir === "left" ? -window.innerWidth * 0.6 : window.innerWidth * 0.6;
-    node.scrollBy({ left: delta, behavior: "smooth" });
-  };
-
+// -----------------------------------------------------------------------------
+// Recommended Grid
+// -----------------------------------------------------------------------------
+function RecommendedGrid({ title, items, onItemClick }) {
   return (
-    <div className={`relative ${className}`}>
-      <div className="absolute -top-12 right-0 flex gap-2">
-        <ArrowButton
-          direction="left"
-          onClick={() => scrollBy("left")}
-          aria={`${ariaPrefix}-left`}
-        />
-        <ArrowButton
-          direction="right"
-          onClick={() => scrollBy("right")}
-          aria={`${ariaPrefix}-right`}
-        />
+    <section className="mt-10">
+      <div className="flex items-center gap-2 mb-4 px-1">
+        <CrownIcon className="w-5 h-5 text-white/90" />
+        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: 'var(--title-font)' }}>{title}</h3>
       </div>
-      <div
-        ref={ref}
-        className="flex overflow-x-auto gap-4 pr-1 scrollbar-thin scrollbar-thumb-purple-700/70 scrollbar-track-transparent"
-      >
-        {items.map((it, idx) => (
-          <div key={`${ariaPrefix}-${idx}`} className="flex-shrink-0">
-            {renderItem(it, idx)}
-          </div>
+      <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+        {items.map((item) => (
+          <PosterCard key={item.id} item={item} onClick={onItemClick} />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
-// ========================= Normalizers (APIs -> Unified Items) =========================
-
-// ---- AniList (GraphQL)
-async function fetchAniList({ sort = "TRENDING_DESC", status, perPage = 20 }) {
-  const query = `
-    query ($page: Int, $perPage: Int, $sort: [MediaSort], $status: MediaStatus) {
-      Page(page: 1, perPage: $perPage) {
-        media(type: ANIME, sort: $sort, status: $status) {
-          id
-          title { romaji english native }
-          popularity
-          averageScore
-          episodes
-          genres
-          coverImage { large extraLarge }
-          bannerImage
-          startDate { year month day }
-          trailer { id site thumbnail }
-          description(asHtml: false)
-        }
-      }
-    }`;
-  const body = JSON.stringify({
-    query,
-    variables: { perPage, sort: [sort], status: status || null },
-  });
-  const res = await fetch("https://graphql.anilist.co", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
-  });
-  if (!res.ok) throw new Error(`AniList error ${res.status}`);
-  const json = await res.json();
-  const media = json?.data?.Page?.media || [];
-  return media.map((m) => ({
-    id: m.id,
-    source: "anilist",
-    title: m.title?.romaji || m.title?.english || m.title?.native || "Untitled",
-    altTitles: [m.title?.english, m.title?.native, m.title?.romaji].filter(Boolean),
-    overview: m.description || "",
-    poster: m.coverImage?.extraLarge || m.coverImage?.large || null,
-    backdrop: m.bannerImage || null,
-    trailerKey:
-      m.trailer && m.trailer.site?.toLowerCase() === "youtube" ? m.trailer.id : null,
-    trailerSite:
-      m.trailer && m.trailer.site ? m.trailer.site : m.trailer ? "YouTube" : null,
-    genres: m.genres || [],
-    score:
-      typeof m.averageScore === "number"
-        ? clamp(Math.round(m.averageScore), 0, 100)
-        : null,
-    popularity: m.popularity || null,
-    type: "anime",
-    releaseDate: toISODate(m.startDate?.year, m.startDate?.month, m.startDate?.day),
-    year: m.startDate?.year || null,
-    runtime: null,
-    episodes: m.episodes || null,
-  }));
-}
-
-// ---- Jikan (MAL REST): seasonal upcoming / top rated backup
-async function fetchJikanUpcoming({ limit = 24 }) {
-  const url = `https://api.jikan.moe/v4/seasons/upcoming?limit=${limit}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Jikan upcoming error ${res.status}`);
-  const json = await res.json();
-  const list = json?.data || [];
-  return list.map((a) => ({
-    id: a.mal_id,
-    source: "jikan",
-    title: a.title || a.title_english || a.title_japanese || "Untitled",
-    altTitles: [a.title_english, a.title_japanese, ...(a.titles || []).map((t) => t.title)].filter(Boolean),
-    overview: a.synopsis || "",
-    poster: a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || null,
-    backdrop: a.trailer?.images?.maximum_image_url || null,
-    trailerKey: a.trailer?.youtube_id || null,
-    trailerSite: a.trailer?.youtube_id ? "YouTube" : null,
-    genres: (a.genres || []).map((g) => g.name),
-    score:
-      typeof a.score === "number"
-        ? clamp(Math.round(a.score * 10), 0, 100)
-        : null,
-    popularity: a.popularity || null,
-    type: a.type?.toLowerCase() === "movie" ? "movie" : "anime",
-    releaseDate: a.aired?.from || a.approved ? a.aired?.from : null,
-    year: a.year || null,
-    runtime: null,
-    episodes: a.episodes || null,
-  }));
-}
-
-async function fetchJikanTop({ limit = 24 }) {
-  const url = `https://api.jikan.moe/v4/top/anime?limit=${limit}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Jikan top error ${res.status}`);
-  const json = await res.json();
-  const list = json?.data || [];
-  return list.map((a) => ({
-    id: a.mal_id,
-    source: "jikan",
-    title: a.title || a.title_english || a.title_japanese || "Untitled",
-    altTitles: [a.title_english, a.title_japanese, ...(a.titles || []).map((t) => t.title)].filter(Boolean),
-    overview: a.synopsis || "",
-    poster: a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || null,
-    backdrop: a.trailer?.images?.maximum_image_url || null,
-    trailerKey: a.trailer?.youtube_id || null,
-    trailerSite: a.trailer?.youtube_id ? "YouTube" : null,
-    genres: (a.genres || []).map((g) => g.name),
-    score:
-      typeof a.score === "number"
-        ? clamp(Math.round(a.score * 10), 0, 100)
-        : null,
-    popularity: a.popularity || null,
-    type: a.type?.toLowerCase() === "movie" ? "movie" : "anime",
-    releaseDate: a.aired?.from || null,
-    year: a.year || null,
-    runtime: null,
-    episodes: a.episodes || null,
-  }));
-}
-
-// ---- TMDB (movies + tv) Helpers
-const TMDB_IMG = (path, size = "w500") =>
-  path ? `https://image.tmdb.org/t/p/${size}${path}` : null;
-
-async function fetchTMDB({ path, params = {} }) {
-  if (!TMDB_API_KEY || TMDB_API_KEY === "<YOUR_TMDB_API_KEY_HERE>") {
-    throw new Error("TMDB API key missing. Set REACT_APP_TMDB_API_KEY.");
-  }
-  const url = new URL(`https://api.themoviedb.org/3/${path}`);
-  url.searchParams.set("api_key", TMDB_API_KEY);
-  url.searchParams.set("language", "en-US");
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(`TMDB error ${res.status}`);
-  return res.json();
-}
-
-function normalizeTMDBMovie(m) {
-  return {
-    id: m.id,
-    source: "tmdb",
-    title: m.title || m.original_title || "Untitled",
-    altTitles: [m.original_title].filter(Boolean),
-    overview: m.overview || "",
-    poster: TMDB_IMG(m.poster_path, "w500"),
-    backdrop: TMDB_IMG(m.backdrop_path, "w1280"),
-    trailerKey: null, // fill after fetching videos
-    trailerSite: null,
-    genres: [], // optional fetch later
-    score:
-      typeof m.vote_average === "number"
-        ? clamp(Math.round(m.vote_average * 10), 0, 100)
-        : null,
-    popularity: m.popularity || null,
-    type: "movie",
-    releaseDate: m.release_date ? `${m.release_date}T00:00:00Z` : null,
-    year: m.release_date ? Number(m.release_date.slice(0, 4)) : null,
-    runtime: null,
-    episodes: null,
-  };
-}
-
-function normalizeTMDBTV(m) {
-  return {
-    id: m.id,
-    source: "tmdb",
-    title: m.name || m.original_name || "Untitled",
-    altTitles: [m.original_name].filter(Boolean),
-    overview: m.overview || "",
-    poster: TMDB_IMG(m.poster_path, "w500"),
-    backdrop: TMDB_IMG(m.backdrop_path, "w1280"),
-    trailerKey: null,
-    trailerSite: null,
-    genres: [],
-    score:
-      typeof m.vote_average === "number"
-        ? clamp(Math.round(m.vote_average * 10), 0, 100)
-        : null,
-    popularity: m.popularity || null,
-    type: "series",
-    releaseDate: m.first_air_date ? `${m.first_air_date}T00:00:00Z` : null,
-    year: m.first_air_date ? Number(m.first_air_date.slice(0, 4)) : null,
-    runtime: null,
-    episodes: null,
-  };
-}
-
-async function enrichTMDBTrailers(items) {
-  // Fetch trailer videos for first N items to save requests
-  const slice = items.slice(0, 12);
-  const promises = slice.map(async (it) => {
-    try {
-      const path =
-        it.type === "series" ? `tv/${it.id}/videos` : `movie/${it.id}/videos`;
-      const json = await fetchTMDB({ path, params: {} });
-      const vids = json?.results || [];
-      const trailer = vids.find(
-        (v) =>
-          (v.type === "Trailer" || v.type === "Teaser") &&
-          v.site === "YouTube" &&
-          v.key
-      );
-      if (trailer) {
-        it.trailerKey = trailer.key;
-        it.trailerSite = "YouTube";
-      }
-    } catch {
-      // ignore
-    }
-    return it;
-  });
-  const enriched = await Promise.all(promises);
-  // Return enriched + unchanged remainder
-  return enriched.concat(items.slice(slice.length));
-}
-
-// ---- Trakt (optional). We will use trending (shows & movies) if key present.
-async function fetchTraktTrending({ type = "movies", limit = 20 }) {
-  if (
-    !TRAKT_API_KEY ||
-    TRAKT_API_KEY === "<OPTIONAL_TRAKT_CLIENT_ID>" ||
-    TRAKT_API_KEY.trim() === ""
-  ) {
-    // Graceful fallback: no Trakt key
-    return [];
-  }
-  const url = `https://api.trakt.tv/${type}/trending?limit=${limit}`;
-  const res = await fetch(url, {
-    headers: {
-      "trakt-api-version": "2",
-      "trakt-api-key": TRAKT_API_KEY,
-    },
-  });
-  if (!res.ok) {
-    // Do not hard fail West if Trakt is down; just return empty
-    return [];
-  }
-  const json = await res.json();
-  // Trakt returns array with { watchers, movie } or { watchers, show }
-  // We'll normalize minimally; posters/trailers not provided -> we can later match with TMDB if needed.
-  return json
-    .map((entry) => entry.movie || entry.show)
-    .filter(Boolean)
-    .map((e) => ({
-      id: e.ids?.trakt || e.ids?.slug || e.title,
-      source: "trakt",
-      title: e.title,
-      altTitles: [],
-      overview: "", // Not provided in trending; could fetch /summary but keep it light
-      poster: null,
-      backdrop: null,
-      trailerKey: null,
-      trailerSite: null,
-      genres: [],
-      score: null,
-      popularity: null,
-      type: e.type || (type === "movies" ? "movie" : "series"),
-      releaseDate: null,
-      year: e.year || null,
-      runtime: null,
-      episodes: null,
-    }));
-}
-
-// ========================= East/West Data Hooks =========================
-
-function useEastHubData() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [mode, setMode] = useState("east");
-
-  const [trending, setTrending] = useState([]); // top airing / trending
-  const [newReleases, setNewReleases] = useState([]); // upcoming, seasonal
-  const [topRated, setTopRated] = useState([]); // highest rated
-  const [recommended, setRecommended] = useState([]); // curated/random
-  const [spotlight, setSpotlight] = useState(null); // first trending
-  const [trailers, setTrailers] = useState([]); // items with trailerKey (for trailer strip)
-
-  useEffect(() => {
-  if (mode !== "east") return; // ⬅ only fetch when on anime hub
-
-  let alive = true;
-  (async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Fetch from AniList
-      const [aniTrending, aniTop, aniUpcoming] = await Promise.all([
-        fetchAniList({ sort: "TRENDING_DESC", perPage: 24 }),
-        fetchAniList({ sort: "SCORE_DESC", perPage: 24 }),
-        fetchAniList({
-          sort: "POPULARITY_DESC",
-          status: "NOT_YET_RELEASED",
-          perPage: 24,
-        }),
-      ]);
-
-      // Fetch from Jikan
-      const [jkUpcoming, jkTop] = await Promise.all([
-        fetchJikanUpcoming({ limit: 24 }).catch(() => []),
-        fetchJikanTop({ limit: 24 }).catch(() => []),
-      ]);
-
-      // Merge & dedupe
-      const deDup = (arr) => {
-        const seen = new Set();
-        const out = [];
-        for (const x of arr) {
-          const key = `${x.source}:${x.id}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            out.push(x);
-          }
-        }
-        return out;
-      };
-
-      const TRENDING = deDup([...aniTrending]);
-      const TOP = deDup([...aniTop, ...jkTop]).sort(
-        (a, b) => (b.score || 0) - (a.score || 0)
-      );
-      const UPCOMING = deDup([...aniUpcoming, ...jkUpcoming]).sort(
-        (a, b) =>
-          new Date(a.releaseDate || "9999-01-01") -
-          new Date(b.releaseDate || "9999-01-01")
-      );
-
-      const RECO = deDup(
-        [...TRENDING.slice(0, 10), ...TOP.slice(0, 10), ...UPCOMING.slice(0, 10)]
-          .filter(Boolean)
-          .sort(() => Math.random() - 0.5)
-      ).slice(0, 18);
-
-      const SPOT = TRENDING[0] || TOP[0] || UPCOMING[0] || null;
-
-      const TRAILERS = deDup(
-        [...TRENDING, ...UPCOMING, ...TOP].filter((x) => x.trailerKey)
-      ).slice(0, 14);
-
-      if (!alive) return;
-
-      setTrending(TRENDING);
-      setTopRated(TOP);
-      setNewReleases(UPCOMING);
-      setRecommended(RECO);
-      setSpotlight(SPOT);
-      setTrailers(TRAILERS);
-    } catch (err) {
-      if (!alive) return;
-      setError(err?.message || "Failed to load anime hub");
-    } finally {
-      if (alive) setLoading(false);
-    }
-  })();
-
-  return () => {
-    alive = false;
-  };
-}, [mode]); // ⬅ rerun whenever toggle switches
-
-
-  return {
-    loading,
-    error,
-    trending,
-    newReleases,
-    topRated,
-    recommended,
-    spotlight,
-    trailers,
-  };
-}
-
-function useWestHubData() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const [trending, setTrending] = useState([]); // tmdb trending + trakt
-  const [newReleases, setNewReleases] = useState([]); // tmdb upcoming + on the air
-  const [topRated, setTopRated] = useState([]); // tmdb top_rated
-  const [recommended, setRecommended] = useState([]); // curated/random
-  const [spotlight, setSpotlight] = useState(null); // first trending/upcoming
-  const [trailers, setTrailers] = useState([]); // with trailers
-
-  useEffect(() => {
-    let alive = true;
-
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // TMDB: trending movies + tv
-        const [tmdbTrendMovies, tmdbTrendTV] = await Promise.all([
-          fetchTMDB({ path: "trending/movie/week" }),
-          fetchTMDB({ path: "trending/tv/week" }),
-        ]);
-
-        const trendMovies = (tmdbTrendMovies?.results || []).map(normalizeTMDBMovie);
-        const trendTV = (tmdbTrendTV?.results || []).map(normalizeTMDBTV);
-
-        // TMDB: upcoming movies + on the air tv
-        const [tmdbUpcoming, tmdbOnAir] = await Promise.all([
-          fetchTMDB({ path: "movie/upcoming", params: { page: 1 } }),
-          fetchTMDB({ path: "tv/on_the_air", params: { page: 1 } }),
-        ]);
-
-        const upcomingMovies = (tmdbUpcoming?.results || []).map(normalizeTMDBMovie);
-        const onAirTV = (tmdbOnAir?.results || []).map(normalizeTMDBTV);
-
-        // TMDB: top rated
-        const [tmdbTopMovies, tmdbTopTV] = await Promise.all([
-          fetchTMDB({ path: "movie/top_rated", params: { page: 1 } }),
-          fetchTMDB({ path: "tv/top_rated", params: { page: 1 } }),
-        ]);
-        const topMovies = (tmdbTopMovies?.results || []).map(normalizeTMDBMovie);
-        const topTV = (tmdbTopTV?.results || []).map(normalizeTMDBTV);
-
-        // Optional: Trakt trending to enrich variety (no posters, but can mix)
-        const [traktMovies, traktShows] = await Promise.all([
-          fetchTraktTrending({ type: "movies", limit: 18 }).catch(() => []),
-          fetchTraktTrending({ type: "shows", limit: 18 }).catch(() => []),
-        ]);
-
-        // Compose sections
-        const deDup = (arr) => {
-          const seen = new Set();
-          const out = [];
-          for (const x of arr) {
-            const key = `${x.source}:${x.id}`;
-            if (!seen.has(key)) {
-              seen.add(key);
-              out.push(x);
-            }
-          }
-          return out;
-        };
-
-        let TRENDING = deDup([...trendMovies.slice(0, 12), ...trendTV.slice(0, 12)]);
-        // add trakt (they may lack posters, but still clickable)
-        if (traktMovies.length || traktShows.length) {
-          TRENDING = deDup([...TRENDING, ...traktMovies.slice(0, 8), ...traktShows.slice(0, 8)]);
-        }
-
-        let UPCOMING = deDup([...upcomingMovies.slice(0, 18), ...onAirTV.slice(0, 18)]).sort(
-          (a, b) =>
-            new Date(a.releaseDate || "9999-01-01") -
-            new Date(b.releaseDate || "9999-01-01")
-        );
-
-        let TOP = deDup([...topMovies.slice(0, 12), ...topTV.slice(0, 12)]).sort(
-          (a, b) => (b.score || 0) - (a.score || 0)
-        );
-
-        let RECO = deDup(
-          [...TRENDING.slice(0, 8), ...TOP.slice(0, 8), ...UPCOMING.slice(0, 8)]
-            .filter(Boolean)
-            .sort(() => Math.random() - 0.5)
-        ).slice(0, 18);
-
-        // Enrich with trailers from TMDB (for first batch)
-        TRENDING = await enrichTMDBTrailers(TRENDING);
-        TOP = await enrichTMDBTrailers(TOP);
-        UPCOMING = await enrichTMDBTrailers(UPCOMING);
-
-        const SPOT = TRENDING[0] || UPCOMING[0] || TOP[0] || null;
-
-        const TRAILERS = deDup(
-          [...TRENDING, ...UPCOMING, ...TOP].filter((x) => x.trailerKey)
-        ).slice(0, 16);
-
-        if (!alive) return;
-        setTrending(TRENDING);
-        setNewReleases(UPCOMING);
-        setTopRated(TOP);
-        setRecommended(RECO);
-        setSpotlight(SPOT);
-        setTrailers(TRAILERS);
-      } catch (err) {
-        if (!alive) return;
-        setError(err?.message || "Failed to load movies/shows hub");
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  return {
-    loading,
-    error,
-    trending,
-    newReleases,
-    topRated,
-    recommended,
-    spotlight,
-    trailers,
-  };
-}
-
-// ========================= Cards =========================
-
-function PosterCard({ item, onClick }) {
-  const { title, poster, score, releaseDate } = item;
+// -----------------------------------------------------------------------------
+// Page Chrome: Header, Footer, Utility Bars
+// -----------------------------------------------------------------------------
+function HeaderBar({ mode, setMode, onRefresh }) {
   return (
-    <motion.article
-      whileHover={{ y: -4, scale: 1.02 }}
-      className="w-[160px] sm:w-[180px] md:w-[200px] rounded-2xl overflow-hidden cursor-pointer bg-white/5 border border-white/10 hover:border-purple-400/40 transition-all shadow-[0_8px_30px_rgba(0,0,0,0.35)]"
-      onClick={() => onClick?.(item)}
-      title={`${title} • ${releaseDate ? prettyDate(releaseDate) : "TBA"}`}
-    >
-      {poster ? (
-        <img
-          src={poster}
-          alt={title}
-          className="w-full h-[220px] sm:h-[250px] object-cover"
-          loading="lazy"
-          decoding="async"
-        />
-      ) : (
-        <div className="w-full h-[220px] sm:h-[250px] bg-gradient-to-br from-purple-900/50 to-fuchsia-900/50 flex items-center justify-center text-purple-300">
-          No Poster
-        </div>
-      )}
-      <div className="p-3">
-        <h3 className="text-sm font-semibold line-clamp-2 min-h-[2.5rem]">{title}</h3>
-        <div className="mt-2 flex items-center justify-between">
-          <span className="text-xs text-zinc-400">{prettyDate(releaseDate)}</span>
-          {typeof score === "number" && (
-            <span className="text-xs font-mono text-yellow-300 flex items-center gap-1">
-              <Star className="w-3.5 h-3.5" />
-              {score}
-            </span>
-          )}
-        </div>
-      </div>
-    </motion.article>
-  );
-}
-
-function CalendarCard({ item, onClick }) {
-  const { title, releaseDate, poster } = item;
-  const d = releaseDate ? new Date(releaseDate) : null;
-  const day = d ? d.toLocaleString("en-US", { day: "numeric" }) : "--";
-  const month = d ? d.toLocaleString("en-US", { month: "short" }) : "---";
-  const year = d ? d.getFullYear() : "----";
-
-  return (
-    <motion.div
-      whileHover={{ y: -2, scale: 1.02 }}
-      className="flex-shrink-0 w-36 rounded-xl p-3 bg-white/5 border border-white/10 hover:border-purple-400/40 transition cursor-pointer"
-      onClick={() => onClick?.(item)}
-    >
-      <div className="flex flex-col items-center gap-2">
-        <div className="text-center text-white font-mono font-bold text-lg">
-          {day}
-        </div>
-        <div className="text-center text-purple-300 font-semibold text-sm uppercase tracking-wide">
-          {month}
-        </div>
-        {poster ? (
-          <img
-            src={poster}
-            alt={title}
-            className="w-full h-24 object-cover rounded-lg"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-24 bg-purple-900/40 rounded-lg flex items-center justify-center text-purple-400 select-none text-xs p-2 text-center">
-            No Image
+    <header className="sticky top-0 z-40 bg-gradient-to-b from-black/70 to-black/0 backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 shadow-lg flex items-center justify-center">
+            <TriangleIcon className="w-5 h-5 text-white rotate-180" />
           </div>
-        )}
-        <div className="text-center text-xs mt-1 font-medium line-clamp-2">
-          {title}
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ========================= Toggle =========================
-
-function EastWestToggle({ isEast, setIsEast }) {
-  return (
-    <div className="fixed top-6 right-6 z-[60]">
-      <div className="p-1 rounded-2xl backdrop-blur bg-black/40 border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.4)]">
-        <label className="relative inline-flex items-center cursor-pointer select-none">
-          <input
-            type="checkbox"
-            className="sr-only peer"
-            checked={!isEast}
-            onChange={() => {
-              setIsEast((prev) => {
-                const next = !prev;
-                try {
-                  localStorage.setItem("watchtower:isEast", JSON.stringify(next ? false : false)); 
-                } catch {}
-                return !prev;
-              });
-              try {
-                localStorage.setItem("watchtower:isEast", JSON.stringify(!isEast ? true : false));
-              } catch {}
-            }}
-          />
-
-          {/* Track background */}
-          <div
-            className={[
-              "w-[96px] h-12 rounded-full transition-colors duration-500 flex items-center justify-between px-3",
-              isEast
-                ? "bg-gradient-to-r from-purple-600/80 to-pink-500/80"
-                : "bg-gradient-to-r from-blue-600/80 to-cyan-500/80",
-              "border border-white/20 shadow-[0_0_25px_rgba(255,255,255,0.2)]",
-            ].join(" ")}
-          >
-            {/* East Icon */}
-            <Sparkles
-              className={`w-5 h-5 transition-colors ${
-                isEast ? "text-white" : "text-white/40"
-              }`}
-            />
-            {/* West Icon */}
-            <Film
-              className={`w-5 h-5 transition-colors ${
-                !isEast ? "text-white" : "text-white/40"
-              }`}
-            />
+          <div>
+            <div className="text-base md:text-lg tracking-widest" style={{ fontFamily: 'var(--title-font)' }}>WATCHTOWER</div>
+            <div className="text-[10px] md:text-xs text-white/70" style={{ fontFamily: 'var(--text-font)' }}>East / West Hub</div>
           </div>
-
-          {/* Knob */}
-          <span
-            className={[
-              "absolute top-1 left-1 w-10 h-10 rounded-full shadow-xl transition-transform duration-500",
-              "bg-white/90",
-              isEast ? "translate-x-0" : "translate-x-[56px]",
-            ].join(" ")}
-          />
-        </label>
-
-        {/* Label */}
-        <div className="flex justify-between mt-1 text-[11px] font-semibold tracking-wide">
-          <span className={isEast ? "text-purple-300" : "text-gray-400"}>East</span>
-          <span className={!isEast ? "text-cyan-300" : "text-gray-400"}>West</span>
         </div>
-      </div>
-    </div>
-  );
-}
-
-
-// ========================= Skeletons =========================
-
-function LineSkeleton({ w = "w-40" }) {
-  return (
-    <div className={`h-4 ${w} bg-white/10 rounded-full animate-pulse`} />
-  );
-}
-function PosterSkeleton() {
-  return (
-    <div className="w-[160px] sm:w-[180px] md:w-[200px] rounded-2xl overflow-hidden bg-white/5 border border-white/10">
-      <div className="w-full h-[220px] sm:h-[250px] bg-white/10 animate-pulse" />
-      <div className="p-3 space-y-2">
-        <LineSkeleton w="w-32" />
-        <LineSkeleton w="w-24" />
-      </div>
-    </div>
-  );
-}
-
-// ========================= Page =========================
-
-export default function WatchTowerPage() {
-  // --- East/West toggle: persist in localStorage
-  const [isEast, setIsEast] = useState(() => {
-    try {
-      const raw = localStorage.getItem("watchtower:isEast");
-      if (raw === null) return true;
-      // previous code used a weird write; ensure bool
-      const parsed = JSON.parse(raw);
-      // If a previous write mistakenly wrote "false" strings, handle gracefully
-      if (typeof parsed === "boolean") return parsed;
-      return true;
-    } catch {
-      return true;
-    }
-  });
-
-  // --- Data hooks
-  const EAST = useEastHubData();
-  const WEST = useWestHubData();
-
-  // Derived current hub
-  const HUB = isEast ? EAST : WEST;
-
-  // --- Modal (Trailer)
-  const [modalItem, setModalItem] = useState(null);
-
-  // --- Genre filtering across items (from trending + newReleases + topRated)
-  const allGenres = useMemo(() => {
-    const gset = new Set();
-    const pools = [
-      ...(HUB.trending || []),
-      ...(HUB.newReleases || []),
-      ...(HUB.topRated || []),
-    ];
-    pools.forEach((it) => {
-      (it.genres || []).forEach((g) => g && gset.add(g));
-    });
-    return [...gset].sort();
-  }, [HUB.trending, HUB.newReleases, HUB.topRated]);
-
-  const [selectedGenre, setSelectedGenre] = useState(null);
-
-  const matchesGenre = (item) => {
-    if (!selectedGenre) return true;
-    return (item.genres || []).includes(selectedGenre);
-  };
-
-  // --- Featured/Hero item
-  const featuredItem = useMemo(() => {
-    return HUB.spotlight || HUB.trending?.[0] || HUB.newReleases?.[0] || null;
-  }, [HUB.spotlight, HUB.trending, HUB.newReleases]);
-
-  // --- Recommended refresh
-  const [reco, setReco] = useState([]);
-  useEffect(() => {
-    setReco(HUB.recommended || []);
-  }, [HUB.recommended]);
-
-  const reshuffleReco = () => {
-    const arr = [...(HUB.recommended || [])].sort(
-      () => Math.random() - 0.5
-    );
-    setReco(arr.slice(0, 18));
-  };
-
-  // --- Helpful neon panel class
-  const neonPanel =
-    "neon-glow border border-white/10 bg-white/5 hover:bg-white/10 p-5 rounded-2xl transition relative overflow-visible";
-
-  // --- Scroll Refs (for Trailer strip + Calendar) using shared carousel; not strictly needed
-  const onPosterClick = (item) => {
-    if (item.trailerKey) {
-      setModalItem(item);
-    }
-  };
-
-  // --- Trailer strip items (with optional genre filter)
-  const trailerStrip = useMemo(() => {
-    const arr = (HUB.trailers || []).filter(matchesGenre);
-    return arr.slice(0, 18);
-  }, [HUB.trailers, selectedGenre]);
-
-  // --- Calendar list (merge newReleases + trending future items)
-  const calendarList = useMemo(() => {
-    const src = [
-      ...(HUB.newReleases || []),
-      ...(HUB.trending || []),
-      ...(HUB.topRated || []),
-    ];
-    const filtered = src
-      .filter((x) => x.releaseDate)
-      .filter(matchesGenre)
-      .sort(
-        (a, b) =>
-          new Date(a.releaseDate || "9999-01-01") -
-          new Date(b.releaseDate || "9999-01-01")
-      );
-    // de-duplicate by source:id
-    const seen = new Set();
-    const out = [];
-    for (const it of filtered) {
-      const k = `${it.source}:${it.id}`;
-      if (!seen.has(k)) {
-        seen.add(k);
-        out.push(it);
-      }
-    }
-    return out.slice(0, 32);
-  }, [HUB.newReleases, HUB.trending, HUB.topRated, selectedGenre]);
-
-  // --- Error/Loading banners
-  const Banner = ({ icon: Icon, text, tone = "info" }) => {
-    const tones = {
-      info: "from-purple-700/30 to-fuchsia-700/20 text-purple-200",
-      warn: "from-yellow-700/20 to-amber-700/10 text-yellow-200",
-      error: "from-rose-800/30 to-red-800/20 text-rose-200",
-    };
-    return (
-      <div
-        className={[
-          "rounded-xl p-4 border border-white/10 bg-gradient-to-r",
-          tones[tone] || tones.info,
-          "flex items-center gap-2",
-        ].join(" ")}
-      >
-        <Icon className="w-5 h-5" />
-        <span className="text-sm">{text}</span>
-      </div>
-    );
-  };
-
-  return (
-    <div
-      className="min-h-screen bg-black text-white px-4 md:px-6 py-8 font-sans max-w-7xl mx-auto relative"
-      style={{ fontFamily: "'Azonix', sans-serif" }}
-    >
-      {/* Background Glow / Grid */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(800px 400px at 20% 10%, rgba(180,100,255,0.12), transparent 60%), radial-gradient(600px 300px at 80% 0%, rgba(255,80,200,0.10), transparent 60%)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 opacity-[0.07] bg-[radial-gradient(#ffffff33_1px,transparent_1px)] [background-size:18px_18px]"
-      />
-
-      {/* East/West Toggle */}
-      <EastWestToggle
-        isEast={isEast}
-        setIsEast={(val) => {
-          setIsEast(val);
-          try {
-            localStorage.setItem("watchtower:isEast", JSON.stringify(val));
-          } catch {}
-        }}
-      />
-
-      {/* Header / Logo & Tagline */}
-      <div className="relative overflow-hidden rounded-3xl border border-white/10 mb-10 bg-gradient-to-br from-[#0B0B0C] via-[#0D0B12] to-[#0B0B0C]">
-        <div
-          className="absolute inset-0 min-h-[240px] bg-fixed bg-center opacity-10"
-          style={{
-            backgroundImage: "url('/assets/watchtower-bg-dreamworks.jpg')",
-          }}
-        />
-        <div className="relative z-10 container mx-auto px-4 py-12 md:py-16">
-          <motion.div
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            <motion.img
-              src="/assets/animac_logo_transparent-removebg-preview.png"
-              alt="Watchtower logo"
-              className="mx-auto h-24 w-auto mb-6 md:mb-8"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, ease: "easeOut" }}
-            />
-            <p className="text-xl md:text-2xl font-medium text-gray-300 mb-3">
-              Where Culture Meets Commentary
-            </p>
-            <p className="text-sm md:text-base text-gray-400 leading-relaxed max-w-2xl mx-auto">
-              Switch between{" "}
-              <span className="text-purple-300 font-semibold">East</span> (Anime
-              & Asian Media) and{" "}
-              <span className="text-pink-300 font-semibold">West</span> (Movies
-              & Series). A cyber-sleek hub with trailers, calendars, and
-              countdowns.
-            </p>
-          </motion.div>
+        <div className="hidden md:flex items-center gap-2 text-xs text-white/80" style={{ fontFamily: 'var(--text-font)' }}>
+          <MonitorIcon className="w-4 h-4" />
+          <span>Optimized for laptops</span>
+          <span className="mx-1">•</span>
+          <PhoneIcon className="w-4 h-4" />
+          <span>and phones</span>
         </div>
-      </div>
-
-      {/* Hero Featured */}
-      <div className="mb-12">
-        {HUB.loading && !featuredItem && (
-          <div className="h-[60vh] md:h-[72vh] rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
-        )}
-        {!HUB.loading && featuredItem && (
-          <HeroFeatured
-            item={featuredItem}
-            onPlay={(it) => setModalItem(it)}
-          />
-        )}
-      </div>
-
-      {/* Quick Divider Glow */}
-      <div className="relative mx-1 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full mb-10" />
-
-      {/* Genre Filter */}
-      <div className="mb-10 flex flex-wrap justify-center gap-2">
-        <button
-          onClick={() => setSelectedGenre(null)}
-          className={[
-            "px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition border border-white/10",
-            selectedGenre === null
-              ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
-              : "bg-zinc-900 text-zinc-200 hover:bg-purple-800/50 hover:text-white",
-          ].join(" ")}
-        >
-          All Genres
-        </button>
-        {allGenres.map((g) => (
-          <button
-            key={g}
-            onClick={() => setSelectedGenre(g)}
-            className={[
-              "px-4 py-2 rounded-full text-xs md:text-sm font-semibold transition border border-white/10",
-              selectedGenre === g
-                ? "bg-gradient-to-r from-purple-700 to-pink-600 text-white shadow-lg"
-                : "bg-zinc-900 text-zinc-200 hover:bg-purple-800/50 hover:text-white",
-            ].join(" ")}
-          >
-            <Tag className="inline w-4 h-4 mr-1 -mt-0.5" />
-            {g}
+        <div className="flex items-center gap-3">
+          <button onClick={onRefresh} className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs md:text-sm font-semibold shadow bg-white/10 hover:bg-white/20">
+            <RefreshIcon className="w-4 h-4" /> Refresh
           </button>
-        ))}
+        </div>
       </div>
+      <div className="max-w-3xl mx-auto pb-3 px-4">
+        <EastWestToggle value={mode} onChange={setMode} />
+      </div>
+    </header>
+  );
+}
 
-      {/* Trailer Strip */}
-      <section className="mb-14">
-        <SectionHeader
-          icon={Clapperboard}
-          title="Trailers"
-          subtitle={
-            isEast
-              ? "Top airing & upcoming anime trailers"
-              : "Trending movie & series trailers"
-          }
-          right={
-            <NeonPill active className="hidden md:inline">
-              Autoplay Preview
-            </NeonPill>
-          }
-        />
-        <div className={neonPanel + " mt-6"}>
-          {HUB.loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <PosterSkeleton key={`tskel-${i}`} />
-              ))}
-            </div>
-          )}
-          {!HUB.loading && trailerStrip.length === 0 && (
-            <Banner
-              icon={Sparkles}
-              text="No trailers found right now. Try switching side or clearing your genre filter."
-              tone="warn"
-            />
-          )}
-          {!HUB.loading && trailerStrip.length > 0 && (
-            <HorizontalCarousel
-              items={trailerStrip}
-              ariaPrefix="trailers"
-              renderItem={(it) => (
-                <TrailerCard item={it} onClick={(x) => setModalItem(x)} />
-              )}
-            />
-          )}
-        </div>
-      </section>
+function FooterBar() {
+  return (
+    <footer className="mt-16 py-8 text-center text-white/60 text-xs" style={{ fontFamily: 'var(--text-font)' }}>
+      <div className="max-w-7xl mx-auto px-4">
+        Built with ❤️ using AniList, Jikan, TMDB & Trakt. Supply API keys in .env. Respect each provider's terms.
+      </div>
+    </footer>
+  );
+}
 
-      {/* Spotlight */}
-      <section className="mb-16">
-        <SectionHeader
-          icon={Flame}
-          title={`Spotlight Upcoming ${isEast ? "Anime" : "Titles"}`}
-          subtitle="Hand-picked highlights arriving soon"
-          right={<NeonPill>Curated</NeonPill>}
-        />
-        <div className={neonPanel}>
-          {HUB.loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-5">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <PosterSkeleton key={`sp-${i}`} />
-              ))}
-            </div>
-          )}
-          {!HUB.loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-5">
-              {(HUB.newReleases || [])
-                .filter(matchesGenre)
-                .slice(0, 9)
-                .map((it) => (
-                  <PosterCard key={`${it.source}:${it.id}`} item={it} onClick={onPosterClick} />
-                ))}
-            </div>
-          )}
-          {!HUB.loading && (HUB.newReleases || []).filter(matchesGenre).length === 0 && (
-            <Banner icon={Rocket} text="No upcoming titles match this genre." tone="warn" />
-          )}
-        </div>
-      </section>
-
-      {/* Release Calendar */}
-      <section className="mb-16">
-        <SectionHeader
-          icon={Calendar}
-          title="Release Calendar"
-          subtitle="Mark the dates — countdowns tick in real-time"
-          right={null}
-        />
-        <div className={neonPanel}>
-          {HUB.loading && (
-            <div className="flex gap-3 overflow-hidden">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div key={`calskel-${i}`} className="w-36">
-                  <div className="h-6 bg-white/10 rounded mb-2 animate-pulse" />
-                  <div className="h-24 bg-white/10 rounded mb-2 animate-pulse" />
-                  <div className="h-10 bg-white/10 rounded animate-pulse" />
-                </div>
-              ))}
-            </div>
-          )}
-          {!HUB.loading && calendarList.length > 0 && (
-            <HorizontalCarousel
-              items={calendarList}
-              ariaPrefix="calendar"
-              renderItem={(it) => (
-                <CalendarCard item={it} onClick={(x) => onPosterClick(x)} />
-              )}
-            />
-          )}
-          {!HUB.loading && calendarList.length === 0 && (
-            <Banner icon={Calendar} text="No dated items found." tone="warn" />
-          )}
-        </div>
-      </section>
-
-      {/* Trending */}
-      <section className="mb-16">
-        <SectionHeader
-          icon={TrendingIcon}
-          title="Trending"
-          subtitle={
-            isEast
-              ? "Top airing and most discussed anime"
-              : "Hot right now across movies and TV"
-          }
-          right={<NeonPill>Live Buzz</NeonPill>}
-        />
-        <div className={neonPanel}>
-          {HUB.loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <PosterSkeleton key={`t-${i}`} />
-              ))}
-            </div>
-          )}
-          {!HUB.loading && (HUB.trending || []).filter(matchesGenre).length === 0 && (
-            <Banner icon={Flame} text="Nothing trending for this genre." tone="warn" />
-          )}
-          {!HUB.loading && (HUB.trending || []).filter(matchesGenre).length > 0 && (
-            <HorizontalCarousel
-              items={(HUB.trending || []).filter(matchesGenre)}
-              ariaPrefix="trending"
-              renderItem={(it) => (
-                <PosterCard item={it} onClick={(x) => onPosterClick(x)} />
-              )}
-            />
-          )}
-        </div>
-      </section>
-
-      {/* New Releases */}
-      <section className="mb-16">
-        <SectionHeader
-          icon={Tv}
-          title="New Releases"
-          subtitle={
-            isEast
-              ? "Fresh simulcasts and latest anime drops"
-              : "This week’s new movies and episodes"
-          }
-          right={<NeonPill>Fresh</NeonPill>}
-        />
-        <div className={neonPanel}>
-          {HUB.loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <PosterSkeleton key={`n-${i}`} />
-              ))}
-            </div>
-          )}
-          {!HUB.loading && (HUB.newReleases || []).filter(matchesGenre).length === 0 && (
-            <Banner icon={Tv} text="No new releases match this genre yet." tone="warn" />
-          )}
-          {!HUB.loading && (HUB.newReleases || []).filter(matchesGenre).length > 0 && (
-            <HorizontalCarousel
-              items={(HUB.newReleases || []).filter(matchesGenre)}
-              ariaPrefix="new"
-              renderItem={(it) => (
-                <PosterCard item={it} onClick={(x) => onPosterClick(x)} />
-              )}
-            />
-          )}
-        </div>
-      </section>
-
-      {/* Top Rated */}
-      <section className="mb-16">
-        <SectionHeader
-          icon={Medal}
-          title={`Top Rated ${isEast ? "Anime" : "Titles"}`}
-          subtitle="Critically acclaimed and fan favorites"
-          right={<NeonPill>Elite</NeonPill>}
-        />
-        <div className={neonPanel}>
-          {HUB.loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <PosterSkeleton key={`top-${i}`} />
-              ))}
-            </div>
-          )}
-          {!HUB.loading && (HUB.topRated || []).filter(matchesGenre).length === 0 && (
-            <Banner icon={Medal} text="No top rated items match this genre." tone="warn" />
-          )}
-          {!HUB.loading && (HUB.topRated || []).filter(matchesGenre).length > 0 && (
-            <HorizontalCarousel
-              items={(HUB.topRated || []).filter(matchesGenre)}
-              ariaPrefix="top"
-              renderItem={(it) => (
-                <PosterCard item={it} onClick={(x) => onPosterClick(x)} />
-              )}
-            />
-          )}
-        </div>
-      </section>
-
-      {/* Recommended */}
-      <section className="mb-20">
-        <SectionHeader
-          icon={Compass}
-          title="Recommended For You"
-          subtitle="Smart shuffle based on what’s buzzing"
-          right={
-            <button
-              onClick={reshuffleReco}
-              className="px-3 py-2 rounded-lg bg-black/40 border border-white/10 hover:bg-white/10 transition flex items-center gap-2 text-sm"
-            >
-              <RefreshCcw className="w-4 h-4" />
-              Shuffle
-            </button>
-          }
-        />
-        <div className={neonPanel}>
-          {HUB.loading && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-5">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <PosterSkeleton key={`r-${i}`} />
-              ))}
-            </div>
-          )}
-          {!HUB.loading && (reco || []).filter(matchesGenre).length === 0 && (
-            <Banner icon={ThumbsUp} text="No recommendations right now." tone="warn" />
-          )}
-          {!HUB.loading && (reco || []).filter(matchesGenre).length > 0 && (
-            <HorizontalCarousel
-              items={(reco || []).filter(matchesGenre)}
-              ariaPrefix="reco"
-              renderItem={(it) => (
-                <PosterCard item={it} onClick={(x) => onPosterClick(x)} />
-              )}
-            />
-          )}
-        </div>
-      </section>
-
-      {/* Trailer Modal */}
-      <TrailerModal
-        youtubeKey={modalItem?.trailerKey}
-        title={modalItem?.title}
-        onClose={() => setModalItem(null)}
-      />
-
-      {/* Footnote: API Sources */}
-      <footer className="mt-8 mb-4 text-center text-[11px] text-zinc-500">
-        Data sources: {isEast ? "AniList, Jikan (MAL)" : "TMDB"}
-        {isEast
-          ? ". For streaming availability, consider JustWatch API in future."
-          : TRAKT_API_KEY && TRAKT_API_KEY !== "<OPTIONAL_TRAKT_CLIENT_ID>"
-          ? ", Trakt."
-          : ". (Trakt optional)."}
-      </footer>
+// -----------------------------------------------------------------------------
+// Error/Empty States
+// -----------------------------------------------------------------------------
+function ErrorState({ onRetry, error }) {
+  return (
+    <div className="rounded-2xl bg-red-500/10 border border-red-500/20 p-6 text-center">
+      <div className="text-red-300 font-semibold" style={{ fontFamily: 'var(--text-font)' }}>Something went wrong loading content.</div>
+      {error?.message && <div className="mt-1 text-red-200 text-xs">{String(error.message)}</div>}
+      <button onClick={onRetry} className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow bg-red-500/20 hover:bg-red-500/30">
+        <RefreshIcon className="w-4 h-4" /> Try Again
+      </button>
     </div>
   );
 }
 
-// ========================= Icons =========================
-function TrendingIcon(props) {
-  return <Flame {...props} />;
+function LoadingState() {
+  return (
+    <div className="space-y-6">
+      <LineSkeleton className="h-10 w-64" />
+      <div className="flex gap-3 overflow-hidden">{Array.from({ length: 8 }).map((_, i) => <PosterSkeleton key={i} />)}</div>
+      <LineSkeleton className="h-10 w-72" />
+      <div className="flex gap-3 overflow-hidden">{Array.from({ length: 8 }).map((_, i) => <PosterSkeleton key={i} />)}</div>
+      <LineSkeleton className="h-10 w-80" />
+      <div className="flex gap-3 overflow-hidden">{Array.from({ length: 8 }).map((_, i) => <PosterSkeleton key={i} />)}</div>
+    </div>
+  );
 }
 
-/* =========================
-   Notes & Implementation Details
-   =========================
-- East (Anime) uses AniList GraphQL (trending/top/upcoming) and Jikan REST
-  (upcoming + top) to enrich. Trailers are taken from AniList/Jikan when present.
-- West (Movies/Series) uses TMDB trending (movies+tv), upcoming (movies) and
-  on_the_air (tv), plus top_rated (movies+tv). Trailers are enriched via TMDB videos.
-- Trakt trending is optional (requires REACT_APP_TRAKT_API_KEY). If present, its
-  items are merged into Trending (they may have no images/trailers).
-- Toggle persists with localStorage key "watchtower:isEast".
-- All sections are horizontal carousels with scroll arrows; mobile uses swipe/drag.
-- Trailer modal embeds YouTube by trailerKey. If an item has no trailerKey, clicking poster
-  simply opens nothing (or can be extended).
-- Styling: glassmorphism + neon gradients. Tailwind utility classes.
-- Keep Azonix font for headings. The rest can use system fonts.
-- This file is self-contained; only expects env keys for TMDB (required) and optional Trakt.
-- If TMDB key is missing, West side shows an error banner (via hook error state).
-*/
+// -----------------------------------------------------------------------------
+// Main Page Component
+// -----------------------------------------------------------------------------
+export default function WatchTowerPage() {
+  const [mode, setMode] = useState('east');
+  const { trending, upcoming, topRated, recommended, loading, error, refresh } = useWatchTowerData(mode);
+  const [trailer, setTrailer] = useState({ open: false, item: null });
+
+  const onItemClick = useCallback((item) => { if (item?.trailerUrl) setTrailer({ open: true, item }); }, []);
+
+  const onPlayHeroTrailer = useCallback(() => {
+    const heroItem = {
+      title: mode === 'east' ? 'Attack on Titan' : 'Spider-Verse',
+      trailerUrl: mode === 'east' ? 'https://www.youtube.com/watch?v=MGRm4IzK1SQ' : 'https://www.youtube.com/watch?v=g4Hbz2jLxvQ',
+    };
+    setTrailer({ open: true, item: heroItem });
+  }, [mode]);
+
+  const fadeKey = `mode-${mode}`;
+
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <GlobalStyles />
+      <div className="pointer-events-none fixed inset-0 -z-10">
+        <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl opacity-30 bg-indigo-600" />
+        <div className="absolute top-1/2 -right-24 h-72 w-72 rounded-full blur-3xl opacity-30 bg-pink-600" />
+      </div>
+
+      <HeaderBar mode={mode} setMode={setMode} onRefresh={refresh} />
+
+      <main className="max-w-7xl mx-auto px-4 pb-16">
+        <AnimatePresence mode="wait">
+          <motion.div key={fadeKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.35 }}>
+            <HeroSection mode={mode} onPlayTrailer={onPlayHeroTrailer} />
+
+            {error ? (
+              <div className="mt-8"><ErrorState onRetry={refresh} error={error} /></div>
+            ) : loading ? (
+              <div className="mt-8"><LoadingState /></div>
+            ) : (
+              <>
+                <HorizontalCarousel title="Trending Now" icon={FlameIcon} items={trending} speed={42} direction="left" onItemClick={onItemClick} />
+                <HorizontalCarousel title="New Releases & Upcoming" icon={SparklesIcon} items={upcoming} speed={48} direction="right" onItemClick={onItemClick} />
+                <HorizontalCarousel title="Top Rated" icon={StarIcon} items={topRated} speed={40} direction="left" onItemClick={onItemClick} />
+                <RecommendedGrid title="Recommended For You" items={recommended} onItemClick={onItemClick} />
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
+      <FooterBar />
+
+      <TrailerModal open={trailer.open} onClose={() => setTrailer({ open: false, item: null })} title={trailer.item?.title} trailerUrl={trailer.item?.trailerUrl} />
+    </div>
+  );
+}
+
+// -----------------------------------------------------------------------------
+// Developer Notes & Setup
+// -----------------------------------------------------------------------------
+// 1) Environment Variables (.env at project root):
+//    REACT_APP_TMDB_KEY=your_tmdb_key
+//    REACT_APP_TRAKT_KEY=your_trakt_client_id
+//    Restart dev server after adding.
+// 2) Rate limits: Jikan is free but rate-limited; Trakt requires API key and adherence to
+//    their terms. AniList GraphQL also has limits—batch responsibly.
+// 3) Image CDN: TMDB images used for West and to enrich Trakt items. For East, AniList and
+//    Jikan provide cover images; we display those directly.
+// 4) Trailer logic priority:
+//    - East: Use AniList trailer if present; else Jikan trailer; fallback none.
+//    - West: Use Trakt trailer if present; else TMDB videos endpoint; else none.
+// 5) Infinite carousels are CSS-powered (no timers) using marquee-style keyframes. Hover
+//    pauses animation. Duplicate arrays ensure seamless looping.
+// 6) Accessibility: Modal supports ESC and backdrop click to close. Posters are buttons with
+//    focus rings. Consider focus trapping for complex modals.
+// 7) Performance tips: You may virtualize rows, lazy-load carousels with IntersectionObserver,
+//    or lower image sizes for low-end devices.
+// 8) Security/CORS: In some setups, Trakt/TMDB calls from the browser may need a proxy if
+//    your environment enforces strict CORS. In that case, add a tiny server middleware or use
+//    a Next.js API route to forward requests securely.
+// 9) Future enhancements: Authentication, user watchlist, genre filters, search, continue
+//    watching rail, and server-side caching for API responses.
