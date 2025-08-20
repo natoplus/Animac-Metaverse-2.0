@@ -16,7 +16,7 @@ import {
   Flame as FlameIcon,
 } from "lucide-react";
 
-import { useWatchTowerData } from "@/utils/watchtowerData";
+import { useWatchTowerData } from "../utils/watchtowerData";
 
 // -----------------------------------------------------------------------------
 // Skeletons
