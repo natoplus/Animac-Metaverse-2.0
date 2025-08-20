@@ -20,6 +20,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSwipeable } from "react-swipeable";
 import {
   Play as PlayIcon,
   X as XIcon,
@@ -730,26 +731,63 @@ function PosterCard({ item, onClick }) {
 // -----------------------------------------------------------------------------
 // Horizontal Carousel (Infinite loop via marquee duplication)
 // -----------------------------------------------------------------------------
-function HorizontalCarousel({ title, icon: Icon, items, speed = 45, direction = 'left', onItemClick }) {
+function HorizontalCarousel({ title, icon: Icon, items, speed = 45, direction = "left", onItemClick }) {
   const trackRef = useRef(null);
   const duration = `${Math.max(20, Math.min(90, speed))}s`;
-  const marqueeClass = direction === 'left' ? 'marquee-left' : 'marquee-right';
-  const loopItems = useMemo(() => { const base = items && items.length ? items : []; return [...base, ...base]; }, [items]);
+  const marqueeClass = direction === "left" ? "marquee-left" : "marquee-right";
+
+  // Duplicate items so marquee can loop seamlessly
+  const loopItems = useMemo(() => {
+    const base = items && items.length ? items : [];
+    return [...base, ...base];
+  }, [items]);
+
+  // Swipe gestures
+  const handlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (trackRef.current) {
+        trackRef.current.scrollBy({ left: 300, behavior: "smooth" });
+      }
+    },
+    onSwipedRight: () => {
+      if (trackRef.current) {
+        trackRef.current.scrollBy({ left: -300, behavior: "smooth" });
+      }
+    },
+    trackMouse: true, // enables drag on desktop
+  });
 
   return (
     <section className="mt-8">
       <div className="flex items-center gap-2 mb-3 px-1">
-        {Icon ? <Icon className="w-5 h-5 text-white/90" /> : <FlameIcon className="w-5 h-5 text-white/90" />}
-        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: 'var(--title-font)' }}>{title}</h3>
+        {Icon ? (
+          <Icon className="w-5 h-5 text-white/90" />
+        ) : (
+          <FlameIcon className="w-5 h-5 text-white/90" />
+        )}
+        <h3
+          className="text-lg md:text-xl tracking-wider"
+          style={{ fontFamily: "var(--title-font)" }}
+        >
+          {title}
+        </h3>
       </div>
-      <div className="relative overflow-hidden">
-        <div ref={trackRef} style={{ ['--marquee-duration']: duration }} className={cx("marquee-pause thin-scrollbar", marqueeClass)}>
+
+      {/* Wrapper now has swipe handlers */}
+      <div className="relative overflow-hidden" {...handlers}>
+        <div
+          ref={trackRef}
+          style={{ ["--marquee-duration"]: duration }}
+          className={cx("marquee-pause thin-scrollbar flex-nowrap", marqueeClass)}
+        >
           <div className="flex gap-3 pr-3 will-change-transform">
             {loopItems.map((item, idx) => (
               <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
             ))}
           </div>
         </div>
+
+        {/* gradient fades */}
         <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black to-transparent" />
       </div>
