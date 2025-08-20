@@ -36,7 +36,7 @@ import {
   Crown as CrownIcon,
 } from "lucide-react";
 
-import { useWatchTowerData } from "@/utils/watchtowerData";
+import { useWatchTowerData } from "../utils/watchtowerData";
 
 // -----------------------------------------------------------------------------
 // Global Style Injection: Fonts, Keyframes, Reusable CSS
