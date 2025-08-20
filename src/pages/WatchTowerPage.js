@@ -288,37 +288,47 @@ async function fetchAniListUpcoming() {
   return (data?.Page?.media || []).map(mapAniListMedia);
 }
 
-// ---------------- Jikan (REST) ----------------
-function mapJikanAnime(a){
-  const title = a.title_english || a.title || 'Untitled';
+// ---------------- Jikan (REST via Proxy) ----------------
+function mapJikanAnime(a) {
+  const title = a.title_english || a.title || "Untitled";
   const youtubeId = a.trailer?.youtube_id;
-  const trailerUrl = youtubeId ? `https://www.youtube.com/watch?v=${youtubeId}` : (a.trailer?.url || null);
+  const trailerUrl = youtubeId
+    ? `https://www.youtube.com/watch?v=${youtubeId}`
+    : a.trailer?.url || null;
+
   return {
     id: `east-jikan-${a.mal_id}`,
     title,
-    year: a.year || a.aired?.prop?.from?.year || '—',
-    rating: typeof a.score === 'number' ? +a.score.toFixed(1) : 0,
-    poster: a.images?.jpg?.large_image_url || a.images?.jpg?.image_url || sample(PLACEHOLDER.posters),
-    backdrop: a.trailer?.images?.maximum_image_url || sample(PLACEHOLDER.backdrops),
-    type: 'anime',
-    region: 'east',
-    synopsis: a.synopsis || '',
+    year: a.year || a.aired?.prop?.from?.year || "—",
+    rating: typeof a.score === "number" ? +a.score.toFixed(1) : 0,
+    poster:
+      a.images?.jpg?.large_image_url ||
+      a.images?.jpg?.image_url ||
+      sample(PLACEHOLDER.posters),
+    backdrop:
+      a.trailer?.images?.maximum_image_url ||
+      sample(PLACEHOLDER.backdrops),
+    type: "anime",
+    region: "east",
+    synopsis: a.synopsis || "",
     trailerUrl,
-    _meta: { source: 'jikan', malId: a.mal_id }
+    _meta: { source: "jikan", malId: a.mal_id },
   };
 }
 
-async function fetchJikanTrending(){
-  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=20`);
-  return (json?.data||[]).map(mapJikanAnime);
+async function fetchJikanTrending() {
+  const json = await safeFetch(`/api/jikan?endpoint=top/anime?limit=20`);
+  return (json?.data || []).map(mapJikanAnime);
 }
-async function fetchJikanUpcoming(){
-  const json = await safeFetch(`${JIKAN_BASE}/seasons/upcoming?limit=24`);
-  return (json?.data||[]).map(mapJikanAnime);
+
+async function fetchJikanUpcoming() {
+  const json = await safeFetch(`/api/jikan?endpoint=seasons/upcoming?limit=24`);
+  return (json?.data || []).map(mapJikanAnime);
 }
-async function fetchJikanTop(){
-  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=24`);
-  return (json?.data||[]).map(mapJikanAnime);
+
+async function fetchJikanTop() {
+  const json = await safeFetch(`/api/jikan?endpoint=top/anime?limit=24`);
+  return (json?.data || []).map(mapJikanAnime);
 }
 
 // ---------------- TMDB (REST) ----------------
