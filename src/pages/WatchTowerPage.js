@@ -672,88 +672,88 @@ function useEastHubData() {
   const [trailers, setTrailers] = useState([]); // items with trailerKey (for trailer strip)
 
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        // Fetch from AniList
-        const [aniTrending, aniTop, aniUpcoming] = await Promise.all([
-          // trending/currently popular
-          fetchAniList({ sort: "TRENDING_DESC", perPage: 24 }),
-          // top rated overall
-          fetchAniList({ sort: "SCORE_DESC", perPage: 24 }),
-          // not yet released (for upcoming)
-          fetchAniList({
-            sort: "POPULARITY_DESC",
-            status: "NOT_YET_RELEASED",
-            perPage: 24,
-          }),
-        ]);
+  if (mode !== "east") return; // ⬅ only fetch when on anime hub
 
-        // Fetch from Jikan as well to enrich upcoming and top
-        const [jkUpcoming, jkTop] = await Promise.all([
-          fetchJikanUpcoming({ limit: 24 }).catch(() => []),
-          fetchJikanTop({ limit: 24 }).catch(() => []),
-        ]);
+  let alive = true;
+  (async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch from AniList
+      const [aniTrending, aniTop, aniUpcoming] = await Promise.all([
+        fetchAniList({ sort: "TRENDING_DESC", perPage: 24 }),
+        fetchAniList({ sort: "SCORE_DESC", perPage: 24 }),
+        fetchAniList({
+          sort: "POPULARITY_DESC",
+          status: "NOT_YET_RELEASED",
+          perPage: 24,
+        }),
+      ]);
 
-        // Build sections — merge & de-duplicate by title or id
-        const deDup = (arr) => {
-          const seen = new Set();
-          const out = [];
-          for (const x of arr) {
-            const key = `${x.source}:${x.id}`;
-            if (!seen.has(key)) {
-              seen.add(key);
-              out.push(x);
-            }
+      // Fetch from Jikan
+      const [jkUpcoming, jkTop] = await Promise.all([
+        fetchJikanUpcoming({ limit: 24 }).catch(() => []),
+        fetchJikanTop({ limit: 24 }).catch(() => []),
+      ]);
+
+      // Merge & dedupe
+      const deDup = (arr) => {
+        const seen = new Set();
+        const out = [];
+        for (const x of arr) {
+          const key = `${x.source}:${x.id}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            out.push(x);
           }
-          return out;
-        };
+        }
+        return out;
+      };
 
-        const TRENDING = deDup([...aniTrending]);
-        const TOP = deDup([...aniTop, ...jkTop]).sort(
-          (a, b) => (b.score || 0) - (a.score || 0)
-        );
-        const UPCOMING = deDup([...aniUpcoming, ...jkUpcoming]).sort(
-          (a, b) =>
-            new Date(a.releaseDate || "9999-01-01") -
-            new Date(b.releaseDate || "9999-01-01")
-        );
+      const TRENDING = deDup([...aniTrending]);
+      const TOP = deDup([...aniTop, ...jkTop]).sort(
+        (a, b) => (b.score || 0) - (a.score || 0)
+      );
+      const UPCOMING = deDup([...aniUpcoming, ...jkUpcoming]).sort(
+        (a, b) =>
+          new Date(a.releaseDate || "9999-01-01") -
+          new Date(b.releaseDate || "9999-01-01")
+      );
 
-        const RECO = deDup(
-          [...TRENDING.slice(0, 10), ...TOP.slice(0, 10), ...UPCOMING.slice(0, 10)]
-            .filter(Boolean)
-            .sort(() => Math.random() - 0.5)
-        ).slice(0, 18);
+      const RECO = deDup(
+        [...TRENDING.slice(0, 10), ...TOP.slice(0, 10), ...UPCOMING.slice(0, 10)]
+          .filter(Boolean)
+          .sort(() => Math.random() - 0.5)
+      ).slice(0, 18);
 
-        const SPOT = TRENDING[0] || TOP[0] || UPCOMING[0] || null;
+      const SPOT = TRENDING[0] || TOP[0] || UPCOMING[0] || null;
 
-        // Trailer strip: prioritize items with trailerKey (AniList/Jikan often have)
-        const TRAILERS = deDup(
-          [...TRENDING, ...UPCOMING, ...TOP].filter((x) => x.trailerKey)
-        ).slice(0, 14);
+      const TRAILERS = deDup(
+        [...TRENDING, ...UPCOMING, ...TOP].filter((x) => x.trailerKey)
+      ).slice(0, 14);
 
-        if (!alive) return;
+      if (!alive) return;
 
-        setTrending(TRENDING);
-        setTopRated(TOP);
-        setNewReleases(UPCOMING);
-        setRecommended(RECO);
-        setSpotlight(SPOT);
-        setTrailers(TRAILERS);
-      } catch (err) {
-        if (!alive) return;
-        setError(err?.message || "Failed to load anime hub");
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
+      setTrending(TRENDING);
+      setTopRated(TOP);
+      setNewReleases(UPCOMING);
+      setRecommended(RECO);
+      setSpotlight(SPOT);
+      setTrailers(TRAILERS);
+    } catch (err) {
+      if (!alive) return;
+      setError(err?.message || "Failed to load anime hub");
+    } finally {
+      if (alive) setLoading(false);
+    }
+  })();
 
-    return () => {
-      alive = false;
-    };
-  }, []);
+  return () => {
+    alive = false;
+  };
+}, [mode]); // ⬅ rerun whenever toggle switches
+
+
 
   return {
     loading,
