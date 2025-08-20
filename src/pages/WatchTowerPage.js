@@ -376,16 +376,19 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItem
 
     let frame;
     function step() {
-      el.scrollLeft += speed; // scroll right continuously
-      // reset when halfway
+      el.scrollLeft += speed;
+
+      // instead of snapping at half, reset earlier invisibly
       if (el.scrollLeft >= el.scrollWidth / 2) {
-        el.scrollLeft = 0;
+        el.scrollLeft -= el.scrollWidth / 2;
       }
+
       frame = requestAnimationFrame(step);
     }
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
   }, [speed]);
+
 
   // Swipe gestures
   const handlers = useSwipeable({
@@ -416,12 +419,13 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItem
       <div className="relative overflow-hidden" {...handlers}>
         <div
           ref={scrollRef}
-          className="flex gap-3 pr-3 overflow-x-scroll scrollbar-hide scroll-smooth"
+          className="flex gap-3 pr-3 overflow-x-scroll scrollbar-hide" // removed scroll-smooth here
         >
           {loopItems.map((item, idx) => (
             <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
           ))}
         </div>
+
 
         {/* gradient fades */}
         <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black to-transparent" />
