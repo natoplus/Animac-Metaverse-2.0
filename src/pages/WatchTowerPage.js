@@ -663,6 +663,7 @@ async function fetchTraktTrending({ type = "movies", limit = 20 }) {
 function useEastHubData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mode, setMode] = useState("east");
 
   const [trending, setTrending] = useState([]); // top airing / trending
   const [newReleases, setNewReleases] = useState([]); // upcoming, seasonal
@@ -752,7 +753,6 @@ function useEastHubData() {
     alive = false;
   };
 }, [mode]); // ⬅ rerun whenever toggle switches
-
 
 
   return {
