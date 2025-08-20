@@ -731,60 +731,64 @@ function PosterCard({ item, onClick }) {
 // -----------------------------------------------------------------------------
 // Horizontal Carousel (Infinite loop via marquee duplication)
 // -----------------------------------------------------------------------------
-function HorizontalCarousel({ title, icon: Icon, items, speed = 45, direction = "left", onItemClick }) {
-  const trackRef = useRef(null);
-  const duration = `${Math.max(20, Math.min(90, speed))}s`;
-  const marqueeClass = direction === "left" ? "marquee-left" : "marquee-right";
+function HorizontalCarousel({ title, icon: Icon, items = [], speed = 0.5, onItemClick }) {
+  const scrollRef = useRef(null);
 
-  // Duplicate items so marquee can loop seamlessly
-  const loopItems = useMemo(() => {
-    const base = items && items.length ? items : [];
-    return [...base, ...base];
-  }, [items]);
+  // Duplicate items for seamless loop
+  const loopItems = useMemo(() => [...items, ...items], [items]);
+
+  // Auto scroll effect
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    let frame;
+    function step() {
+      el.scrollLeft += speed; // scroll right continuously
+      // reset when halfway
+      if (el.scrollLeft >= el.scrollWidth / 2) {
+        el.scrollLeft = 0;
+      }
+      frame = requestAnimationFrame(step);
+    }
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [speed]);
 
   // Swipe gestures
   const handlers = useSwipeable({
     onSwipedLeft: () => {
-      if (trackRef.current) {
-        trackRef.current.scrollBy({ left: 300, behavior: "smooth" });
+      if (scrollRef.current) {
+        scrollRef.current.scrollBy({ left: 300, behavior: "smooth" });
       }
     },
     onSwipedRight: () => {
-      if (trackRef.current) {
-        trackRef.current.scrollBy({ left: -300, behavior: "smooth" });
+      if (scrollRef.current) {
+        scrollRef.current.scrollBy({ left: -300, behavior: "smooth" });
       }
     },
-    trackMouse: true, // enables drag on desktop
+    trackMouse: true,
   });
 
   return (
     <section className="mt-8">
+      {/* Section title */}
       <div className="flex items-center gap-2 mb-3 px-1">
-        {Icon ? (
-          <Icon className="w-5 h-5 text-white/90" />
-        ) : (
-          <FlameIcon className="w-5 h-5 text-white/90" />
-        )}
-        <h3
-          className="text-lg md:text-xl tracking-wider"
-          style={{ fontFamily: "var(--title-font)" }}
-        >
+        {Icon ? <Icon className="w-5 h-5 text-white/90" /> : <FlameIcon className="w-5 h-5 text-white/90" />}
+        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: "var(--title-font)" }}>
           {title}
         </h3>
       </div>
 
-      {/* Wrapper now has swipe handlers */}
+      {/* Carousel */}
       <div className="relative overflow-hidden" {...handlers}>
         <div
-          ref={trackRef}
-          style={{ ["--marquee-duration"]: duration }}
-          className={cx("marquee-pause thin-scrollbar flex-nowrap", marqueeClass)}
+          ref={scrollRef}
+          className="flex gap-3 pr-3 overflow-x-scroll scrollbar-hide scroll-smooth"
         >
-          <div className="flex gap-3 pr-3 will-change-transform">
-            {loopItems.map((item, idx) => (
-              <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
-            ))}
-          </div>
+          {loopItems.map((item, idx) => (
+            <PosterCard key={`${item.id}-${idx}`} item={item} onClick={onItemClick} />
+          ))}
         </div>
 
         {/* gradient fades */}
@@ -794,26 +798,6 @@ function HorizontalCarousel({ title, icon: Icon, items, speed = 45, direction = 
     </section>
   );
 }
-
-// -----------------------------------------------------------------------------
-// Recommended Grid
-// -----------------------------------------------------------------------------
-function RecommendedGrid({ title, items, onItemClick }) {
-  return (
-    <section className="mt-10">
-      <div className="flex items-center gap-2 mb-4 px-1">
-        <CrownIcon className="w-5 h-5 text-white/90" />
-        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: 'var(--title-font)' }}>{title}</h3>
-      </div>
-      <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-        {items.map((item) => (
-          <PosterCard key={item.id} item={item} onClick={onItemClick} />
-        ))}
-      </div>
-    </section>
-  );
-}
-
 // -----------------------------------------------------------------------------
 // Page Chrome: Header, Footer, Utility Bars
 // -----------------------------------------------------------------------------
