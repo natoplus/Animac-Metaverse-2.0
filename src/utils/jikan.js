@@ -15,9 +15,9 @@ function mapJikanAnime(a) {
     rating: typeof a.score === "number" ? +a.score.toFixed(1) : 0,
     poster:
       a.images?.jpg?.large_image_url ||
-      a.images?.jpg?.image_url ||
-      sample(PLACEHOLDER.posters),
-    backdrop: a.trailer?.images?.maximum_image_url || sample(PLACEHOLDER.backdrops),
+      a.images?.jpg?.image_url,
+    backdrop:
+      a.trailer?.images?.maximum_image_url || null,
     type: "anime",
     region: "east",
     synopsis: a.synopsis || "",
@@ -37,7 +37,13 @@ export async function fetchJikanUpcoming() {
   return (json?.data || []).map(mapJikanAnime);
 }
 
-export async function fetchJikanTop() {
+export async function fetchJikanTopRated() {
   const json = await fetchJikan(`/top/anime`, { limit: 24 });
+  return (json?.data || []).map(mapJikanAnime);
+}
+
+export async function fetchJikanRecommended() {
+  // Jikan doesn’t expose direct "recommended" lists, so fallback to "popular"
+  const json = await fetchJikan(`/top/anime`, { filter: "bypopularity", limit: 24 });
   return (json?.data || []).map(mapJikanAnime);
 }

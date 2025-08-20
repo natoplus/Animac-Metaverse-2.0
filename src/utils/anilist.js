@@ -70,6 +70,24 @@ query ($page:Int,$perPage:Int){
   }
 }`;
 
+// Recommended = use "POPULARITY_DESC" as proxy
+const GQL_RECOMMENDED = `
+query ($page:Int,$perPage:Int){
+  Page(page:$page, perPage:$perPage){
+    media(type:ANIME, sort:POPULARITY_DESC){
+      id
+      title{ romaji english }
+      averageScore
+      startDate{ year }
+      format
+      description(asHtml:false)
+      coverImage{ extraLarge large }
+      bannerImage
+      trailer{ id site thumbnail }
+    }
+  }
+}`;
+
 // ---------------- Mapper ----------------
 function mapAniListMedia(m) {
   const title = m.title?.english || m.title?.romaji || "Untitled";
@@ -86,11 +104,8 @@ function mapAniListMedia(m) {
       typeof m.averageScore === "number"
         ? +(m.averageScore / 10).toFixed(1)
         : 0,
-    poster:
-      m.coverImage?.extraLarge ||
-      m.coverImage?.large ||
-      sample(PLACEHOLDER.posters),
-    backdrop: m.bannerImage || sample(PLACEHOLDER.backdrops),
+    poster: m.coverImage?.extraLarge || m.coverImage?.large,
+    backdrop: m.bannerImage || null,
     type: "anime",
     region: "east",
     synopsis: m.description || "",
@@ -105,12 +120,17 @@ export async function fetchAniListTrending() {
   return (data?.Page?.media || []).map(mapAniListMedia);
 }
 
-export async function fetchAniListTop() {
+export async function fetchAniListTopRated() {
   const data = await anilistQuery(GQL_TOP, { page: 1, perPage: 24 });
   return (data?.Page?.media || []).map(mapAniListMedia);
 }
 
 export async function fetchAniListUpcoming() {
   const data = await anilistQuery(GQL_UPCOMING, { page: 1, perPage: 24 });
+  return (data?.Page?.media || []).map(mapAniListMedia);
+}
+
+export async function fetchAniListRecommended() {
+  const data = await anilistQuery(GQL_RECOMMENDED, { page: 1, perPage: 24 });
   return (data?.Page?.media || []).map(mapAniListMedia);
 }
