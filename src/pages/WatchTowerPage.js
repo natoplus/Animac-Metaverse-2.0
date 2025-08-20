@@ -644,7 +644,6 @@ function EastWestToggle({ mode, setMode, refresh }) {
         <button
           onClick={() => {
             setMode("east");
-            refresh(); // reload east content
           }}
           className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
             mode === "east"
