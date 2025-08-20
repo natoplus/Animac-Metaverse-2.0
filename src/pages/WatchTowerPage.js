@@ -446,13 +446,21 @@ function HorizontalCarousel({ title, icon: Icon, items = [], speed = 30, onItemC
 // -----------------------------------------------------------------------------
 // Recommended Grid
 // -----------------------------------------------------------------------------
-function RecommendedGrid({ title, items, onItemClick }) {
+function RecommendedGrid({ title, items = [], onItemClick }) {
+  if (!items.length) return null; // nothing to render
+
   return (
     <section className="mt-10">
       <div className="flex items-center gap-2 mb-4 px-1">
         <CrownIcon className="w-5 h-5 text-white/90" />
-        <h3 className="text-lg md:text-xl tracking-wider" style={{ fontFamily: 'var(--title-font)' }}>{title}</h3>
+        <h3
+          className="text-lg md:text-xl tracking-wider"
+          style={{ fontFamily: "var(--title-font)" }}
+        >
+          {title}
+        </h3>
       </div>
+
       <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
         {items.map((item) => (
           <PosterCard key={item.id} item={item} onClick={onItemClick} />
@@ -461,6 +469,7 @@ function RecommendedGrid({ title, items, onItemClick }) {
     </section>
   );
 }
+
 
 // -----------------------------------------------------------------------------
 // Page Chrome: Header, Footer, Utility Bars
