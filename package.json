@@ -29,8 +29,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "prebuild": "node generate-sitemap.js",
+    "build": "react-scripts build",
     "start": "react-scripts start",
-    "build": "vite build",
     "test": "react-scripts test",
     "serve": "node server.js",
     "postbuild": "node generate-sitemap.js",
