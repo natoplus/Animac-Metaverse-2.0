@@ -37,6 +37,10 @@
     "postbuild": "node generate-sitemap.js",
     "eject": "react-scripts eject"
   },
+  "rewrites": [
+    { "source": "/sitemap.xml", "destination": "/sitemap.xml" },
+    { "source": "/robots.txt", "destination": "/robots.txt" }
+  ],
   "eslintConfig": {
     "extends": [
       "react-app",
