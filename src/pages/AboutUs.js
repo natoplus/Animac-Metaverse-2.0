@@ -2,9 +2,9 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Users, Globe, Brush, Rocket, Quote } from "lucide-react"; 
-import team1 from "../assets/team1.png"; 
-import team2 from "../assets/team2.png";
-import team3 from "../assets/team3.png";
+import team1 from "../assets/team1.jpg"; 
+import team2 from "../assets/team2.jpg";
+import team3 from "../assets/team3.jpg";
 
 export default function AboutUs() {
   const values = [
