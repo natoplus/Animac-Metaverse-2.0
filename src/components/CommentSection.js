@@ -196,9 +196,6 @@ const CommentSection = ({ articleId }) => {
   };
 
 
-
-
-
   useEffect(() => {
     if (articleId) fetchComments();
   }, [articleId]);
