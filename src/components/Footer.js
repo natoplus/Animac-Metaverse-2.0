@@ -9,7 +9,7 @@ const Footer = () => {
   const footerLinks = {
     Company: [
       { label: 'About ANIMAC', path: '/about' },
-      { label: 'Sitemap', path: '/sitemap.xml' },
+      { label: 'Sitemap', path: '/sitemap' },
       { label: 'Careers', path: '/careers' },
       { label: 'Press Kit', path: '/press' }
     ],
