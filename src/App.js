@@ -16,6 +16,10 @@ import WestPortal from './pages/WestPortal';
 import ArticlePage from './pages/ArticlePage';
 import WatchTowerPage from './pages/WatchTowerPage';
 import AdminDashboard from './pages/AdminDashboard';
+import AboutUs from './pages/AboutUs';
+import Careers from './pages/Careers';
+import PressKit from './pages/PressKit';
+import Contact from './pages/Contact';
 
 // Hooks
 import useSupabaseAuth from './hooks/useSupabaseAuth';
@@ -67,7 +71,11 @@ const AnimatedRoutes = ({ setIsLoading }) => {
           <Route path="/article/:id" element={<PageWrapper><ArticlePage /></PageWrapper>} />
           <Route path="/watch-tower" element={<PageWrapper><WatchTowerPage /></PageWrapper>} />
           <Route path="/admin/*" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
-        </Routes>
+          <Route path="/about" element={<PageWrapper><AboutUs /></PageWrapper>} />
+          <Route path="/careers" element={<PageWrapper><Careers /></PageWrapper>} />
+          <Route path="/press-kit" element={<PageWrapper><PressKit /></PageWrapper>} />
+          <Route path="/contact" element={<PageWrapper><Contact /></PageWrapper>} />
+          </Routes>
       </AnimatePresence>
     </>
   );

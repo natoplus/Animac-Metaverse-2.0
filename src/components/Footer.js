@@ -11,7 +11,7 @@ const Footer = () => {
       { label: 'About ANIMAC', path: '/about' },
       { label: 'Sitemap', path: '/sitemap' },
       { label: 'Careers', path: '/careers' },
-      { label: 'Press Kit', path: '/press' }
+      { label: 'Press Kit', path: '/press-kit' }
     ],
     Content: [
       { label: 'BUZZFEED Hub', path: '/buzzfeed' },
