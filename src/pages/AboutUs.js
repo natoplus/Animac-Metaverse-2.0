@@ -106,7 +106,7 @@ export default function AboutUs() {
 
       {/* OUR STORY with dimmed background */}
       <section className="relative py-20 px-6">
-        <div className="absolute inset-0 bg-[url('/animac-metaverse-2.jpg')] bg-cover bg-center opacity-10" />
+        <div className="absolute inset-0 bg-[url('/assets/animac-metaverse-2.jpg')] bg-cover bg-center opacity-10" />
         <motion.div
           className="relative z-10 max-w-4xl mx-auto text-center"
           initial={{ opacity: 0, y: 30 }}
