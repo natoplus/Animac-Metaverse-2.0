@@ -26,19 +26,19 @@ export default function AboutUs() {
     {
       name: "Jane Doe",
       role: "CEO & Founder",
-      image: "/team1.jpg",
+      image: "/assets/team1.jpg",
       quote: "Innovation drives the future.",
     },
     {
       name: "John Smith",
       role: "Lead Developer",
-      image: "/team2.jpg",
+      image: "/assets/team2.jpg",
       quote: "Code is the bridge to imagination.",
     },
     {
       name: "Sarah Lee",
       role: "Creative Director",
-      image: "/team3.jpg",
+      image: "/assets/team3.jpg",
       quote: "Design is intelligence made visible.",
     },
   ];
@@ -53,7 +53,7 @@ export default function AboutUs() {
       {/* HERO SECTION */}
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-black to-blue-900">
         {/* Optional background spline/image */}
-        <div className="absolute inset-0 bg-[url('/animac-metaverse-1.jpg')] bg-cover bg-center opacity-20" />
+        <div className="absolute inset-0 bg-[url('/assets/animac-metaverse-1.jpg')] bg-cover bg-center opacity-20" />
         <div className="relative z-10 text-center max-w-4xl px-4">
           <motion.h1
             className="text-6xl md:text-7xl mb-6"
