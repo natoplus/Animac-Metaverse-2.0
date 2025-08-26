@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Github, Twitter, Instagram, Mail } from 'lucide-react';
+import { Facebook, XIcon, Instagram, Mail } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -9,7 +9,7 @@ const Footer = () => {
   const footerLinks = {
     Company: [
       { label: 'About ANIMAC', path: '/about' },
-      { label: 'Our Team', path: '/team' },
+      { label: 'Sitemap', path: '/sitemap.xml' },
       { label: 'Careers', path: '/careers' },
       { label: 'Press Kit', path: '/press' }
     ],
@@ -20,7 +20,7 @@ const Footer = () => {
       { label: 'Submit Article', path: '/submit' }
     ],
     Community: [
-      { label: 'Discord', path: '#' },
+      { label: 'Linktree', path: '#' },
       { label: 'Reddit', path: '#' },
       { label: 'Newsletter', path: '/newsletter' },
       { label: 'Contact Us', path: '/contact' }
@@ -56,9 +56,9 @@ const Footer = () => {
               {/* Social Media Links */}
               <div className="flex space-x-4">
                 {[
-                  { icon: Twitter, href: '#', label: 'Twitter' },
+                  { icon: XIcon, href: '#', label: 'x' },
                   { icon: Instagram, href: '#', label: 'Instagram' },
-                  { icon: Github, href: '#', label: 'GitHub' },
+                  { icon: Facebook, href: '#', label: 'Facebook' },
                   { icon: Mail, href: '#', label: 'Email' }
                 ].map(({ icon: Icon, href, label }) => (
                   <motion.a
