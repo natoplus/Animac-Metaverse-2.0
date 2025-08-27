@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Download, FileText } from "lucide-react";
 import clsx from 'clsx';
 import { ArrowDown} from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function PressKit() {
     const assets = [
@@ -112,6 +113,9 @@ export default function PressKit() {
                     Available Assets
                 </motion.h2>
 
+
+                {/* DOWNLOADABLE ASSETS */}
+
                 {/* Portals */}
                 <div className="container mx-auto px-4 py-16">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
@@ -166,14 +170,18 @@ export default function PressKit() {
 
                                             {/* CTA Button */}
                                             <motion.div whileHover={{ scale: 1.02 }} className="mt-8">
-                                                <div
+                                                <div>
+                                                  <a
                                                     className={clsx(
                                                         `w-full py-3 px-6 text-white font-montserrat font-semibold rounded-lg text-center transition-all duration-300`,
                                                         `bg-gradient-to-r from-${portal.color}-600 to-${portal.color}-500`,
                                                         `hover:from-${portal.color}-700 hover:to-${portal.color}-600`
                                                     )}
+                                                    href={assets.file}
+                                                    download
                                                 >
-                                                    Enter {assets.title} Portal
+                                                    <Download size={20} className="inline-block mr-2" /> Enter {assets.title} Portal
+                                                  </a>
                                                 </div>
                                             </motion.div>
                                         </div>
@@ -182,35 +190,6 @@ export default function PressKit() {
                             </motion.div>
                         ))}
                     </div>
-                </div>
-
-
-                {/* DOWNLOADABLE ASSETS */}
-
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {assets.map((asset, i) => (
-                        <motion.div
-                            key={i}
-                            className="relative rounded-2xl overflow-hidden shadow-lg group bg-gradient-to-b from-gray-900 to-gray-800 p-6 flex flex-col justify-between hover:scale-105 transition-transform duration-300"
-                            initial={{ opacity: 0, y: 40 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.7, delay: i * 0.2 }}
-                        >
-                            <div className="mb-4 flex justify-center">
-                                <FileText size={36} className="text-blue-400" />
-                            </div>
-                            <h3 className="text-2xl text-blue-400 mb-2" style={{ fontFamily: "Azonix, sans-serif" }}>
-                                {asset.title}
-                            </h3>
-                            <a
-                                href={asset.file}
-                                download
-                                className="mt-auto px-4 py-2 rounded-lg bg-red-500 text-white font-semibold hover:bg-red-600 transition-colors text-center"
-                            >
-                                <Download size={20} className="inline-block mr-2" /> Download
-                            </a>
-                        </motion.div>
-                    ))}
                 </div>
             </section>
 
