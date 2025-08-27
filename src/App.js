@@ -1,50 +1,50 @@
 // App.js
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect, useState } from "react";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 
 // Layout Components
-import Header from './components/Header';
-import Footer from './components/Footer';
-import LoadingScreen from './components/LoadingScreen';
-import NewsletterModal from './components/NewsletterModal';
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import LoadingScreen from "./components/LoadingScreen";
+import NewsletterModal from "./components/NewsletterModal";
 
 // Pages
-import Home from './pages/Home';
-import BuzzfeedHub from './pages/BuzzfeedHub';
-import EastPortal from './pages/EastPortal';
-import WestPortal from './pages/WestPortal';
-import ArticlePage from './pages/ArticlePage';
-import WatchTowerPage from './pages/WatchTowerPage';
-import AdminDashboard from './pages/AdminDashboard';
-import AboutUs from './pages/AboutUs';
-import Careers from './pages/Careers';
-import PressKit from './pages/PressKit';
-import Contact from './pages/Contact';
+import Home from "./pages/Home";
+import BuzzfeedHub from "./pages/BuzzfeedHub";
+import EastPortal from "./pages/EastPortal";
+import WestPortal from "./pages/WestPortal";
+import ArticlePage from "./pages/ArticlePage";
+import WatchTowerPage from "./pages/WatchTowerPage";
+import AdminDashboard from "./pages/AdminDashboard";
+import AboutUs from "./pages/AboutUs";
+import Careers from "./pages/Careers";
+import PressKit from "./pages/PressKit";
+import Contact from "./pages/Contact";
 
 // Hooks
-import useSupabaseAuth from './hooks/useSupabaseAuth';
+import useSupabaseAuth from "./hooks/useSupabaseAuth";
 
 // Styles
-import './App.css';
+import "./App.css";
 
 // ScrollToTop component
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, [pathname]);
   return null;
 };
 
-// PageWrapper with fade and slight slide up animation
+// PageWrapper with fade/slide animation
 const PageWrapper = ({ children }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     exit={{ opacity: 0, y: 20 }}
     transition={{ duration: 0.5 }}
-    style={{ minHeight: '100vh' }}
+    style={{ minHeight: "100vh" }}
   >
     {children}
   </motion.div>
@@ -84,34 +84,37 @@ const AnimatedRoutes = ({ setIsLoading }) => {
 
 const AppContent = () => {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdminRoute = location.pathname.startsWith("/admin");
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Must be called at the top level of the component
   useSupabaseAuth();
 
   useEffect(() => {
-    console.log('[Auth] Supabase auth initialized');
+    console.log("[Auth] Supabase auth initialized");
   }, []);
 
   return (
     <div className="min-h-screen bg-netflix-black text-white relative">
       {!isAdminRoute && <Header />}
       {isLoading && <LoadingScreen />}
+      
+      {/* Newsletter modal mounted here */}
+      <NewsletterModal />
+
       <AnimatedRoutes setIsLoading={setIsLoading} />
       {!isAdminRoute && <Footer />}
-      {/* Newsletter popup is global */}
-      <NewsletterModal />
     </div>
   );
 };
 
-const App = () => (
-  <React.StrictMode>
-    <Router>
-      <AppContent />
-    </Router>
-  </React.StrictMode>
-);
+function App() {
+  return (
+    <React.StrictMode>
+      <Router>
+        <AppContent />
+      </Router>
+    </React.StrictMode>
+  );
+}
 
 export default App;

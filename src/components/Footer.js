@@ -2,9 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Facebook, XIcon, Instagram, Mail } from 'lucide-react';
+import { useNewsletter } from "../contexts/NewsletterContext"; // import the context hook
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
+  const { openNewsletter } = useNewsletter(); // get the open function
 
   const footerLinks = {
     Company: [
@@ -22,7 +24,7 @@ const Footer = () => {
     Community: [
       { label: 'Linktree', path: '#' },
       { label: 'Reddit', path: '#' },
-      { label: 'Newsletter', path: '/newsletter' },
+      { label: 'Newsletter', path: 'https://animac-metaverse-buzzfeed.kit.com/621519eebb' },
       { label: 'Contact Us', path: '/contact' }
     ]
   };
@@ -49,7 +51,7 @@ const Footer = () => {
               </Link>
 
               <p className="text-gray-400 font-inter leading-relaxed mb-6 max-w-sm">
-                Your ultimate destination for anime, movies, and western cartoons content. 
+                Your ultimate destination for anime, movies, and western cartoons content.
                 Discover stories that shape our streaming culture.
               </p>
 
@@ -129,6 +131,7 @@ const Footer = () => {
               />
               <button
                 type="button"
+                onClick={openNewsletter} // trigger modal
                 className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-inter font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105"
               >
                 Subscribe
