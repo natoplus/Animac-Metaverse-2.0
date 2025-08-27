@@ -1,4 +1,3 @@
-// App.js
 import React, { useEffect, useState } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -87,10 +86,9 @@ const AppContent = () => {
   const isAdminRoute = location.pathname.startsWith("/admin");
   const [isLoading, setIsLoading] = useState(false);
 
-  // ✅ Newsletter modal state
+  // NEW: Newsletter state
   const [newsletterOpen, setNewsletterOpen] = useState(false);
 
-  // Open modal function
   const openNewsletter = () => setNewsletterOpen(true);
   const closeNewsletter = () => setNewsletterOpen(false);
 
@@ -100,17 +98,9 @@ const AppContent = () => {
     console.log("[Auth] Supabase auth initialized");
   }, []);
 
-  // Example: auto-show modal after 5s on Home/Buzzfeed/Article pages
-  useEffect(() => {
-    if (!isAdminRoute && ["/", "/buzzfeed"].includes(location.pathname)) {
-      const timer = setTimeout(() => setNewsletterOpen(true), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [location.pathname, isAdminRoute]);
-
   return (
     <div className="min-h-screen bg-netflix-black text-white relative">
-      {!isAdminRoute && <Header />}
+      {!isAdminRoute && <Header openNewsletter={openNewsletter} />}
       {isLoading && <LoadingScreen />}
 
       {/* Newsletter modal mounted here */}

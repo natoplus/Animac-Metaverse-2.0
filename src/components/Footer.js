@@ -134,7 +134,7 @@ const Footer = () => {
               />
               <button
                 type="button"
-                onClick={openNewsletter} // trigger modal
+                onClick={openNewsletter} // <-- open the modal
                 className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-inter font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105"
               >
                 Subscribe
