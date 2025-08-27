@@ -1,31 +1,26 @@
 // components/NewsletterModal.js
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function NewsletterModal() {
-  const [isOpen, setIsOpen] = useState(true); // default open
-  const formContainerRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(true);
 
   const handleClose = () => {
     setIsOpen(false);
   };
 
   useEffect(() => {
-    if (isOpen && formContainerRef.current) {
-      // Clear any previous form (important for re-opening)
-      formContainerRef.current.innerHTML = "";
+    // Dynamically inject the Kit script once
+    const script = document.createElement("script");
+    script.src =
+      "https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js";
+    script.async = true;
+    document.body.appendChild(script);
 
-      // Create script tag
-      const script = document.createElement("script");
-      script.src =
-        "https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js";
-      script.async = true;
-      script.dataset.uid = "94bd2a2f44";
-
-      // Append script to container
-      formContainerRef.current.appendChild(script);
-    }
-  }, [isOpen]);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   return (
     <AnimatePresence>
@@ -51,8 +46,8 @@ export default function NewsletterModal() {
               ✕
             </button>
 
-            {/* Inline Newsletter Form */}
-            <div ref={formContainerRef}></div>
+            {/* Form placeholder */}
+            <div data-formkit-form="94bd2a2f44"></div>
           </motion.div>
         </motion.div>
       )}
