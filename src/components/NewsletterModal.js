@@ -1,27 +1,36 @@
 // components/NewsletterModal.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function NewsletterModal() {
-  const [isOpen, setIsOpen] = useState(true);
-
-  useEffect(() => {
-    // Dynamically load the ConvertKit script when modal opens
-    if (isOpen) {
-      const script = document.createElement("script");
-      script.src = "https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js";
-      script.async = true;
-      document.body.appendChild(script);
-
-      return () => {
-        document.body.removeChild(script);
-      };
-    }
-  }, [isOpen]);
+  const [isOpen, setIsOpen] = useState(true); // default open
+  const formContainerRef = useRef(null);
 
   const handleClose = () => {
     setIsOpen(false);
   };
+
+  useEffect(() => {
+    // Prevent multiple script injections
+    if (!document.querySelector("#formkit-script")) {
+      const script = document.createElement("script");
+      script.id = "formkit-script";
+      script.async = true;
+      script.src =
+        "https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js";
+      document.body.appendChild(script);
+    }
+
+    // Ensure the form renders inside our container
+    const interval = setInterval(() => {
+      if (window.FormKit) {
+        clearInterval(interval);
+        window.FormKit.mount("#newsletter-formkit");
+      }
+    }, 200);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <AnimatePresence>
@@ -47,14 +56,8 @@ export default function NewsletterModal() {
               ✕
             </button>
 
-            {/* The ConvertKit toggle link */}
-            <a
-              data-formkit-toggle="94bd2a2f44"
-              href="https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44"
-              className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105 block text-center"
-            >
-              Join the Newsletter 🚀
-            </a>
+            {/* Newsletter Form will be mounted here */}
+            <div id="newsletter-formkit" ref={formContainerRef}></div>
           </motion.div>
         </motion.div>
       )}
