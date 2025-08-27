@@ -2,7 +2,6 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Globe, Brush, Rocket, Quote } from "lucide-react";
-import Spline from 'react-spline';
 
 export default function AboutUs() {
   const values = [
@@ -54,11 +53,13 @@ export default function AboutUs() {
       {/* HERO SECTION WITH SPLINE */}
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-black to-blue-900">
         {/* Background spline */}
-        <div className="absolute inset-0">
-          <Spline
-            scene="https://my.spline.design/robotfollowcursorforlandingpage-Sc87H9WSDfXFjPv42kwIl25z/" // 🔥 replace XXXXX with your real Spline scene link
-          />
-        </div>
+            <div className="absolute inset-0">
+                <img
+                    src="/assets/animac-metaverse-1.jpg"
+                    alt="Animac Metaverse"
+                    className="w-full h-96 object-cover"
+                />
+            </div>
         {/* Overlay for contrast */}
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 text-center max-w-4xl px-4">
