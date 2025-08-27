@@ -11,9 +11,9 @@ export default function AboutUs() {
     ];
 
     const team = [
-        { name: "Jane Doe", role: "CEO & Founder", image: "/assets/team1.jpg", quote: "Innovation drives the future." },
-        { name: "John Smith", role: "Lead Developer", image: "/assets/team2.jpg", quote: "Code is the bridge to imagination." },
-        { name: "Sarah Lee", role: "Creative Director", image: "/assets/team3.jpg", quote: "Design is intelligence made visible." },
+        { name: "Arinze Xylo", role: "Operative Director", image: "/assets/team1.jpg", quote: "Innovation drives the future and we are that future." },
+        { name: "Augustine Eleon", role: "Lead Developer", image: "/assets/team2.jpg", quote: "Code is the bridge between imagination and reality." },
+        { name: "Jesse Rumour", role: "Community director", image: "/assets/team3.jpg", quote: "A community of minds is one that cannot perish." },
     ];
 
     return (
