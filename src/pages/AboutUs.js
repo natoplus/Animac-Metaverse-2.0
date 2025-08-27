@@ -1,12 +1,9 @@
 // src/pages/AboutUs.js
-import React, { Suspense, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { Globe, Brush, Rocket, Quote } from "lucide-react";
-import Spline from "@splinetool/react-spline";
 
 export default function AboutUs() {
-  const [splineError, setSplineError] = useState(false);
-
   const values = [
     { icon: <Globe size={36} className="text-blue-400" />, title: "Cultural Unity", desc: "Blending East & West storytelling into one creative universe." },
     { icon: <Brush size={36} className="text-pink-400" />, title: "Creativity", desc: "Limitless imagination powering the future of animation." },
@@ -21,31 +18,15 @@ export default function AboutUs() {
 
   return (
     <motion.div className="min-h-screen bg-black text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
-      {/* HERO SECTION WITH SPLINE AND FALLBACK */}
+
+      {/* HERO SECTION */}
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-black to-blue-900">
-        {/* Fallback background image */}
         <img
           src={process.env.PUBLIC_URL + "/assets/animac-metaverse-1.jpg"}
-          alt="Fallback background"
+          alt="Hero Background"
           className="absolute inset-0 w-full h-full object-cover z-0"
         />
-
-        {/* Spline scene or fallback */}
-        {!splineError && (
-          <Suspense fallback={<div className="absolute inset-0 w-full h-full" />}>
-            <Spline
-              scene="https://my.spline.design/robotfollowcursorforlandingpage-Sc87H9WSDfXFjPv42kwIl25z/"
-              className="absolute inset-0 w-full h-full z-10"
-              onLoad={() => setSplineError(false)}
-              onError={() => setSplineError(true)}
-            />
-          </Suspense>
-        )}
-
-        {/* Overlay for contrast */}
         <div className="absolute inset-0 bg-black/40 z-20" />
-
-        {/* Hero content */}
         <div className="relative z-30 text-center max-w-4xl px-4">
           <motion.h1
             className="text-6xl md:text-7xl mb-6"
@@ -79,25 +60,30 @@ export default function AboutUs() {
             transition={{ duration: 0.6, delay: i * 0.2 }}
           >
             <div className="mb-6 flex justify-center">{val.icon}</div>
-            <h3 className="text-2xl mb-3 text-blue-400" style={{ fontFamily: "Azonix, sans-serif" }}>
-              {val.title}
-            </h3>
-            <p className="text-gray-400" style={{ fontFamily: "Montserrat, sans-serif" }}>
-              {val.desc}
-            </p>
+            <h3 className="text-2xl mb-3 text-blue-400" style={{ fontFamily: "Azonix, sans-serif" }}>{val.title}</h3>
+            <p className="text-gray-400" style={{ fontFamily: "Montserrat, sans-serif" }}>{val.desc}</p>
           </motion.div>
         ))}
       </section>
 
       {/* OUR STORY */}
-      <section className="relative py-20 px-6">
-        <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{ backgroundImage: `url(${process.env.PUBLIC_URL + "/assets/animac-metaverse-2.jpg"})` }} />
+      <section className="relative py-20 px-6 bg-fixed bg-center bg-cover" style={{ backgroundImage: `url(${process.env.PUBLIC_URL + "/assets/animac-metaverse-2.jpg"})` }}>
+        <div className="absolute inset-0 bg-black/70" />
         <motion.div className="relative z-10 max-w-4xl mx-auto text-center" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-          <h2 className="text-4xl mb-6 text-pink-400" style={{ fontFamily: "Azonix, sans-serif" }}>
-            Our Story
-          </h2>
+          <h2 className="text-4xl mb-6 text-pink-400" style={{ fontFamily: "Azonix, sans-serif" }}>Our Story</h2>
           <p className="text-lg text-gray-300 leading-relaxed" style={{ fontFamily: "Montserrat, sans-serif" }}>
             Born from a passion to merge cultural worlds, ANIMAC redefines how we experience animation. From Lagos to Tokyo, from Hollywood to Seoul, we’re building a global community of dreamers, creators, and innovators pushing the limits of imagination.
+          </p>
+        </motion.div>
+      </section>
+
+      {/* ADDITIONAL SECTION */}
+      <section className="relative py-20 px-6 bg-fixed bg-center bg-cover" style={{ backgroundImage: `url(${process.env.PUBLIC_URL + "/assets/animac-metaverse-3.jpg"})` }}>
+        <div className="absolute inset-0 bg-black/60" />
+        <motion.div className="relative z-10 max-w-4xl mx-auto text-center" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+          <h2 className="text-4xl mb-6 text-blue-400" style={{ fontFamily: "Azonix, sans-serif" }}>Our Vision</h2>
+          <p className="text-lg text-gray-300 leading-relaxed" style={{ fontFamily: "Montserrat, sans-serif" }}>
+            We envision a world where animation and storytelling transcend borders, connecting audiences globally through immersive digital experiences and cultural fusion.
           </p>
         </motion.div>
       </section>
