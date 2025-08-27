@@ -1,6 +1,6 @@
 // src/pages/PressKit.js
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Download, FileText } from "lucide-react";
 import clsx from 'clsx';
 import { ArrowDown} from 'lucide-react';
@@ -13,6 +13,80 @@ export default function PressKit() {
         { title: "ANIMAC Social Media Kit", file: "/assets/ANIMAC-SocialKit.zip" },
         { title: "Press Images", file: "/assets/ANIMAC-PressImages.zip" },
     ];
+
+    const PortraitSlideshow = () => {
+        // Update these with your actual local images and captions
+        const slides = [
+            {
+                src: '/assets/our-vision1.jpg',
+                alt: 'Anime trends',
+                caption: ' ',
+                link: '/buzzfeed/east',
+            },
+            {
+                src: '/assets/our-vision2.jpg',
+                alt: 'Western blockbusters',
+                caption: ' ',
+                link: '/buzzfeed/west',
+            },
+            {
+                src: '/assets/our-vision3.jpg',
+                alt: 'Cartoon behind scenes',
+                caption: ' ',
+                link: '/buzzfeed/west',
+            },
+            // Add more slides if needed
+        ];
+
+        const [current, setCurrent] = useState(0);
+
+        useEffect(() => {
+            const interval = setInterval(() => {
+                setCurrent((prev) => (prev + 1) % slides.length);
+            }, 5000); // 5 seconds
+
+            return () => clearInterval(interval);
+        }, [slides.length]);
+
+        return (
+            <div className="mx-auto mb-10 w-[300px] h-[450px] rounded-xl overflow-hidden relative shadow-xl cursor-pointer">
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.a
+                        key={current}
+                        href={slides[current].link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1 }}
+                        className="block w-full h-full bg-cover bg-center"
+                        style={{ backgroundImage: `url(${slides[current].src})` }}
+                        aria-label={slides[current].alt}
+                        title={slides[current].caption}
+                    >
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-transparent p-4 text-white text-center font-semibold text-lg">
+                            {slides[current].caption}
+                        </div>
+                    </motion.a>
+                </AnimatePresence>
+
+                {/* Navigation dots */}
+                <div className="absolute bottom-7 left-0 right-0 flex justify-center space-x-2">
+                    {slides.map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setCurrent(idx)}
+                            className={`w-3 h-3 rounded-full transition ${idx === current ? 'bg-east-500' : 'bg-gray-600 hover:bg-gray-400'
+                                }`}
+                            aria-label={`Go to slide ${idx + 1}`}
+                        />
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
 
     const portalData = [
         {
@@ -104,7 +178,7 @@ export default function PressKit() {
 
             <section className="max-w-6xl mx-auto py-20 px-6">
                 <motion.h2
-                    className="text-4xl mb-12 text-center text-pink-400"
+                    className="text-4xl mb-12 text-center bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent"
                     style={{ fontFamily: "Azonix, sans-serif" }}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -112,7 +186,9 @@ export default function PressKit() {
                 >
                     Available Assets
                 </motion.h2>
-
+                
+                {/* Portrait slideshow inserted here */}
+                    <PortraitSlideshow />
 
                 {/* DOWNLOADABLE ASSETS */}
 
