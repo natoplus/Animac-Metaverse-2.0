@@ -20,19 +20,19 @@ export default function AboutUs() {
         // Update these with your actual local images and captions
         const slides = [
             {
-                src: '/assets/east-poster-animac-website.jpg',
+                src: '/assets/our-vision1.jpg',
                 alt: 'Anime trends',
                 caption: ' ',
                 link: '/buzzfeed/east',
             },
             {
-                src: '/assets/west-poster-animac-website.jpg',
+                src: '/assets/our-vision2.jpg',
                 alt: 'Western blockbusters',
                 caption: ' ',
                 link: '/buzzfeed/west',
             },
             {
-                src: '/assets/animac-neutral-poster.jpg',
+                src: '/assets/our-vision3.jpg',
                 alt: 'Cartoon behind scenes',
                 caption: ' ',
                 link: '/buzzfeed/west',
