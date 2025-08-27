@@ -53,13 +53,15 @@ export default function AboutUs() {
       {/* HERO SECTION WITH SPLINE */}
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-black to-blue-900">
         {/* Background spline */}
-            <div className="absolute inset-0">
-                <img
-                    src="/assets/animac-metaverse-1.jpg"
-                    alt="Animac Metaverse"
-                    className="w-full h-96 object-cover"
-                />
-            </div>
+              <div className="absolute inset-0">
+                  <iframe
+                      src="https://my.spline.design/robotfollowcursorforlandingpage-Sc87H9WSDfXFjPv42kwIl25z/"
+                      frameBorder="0"
+                      width="100%"
+                      height="100%"
+                      className="absolute top-0 left-0 w-full h-full"
+                  ></iframe>
+              </div>
         {/* Overlay for contrast */}
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 text-center max-w-4xl px-4">
