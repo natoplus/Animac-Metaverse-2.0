@@ -2,7 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Globe, Brush, Rocket, Quote } from "lucide-react";
-import Spline from "@splinetool/react-spline/next";
+import Spline from 'react-spline';
 
 export default function AboutUs() {
   const values = [
