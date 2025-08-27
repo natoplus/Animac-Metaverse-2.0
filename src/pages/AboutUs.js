@@ -22,7 +22,7 @@ export default function AboutUs() {
             {/* HERO SECTION */}
             <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-black to-blue-900">
                 <img
-                    src={process.env.PUBLIC_URL + "/assets/anime-character-traveling.jpg"}
+                    src={process.env.PUBLIC_URL + " "}
                     alt="Hero Background"
                     className="absolute inset-0 w-full h-full object-contain mx-auto my-auto z-0"
                     style={{ maxHeight: '80vh' }}

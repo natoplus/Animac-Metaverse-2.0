@@ -9,7 +9,7 @@ const Footer = () => {
   const footerLinks = {
     Company: [
       { label: 'About ANIMAC', path: '/about' },
-      { label: 'Sitemap', path: '/sitemap' },
+      { label: 'Terms & Agreement', path: 'https://www.termsfeed.com/live/078404e4-889d-453b-ac6c-fc3458d9394c' },
       { label: 'Careers', path: '/careers' },
       { label: 'Press Kit', path: '/press-kit' }
     ],
