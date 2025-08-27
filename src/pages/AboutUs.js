@@ -36,7 +36,7 @@ export default function AboutUs() {
                         animate={{ y: 0, opacity: 1 }}
                         transition={{ duration: 0.8 }}
                     >
-                        About <span className="text-blue-400">ANIMAC</span>
+                        About <span className="bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent">ANIMAC</span>
                     </motion.h1>
                     <motion.p
                         className="text-xl text-gray-300"
@@ -62,14 +62,14 @@ export default function AboutUs() {
                         transition={{ duration: 0.6, delay: i * 0.2 }}
                     >
                         <div className="mb-6 flex justify-center">{val.icon}</div>
-                        <h3 className="text-2xl mb-3 text-blue-400" style={{ fontFamily: "Azonix, sans-serif" }}>{val.title}</h3>
+                        <h3 className="text-2xl mb-3 mb-6 bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent" style={{ fontFamily: "Azonix, sans-serif" }}>{val.title}</h3>
                         <p className="text-gray-400" style={{ fontFamily: "Montserrat, sans-serif" }}>{val.desc}</p>
                     </motion.div>
                 ))}
             </section>
 
             {/* OUR STORY */}
-            <section className="relative py-20 px-6 bg-fixed bg-center bg-cover" style={{ backgroundImage: `url(${process.env.PUBLIC_URL + "/assets/animac-metaverse-2.jpg"})` }}>
+            <section className="relative py-20 px-6 bg-center bg-cover" style={{ backgroundImage: `url(${process.env.PUBLIC_URL + "/assets/animac-metaverse-2.jpg"})` }}>
                 <div className="absolute inset-0 bg-black/70" />
                 <motion.div className="relative z-10 max-w-4xl mx-auto text-center" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
                     <h2 className="text-4xl mb-6 text-pink-400" style={{ fontFamily: "Azonix, sans-serif" }}>Our Story</h2>
@@ -150,7 +150,7 @@ export default function AboutUs() {
                 <p className="text-2xl italic text-gray-200 mb-4" style={{ fontFamily: "Montserrat, sans-serif" }}>
                     “Animation is the language of the soul, transcending borders and building bridges between worlds.”
                 </p>
-                <p className="text-gray-400" style={{ fontFamily: "Azonix, sans-serif" }}>— ANIMAC Philosophy</p>
+                <p className="bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent" style={{ fontFamily: "Azonix, sans-serif" }}>— ANIMAC Philosophy</p>
             </motion.section>
         </motion.div>
     );
