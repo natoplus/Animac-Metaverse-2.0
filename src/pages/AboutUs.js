@@ -14,7 +14,7 @@ export default function AboutUs() {
         { name: "Arinze Xylo", role: "Operative Director", image: "/assets/team1.jpg", quote: "Innovation drives the future and we are that future." },
         { name: "Augustine Eleon", role: "Lead Developer", image: "/assets/team2.jpg", quote: "Code is the bridge between imagination and reality." },
         { name: "Jesse Rumour", role: "Community Director", image: "/assets/batman-rumour.jpg", quote: "A community of minds is one that cannot perish." },
-        { name: "Rick Toya", role: "Design Management", image: "/assets/team3.jpg", quote: "Without a design, there is no creation and without creation, there is no life." },
+        { name: "Rick Toya", role: "Design Manager", image: "/assets/team3.jpg", quote: "Without a design, there is no creation and without creation, there is no life." },
     ];
 
     const PortraitSlideshow = () => {
