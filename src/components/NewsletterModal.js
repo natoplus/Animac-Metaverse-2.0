@@ -3,24 +3,33 @@ import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function NewsletterModal() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(true); // default open
 
   const handleClose = () => {
     setIsOpen(false);
   };
 
   useEffect(() => {
-    // Dynamically inject the Kit script once
-    const script = document.createElement("script");
-    script.src =
-      "https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js";
-    script.async = true;
-    document.body.appendChild(script);
+    if (isOpen) {
+      // Remove old script if it exists (prevents duplicates)
+      const oldScript = document.querySelector(
+        'script[src="https://animac-metaverse-buzzfeed.kit.com/eb0868ded1/index.js"]'
+      );
+      if (oldScript) oldScript.remove();
 
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
+      // Create new script tag
+      const script = document.createElement("script");
+      script.src =
+        "https://animac-metaverse-buzzfeed.kit.com/eb0868ded1/index.js";
+      script.async = true;
+      script.dataset.uid = "eb0868ded1";
+
+      // Append to modal container
+      const container = document.getElementById("newsletter-form");
+      if (container) container.innerHTML = ""; // clear previous form
+      container?.appendChild(script);
+    }
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -46,8 +55,8 @@ export default function NewsletterModal() {
               ✕
             </button>
 
-            {/* Form placeholder */}
-            <div data-formkit-form="94bd2a2f44"></div>
+            {/* Embed Newsletter Form */}
+            <div id="newsletter-form"></div>
           </motion.div>
         </motion.div>
       )}
