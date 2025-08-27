@@ -31,7 +31,7 @@ export default function NewsletterModal({ isOpen, onClose }) {
             {/* Embed Newsletter Form */}
             <div
               dangerouslySetInnerHTML={{
-                __html: `<script async data-uid="94bd2a2f44" src="https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js"></script>`
+                 __html: `<script async data-uid="94bd2a2f44" src="https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js"></script>`
               }}
             />
           </motion.div>
