@@ -22,15 +22,14 @@ export default function NewsletterModal({ isOpen, onClose }) {
             {/* Close button */}
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 text-gray-300 hover:text-white text-2xl"
-              aria-label="Close Newsletter Modal"
+              className="absolute top-4 right-4 text-gray-300 hover:text-white text-xl"
+              aria-label="Close newsletter modal"
             >
               ✕
             </button>
 
             {/* Embed Newsletter Form */}
             <div
-              className="mt-6"
               dangerouslySetInnerHTML={{
                 __html: `<script async data-uid="94bd2a2f44" src="https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js"></script>`
               }}
