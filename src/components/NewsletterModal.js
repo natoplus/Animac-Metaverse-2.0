@@ -11,26 +11,21 @@ export default function NewsletterModal() {
   };
 
   useEffect(() => {
-    // Prevent multiple script injections
-    if (!document.querySelector("#formkit-script")) {
+    if (isOpen && formContainerRef.current) {
+      // Clear any previous form (important for re-opening)
+      formContainerRef.current.innerHTML = "";
+
+      // Create script tag
       const script = document.createElement("script");
-      script.id = "formkit-script";
-      script.async = true;
       script.src =
         "https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js";
-      document.body.appendChild(script);
+      script.async = true;
+      script.dataset.uid = "94bd2a2f44";
+
+      // Append script to container
+      formContainerRef.current.appendChild(script);
     }
-
-    // Ensure the form renders inside our container
-    const interval = setInterval(() => {
-      if (window.FormKit) {
-        clearInterval(interval);
-        window.FormKit.mount("#newsletter-formkit");
-      }
-    }, 200);
-
-    return () => clearInterval(interval);
-  }, []);
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
@@ -56,8 +51,8 @@ export default function NewsletterModal() {
               ✕
             </button>
 
-            {/* Newsletter Form will be mounted here */}
-            <div id="newsletter-formkit" ref={formContainerRef}></div>
+            {/* Inline Newsletter Form */}
+            <div ref={formContainerRef}></div>
           </motion.div>
         </motion.div>
       )}
