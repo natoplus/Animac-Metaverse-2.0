@@ -18,9 +18,9 @@ export default function PressKit() {
         {
             id: 'abg',
             title: 'ANIMAC Brand Guidelines',
-            subtitle: 'Anime Culture',
+            subtitle: 'Rules for consistent branding.',
             description:
-                'Dive deep into the world of anime, manga, and Japanese pop culture. From seasonal breakdowns to studio spotlights.',
+                ' A guide to using ANIMAC’s colors, typography, and visuals correctly.',
             color: 'east',
             gradient: 'from-east-600 via-east-700 to-east-800',
             borderColor: 'border-east-500/30',
@@ -31,9 +31,9 @@ export default function PressKit() {
         {
             id: 'alp',
             title: 'ANIMAC Logos Pack',
-            subtitle: 'Movies & Cartoons',
+            subtitle: 'Official ANIMAC logos.',
             description:
-                'Explore Hollywood blockbusters, indie animations, and western cartoon classics. Reviews, features, and deep dives.',
+                'Multiple logo formats for digital, print, and branding use',
             color: 'east',
             gradient: 'from-east-600 via-east-700 to-east-800',
             borderColor: 'border-east-500/30',
@@ -44,9 +44,9 @@ export default function PressKit() {
         {
             id: 'asmk',
             title: 'ANIMAC Social Media Kit',
-            subtitle: 'Movies & Cartoons',
+            subtitle: 'Ready-to-use posts & assets.',
             description:
-                'Explore Hollywood blockbusters, indie animations, and western cartoon classics. Reviews, features, and deep dives.',
+                'A collection of templates and graphics to boost ANIMAC’s presence across all platforms.',
             color: 'east',
             gradient: 'from-east-600 via-east-700 to-east-800',
             borderColor: 'border-east-500/30',
@@ -57,9 +57,9 @@ export default function PressKit() {
         {
             id: 'api',
             title: 'ANIMAC Press Images',
-            subtitle: 'Movies & Cartoons',
+            subtitle: 'High-quality media shots.',
             description:
-                'Explore Hollywood blockbusters, indie animations, and western cartoon classics. Reviews, features, and deep dives.',
+                'Official images for press, articles, and features on ANIMAC.',
             color: 'east',
             gradient: 'from-east-600 via-east-700 to-east-800',
             borderColor: 'border-east-500/30',
