@@ -20,6 +20,7 @@ import AboutUs from './pages/AboutUs';
 import Careers from './pages/Careers';
 import PressKit from './pages/PressKit';
 import Contact from './pages/Contact';
+import NewsletterModal from "./components/NewsletterModal";
 
 // Hooks
 import useSupabaseAuth from './hooks/useSupabaseAuth';
@@ -102,6 +103,15 @@ const AppContent = () => {
     </div>
   );
 };
+
+function App() {
+  return (
+    <>
+      {/* Your routes/pages */}
+      <NewsletterModal />
+    </>
+  );
+}
 
 const App = () => (
   <React.StrictMode>
