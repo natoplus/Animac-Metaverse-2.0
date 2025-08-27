@@ -92,7 +92,13 @@ export default function AboutUs() {
 
             {/* OUR TEAM */}
             <section className="max-w-6xl mx-auto py-20 px-6">
-                <motion.h2 className="text-4xl mb-12 text-center text-blue-400" style={{ fontFamily: "Azonix, sans-serif" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+                <motion.h2
+                    className="text-4xl mb-12 text-center text-blue-400"
+                    style={{ fontFamily: "Azonix, sans-serif" }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.6 }}
+                >
                     Our Team
                 </motion.h2>
                 <div className="grid md:grid-cols-3 gap-10">
@@ -100,16 +106,38 @@ export default function AboutUs() {
                         <motion.div
                             key={i}
                             className="relative rounded-2xl overflow-hidden shadow-lg group"
+                            style={{ aspectRatio: '3 / 4' }} // Portrait orientation
                             initial={{ opacity: 0, y: 40 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.7, delay: i * 0.2 }}
                         >
-                            <div className="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-700" style={{ backgroundImage: `url(${member.image})` }} />
+                            {/* Background image */}
+                            <div
+                                className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-700"
+                                style={{ backgroundImage: `url(${member.image})` }}
+                            />
+                            {/* Overlay */}
                             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+                            {/* Content */}
                             <div className="relative z-10 p-6 flex flex-col justify-end h-full">
-                                <h3 className="text-2xl text-white mb-2" style={{ fontFamily: "Azonix, sans-serif" }}>{member.name}</h3>
-                                <p className="text-gray-300 mb-4" style={{ fontFamily: "Montserrat, sans-serif" }}>{member.role}</p>
-                                <p className="italic text-gray-400 text-sm" style={{ fontFamily: "Montserrat, sans-serif" }}>“{member.quote}”</p>
+                                <h3
+                                    className="text-2xl text-white mb-2"
+                                    style={{ fontFamily: "Azonix, sans-serif" }}
+                                >
+                                    {member.name}
+                                </h3>
+                                <p
+                                    className="text-gray-300 mb-4"
+                                    style={{ fontFamily: "Montserrat, sans-serif" }}
+                                >
+                                    {member.role}
+                                </p>
+                                <p
+                                    className="italic text-gray-400 text-sm"
+                                    style={{ fontFamily: "Montserrat, sans-serif" }}
+                                >
+                                    “{member.quote}”
+                                </p>
                             </div>
                         </motion.div>
                     ))}
