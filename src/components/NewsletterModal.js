@@ -1,8 +1,28 @@
 // components/NewsletterModal.js
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function NewsletterModal({ isOpen, onClose }) {
+export default function NewsletterModal() {
+  const [isOpen, setIsOpen] = useState(true);
+
+  useEffect(() => {
+    // Dynamically load the ConvertKit script when modal opens
+    if (isOpen) {
+      const script = document.createElement("script");
+      script.src = "https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js";
+      script.async = true;
+      document.body.appendChild(script);
+
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    setIsOpen(false);
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -21,19 +41,20 @@ export default function NewsletterModal({ isOpen, onClose }) {
           >
             {/* Close button */}
             <button
-              onClick={onClose}
-              className="absolute top-4 right-4 text-gray-300 hover:text-white text-xl"
-              aria-label="Close newsletter modal"
+              onClick={handleClose}
+              className="absolute top-4 right-4 text-gray-300 hover:text-white"
             >
               ✕
             </button>
 
-            {/* Embed Newsletter Form */}
-            <div
-              dangerouslySetInnerHTML={{
-                __html: `<script async data-uid="94bd2a2f44" src="https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js"></script>`
-              }}
-            />
+            {/* The ConvertKit toggle link */}
+            <a
+              data-formkit-toggle="94bd2a2f44"
+              href="https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44"
+              className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105 block text-center"
+            >
+              Join the Newsletter 🚀
+            </a>
           </motion.div>
         </motion.div>
       )}
