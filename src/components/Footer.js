@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Facebook, XIcon, Instagram, Mail } from 'lucide-react';
-import { useNewsletter } from "../contexts/NewsletterContext"; // import the context hook
+import NewsletterModal from './NewsletterModal'; // import the modal
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
-  const { openNewsletter } = useNewsletter(); // get the open function
+  const [isNewsletterOpen, setIsNewsletterOpen] = useState(false);
+
+  const openNewsletter = () => setIsNewsletterOpen(true);
+  const closeNewsletter = () => setIsNewsletterOpen(false);
 
   const footerLinks = {
     Company: [
@@ -30,7 +33,7 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gradient-to-t from-black to-netflix-dark mt-20">
+    <footer className="bg-gradient-to-t from-black to-netflix-dark mt-20 relative">
       <div className="container mx-auto px-4 py-16">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
@@ -170,6 +173,9 @@ const Footer = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Newsletter Modal */}
+      {isNewsletterOpen && <NewsletterModal isOpen={isNewsletterOpen} onClose={closeNewsletter} />}
     </footer>
   );
 };

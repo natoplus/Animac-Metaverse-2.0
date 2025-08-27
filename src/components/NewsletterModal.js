@@ -1,14 +1,8 @@
 // components/NewsletterModal.js
-import React, { useState } from "react";
+import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
-export default function NewsletterModal() {
-  const [isOpen, setIsOpen] = useState(true); // default open
-
-  const handleClose = () => {
-    setIsOpen(false);
-  };
-
+export default function NewsletterModal({ isOpen, onClose }) {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -27,14 +21,16 @@ export default function NewsletterModal() {
           >
             {/* Close button */}
             <button
-              onClick={handleClose}
-              className="absolute top-4 right-4 text-gray-300 hover:text-white"
+              onClick={onClose}
+              className="absolute top-4 right-4 text-gray-300 hover:text-white text-2xl"
+              aria-label="Close Newsletter Modal"
             >
               ✕
             </button>
 
             {/* Embed Newsletter Form */}
             <div
+              className="mt-6"
               dangerouslySetInnerHTML={{
                 __html: `<script async data-uid="94bd2a2f44" src="https://animac-metaverse-buzzfeed.kit.com/94bd2a2f44/index.js"></script>`
               }}

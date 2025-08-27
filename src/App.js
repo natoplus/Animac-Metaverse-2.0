@@ -87,22 +87,37 @@ const AppContent = () => {
   const isAdminRoute = location.pathname.startsWith("/admin");
   const [isLoading, setIsLoading] = useState(false);
 
+  // ✅ Newsletter modal state
+  const [newsletterOpen, setNewsletterOpen] = useState(false);
+
+  // Open modal function
+  const openNewsletter = () => setNewsletterOpen(true);
+  const closeNewsletter = () => setNewsletterOpen(false);
+
   useSupabaseAuth();
 
   useEffect(() => {
     console.log("[Auth] Supabase auth initialized");
   }, []);
 
+  // Example: auto-show modal after 5s on Home/Buzzfeed/Article pages
+  useEffect(() => {
+    if (!isAdminRoute && ["/", "/buzzfeed"].includes(location.pathname)) {
+      const timer = setTimeout(() => setNewsletterOpen(true), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, isAdminRoute]);
+
   return (
     <div className="min-h-screen bg-netflix-black text-white relative">
       {!isAdminRoute && <Header />}
       {isLoading && <LoadingScreen />}
-      
+
       {/* Newsletter modal mounted here */}
-      <NewsletterModal />
+      <NewsletterModal isOpen={newsletterOpen} onClose={closeNewsletter} />
 
       <AnimatedRoutes setIsLoading={setIsLoading} />
-      {!isAdminRoute && <Footer />}
+      {!isAdminRoute && <Footer openNewsletter={openNewsletter} />}
     </div>
   );
 };
