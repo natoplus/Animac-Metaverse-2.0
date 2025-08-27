@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import LoadingScreen from './components/LoadingScreen';
+import NewsletterModal from './components/NewsletterModal';
 
 // Pages
 import Home from './pages/Home';
@@ -20,7 +21,6 @@ import AboutUs from './pages/AboutUs';
 import Careers from './pages/Careers';
 import PressKit from './pages/PressKit';
 import Contact from './pages/Contact';
-import NewsletterModal from "./components/NewsletterModal";
 
 // Hooks
 import useSupabaseAuth from './hooks/useSupabaseAuth';
@@ -76,7 +76,7 @@ const AnimatedRoutes = ({ setIsLoading }) => {
           <Route path="/careers" element={<PageWrapper><Careers /></PageWrapper>} />
           <Route path="/press-kit" element={<PageWrapper><PressKit /></PageWrapper>} />
           <Route path="/contact" element={<PageWrapper><Contact /></PageWrapper>} />
-          </Routes>
+        </Routes>
       </AnimatePresence>
     </>
   );
@@ -100,18 +100,11 @@ const AppContent = () => {
       {isLoading && <LoadingScreen />}
       <AnimatedRoutes setIsLoading={setIsLoading} />
       {!isAdminRoute && <Footer />}
+      {/* Newsletter popup is global */}
+      <NewsletterModal />
     </div>
   );
 };
-
-function App() {
-  return (
-    <>
-      {/* Your routes/pages */}
-      <NewsletterModal />
-    </>
-  );
-}
 
 const App = () => (
   <React.StrictMode>
