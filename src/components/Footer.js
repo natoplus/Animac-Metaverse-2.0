@@ -15,20 +15,20 @@ const Footer = () => {
     Company: [
       { label: 'About ANIMAC', path: '/about' },
       { label: 'Terms & Agreement', path: 'https://www.termsfeed.com/live/078404e4-889d-453b-ac6c-fc3458d9394c' },
-      { label: 'Careers', path: '/careers' },
+      { label: 'Careers', path: '#' },
       { label: 'Press Kit', path: '/press-kit' }
     ],
     Content: [
       { label: 'BUZZFEED Hub', path: '/buzzfeed' },
       { label: 'EAST Portal', path: '/buzzfeed/east' },
       { label: 'WEST Portal', path: '/buzzfeed/west' },
-      { label: 'Submit Article', path: '/submit' }
+      { label: 'Submit Article', path: 'https://forms.gle/yLHrENNdyCDpVtkdA' }
     ],
     Community: [
       { label: 'Linktree', path: '#' },
       { label: 'Reddit', path: '#' },
       { label: 'Newsletter', path: 'https://animac-metaverse-buzzfeed.kit.com/621519eebb' },
-      { label: 'Contact Us', path: '/contact' }
+      { label: 'Contact Us', path: 'https://forms.gle/FHkorLKUmybNVu5j8' }
     ]
   };
 
