@@ -1,6 +1,6 @@
 // src/pages/AboutUs.js
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Brush, Rocket, Quote } from "lucide-react";
 
 export default function AboutUs() {
