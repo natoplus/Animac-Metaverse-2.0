@@ -16,6 +16,80 @@ export default function AboutUs() {
         { name: "Jesse Rumour", role: "Community director", image: "/assets/team3.jpg", quote: "A community of minds is one that cannot perish." },
     ];
 
+    const PortraitSlideshow = () => {
+        // Update these with your actual local images and captions
+        const slides = [
+            {
+                src: '/assets/east-poster-animac-website.jpg',
+                alt: 'Anime trends',
+                caption: ' ',
+                link: '/buzzfeed/east',
+            },
+            {
+                src: '/assets/west-poster-animac-website.jpg',
+                alt: 'Western blockbusters',
+                caption: ' ',
+                link: '/buzzfeed/west',
+            },
+            {
+                src: '/assets/animac-neutral-poster.jpg',
+                alt: 'Cartoon behind scenes',
+                caption: ' ',
+                link: '/buzzfeed/west',
+            },
+            // Add more slides if needed
+        ];
+
+        const [current, setCurrent] = useState(0);
+
+        useEffect(() => {
+            const interval = setInterval(() => {
+                setCurrent((prev) => (prev + 1) % slides.length);
+            }, 5000); // 5 seconds
+
+            return () => clearInterval(interval);
+        }, [slides.length]);
+
+        return (
+            <div className="mx-auto mb-10 w-[300px] h-[450px] rounded-xl overflow-hidden relative shadow-xl cursor-pointer">
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.a
+                        key={current}
+                        href={slides[current].link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 1 }}
+                        className="block w-full h-full bg-cover bg-center"
+                        style={{ backgroundImage: `url(${slides[current].src})` }}
+                        aria-label={slides[current].alt}
+                        title={slides[current].caption}
+                    >
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black via-transparent p-4 text-white text-center font-semibold text-lg">
+                            {slides[current].caption}
+                        </div>
+                    </motion.a>
+                </AnimatePresence>
+
+                {/* Navigation dots */}
+                <div className="absolute bottom-7 left-0 right-0 flex justify-center space-x-2">
+                    {slides.map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setCurrent(idx)}
+                            className={`w-3 h-3 rounded-full transition ${idx === current ? 'bg-east-500' : 'bg-gray-600 hover:bg-gray-400'
+                                }`}
+                            aria-label={`Go to slide ${idx + 1}`}
+                        />
+                    ))}
+                </div>
+            </div>
+        );
+    };
+
+
     return (
         <motion.div className="min-h-screen bg-black text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
 
@@ -70,7 +144,7 @@ export default function AboutUs() {
 
             {/* OUR STORY */}
             <section className="relative py-20 px-6 bg-center bg-cover" style={{ backgroundImage: `url(${process.env.PUBLIC_URL + "/assets/animac-metaverse-2.jpg"})` }}>
-                <div className="absolute inset-0 bg-black/70" />
+                <div className="absolute inset-0 bg-black/90" />
                 <motion.div className="relative z-10 max-w-4xl mx-auto text-center" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
                     <h2 className="text-4xl mb-6 text-pink-400" style={{ fontFamily: "Azonix, sans-serif" }}>Our Story</h2>
                     <p className="text-lg text-gray-300 leading-relaxed" style={{ fontFamily: "Montserrat, sans-serif" }}>
@@ -80,10 +154,12 @@ export default function AboutUs() {
             </section>
 
             {/* ADDITIONAL SECTION */}
-            <section className="relative mt-16 py-20 px-6 bg-fixed bg-center bg-cover" style={{ backgroundImage: `url(${process.env.PUBLIC_URL + "/assets/animac-metaverse-3.jpg"})` }}>
+            <section className="relative mt-16 py-20 px-6 bg-fixed bg-center bg-cover" style={{ backgroundImage: `url(${process.env.PUBLIC_URL + "/assets/animac-bg1.jpg"})` }}>
                 <div className="absolute inset-0 bg-black/60" />
                 <motion.div className="relative z-10 max-w-4xl mx-auto text-center" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
                     <h2 className="text-4xl mb-6 text-blue-400" style={{ fontFamily: "Azonix, sans-serif" }}>Our Vision</h2>
+                    {/* Portrait slideshow inserted here */}
+                    <PortraitSlideshow />
                     <p className="text-lg text-gray-300 leading-relaxed" style={{ fontFamily: "Montserrat, sans-serif" }}>
                         We envision a world where animation and storytelling transcend borders, connecting audiences globally through immersive digital experiences and cultural fusion.
                     </p>
