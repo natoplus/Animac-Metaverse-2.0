@@ -2,7 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Globe, Brush, Rocket, Quote } from "lucide-react";
-import Spline from '@splinetool/react-spline';
+import Spline from "@splinetool/react-spline";
 
 export default function AboutUs() {
   const values = [
@@ -27,7 +27,7 @@ export default function AboutUs() {
     {
       name: "Jane Doe",
       role: "CEO & Founder",
-      image: "/assets/team1.jpg", // ✅ served from /public/assets
+      image: "/assets/team1.jpg",
       quote: "Innovation drives the future.",
     },
     {
@@ -53,12 +53,10 @@ export default function AboutUs() {
     >
       {/* HERO SECTION WITH SPLINE */}
       <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-black to-blue-900">
-        {/* Background spline */}
-            <div className="absolute inset-0">
-                <main>
-                   <Spline scene="https://my.spline.design/robotfollowcursorforlandingpage-Sc87H9WSDfXFjPv42kwIl25z/" />
-                </main>
-            </div>
+        {/* Background Spline */}
+        <div className="absolute inset-0">
+          <Spline scene="https://my.spline.design/robotfollowcursorforlandingpage-Sc87H9WSDfXFjPv42kwIl25z/" />
+        </div>
         {/* Overlay for contrast */}
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 text-center max-w-4xl px-4">
@@ -111,7 +109,7 @@ export default function AboutUs() {
         ))}
       </section>
 
-      {/* OUR STORY with dimmed background */}
+      {/* OUR STORY */}
       <section className="relative py-20 px-6">
         <div className="absolute inset-0 bg-[url('/assets/animac-metaverse-2.jpg')] bg-cover bg-center opacity-10" />
         <motion.div
