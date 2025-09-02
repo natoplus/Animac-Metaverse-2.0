@@ -21,8 +21,8 @@ import "../styles/admin.css";
 
 const getInitialForm = () => ({
   title: "",
+  content: "<p></p>", // HTML content
   excerpt: "",
-  content: "<p></p>",
   category: "east",
   tags: "",
   featured_image: "",
@@ -67,14 +67,23 @@ export default function AdminDashboard() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    // Update preview for live WYSIWYG
+    if (name === "excerpt") return; // handle excerpt separately if needed
+    if (name === "title" || name === "featured_image" || name === "category") return;
+  };
+
+  const handleEditorUpdate = () => {
+    // Update live preview content but do NOT submit
+    const editorHTML = editorRef.current?.getHTML() || "<p></p>";
+    setPreviewContent(editorHTML);
   };
 
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
 
-    // Get HTML from editor only when submitting
+    // Get HTML from editor only on submit
     const editorHTML = editorRef.current?.getHTML() || "<p></p>";
-    setPreviewContent(editorHTML); // update preview
 
     const tagsArray = formData.tags
       .split(",")
@@ -182,7 +191,7 @@ export default function AdminDashboard() {
 
                   <Input
                     name="excerpt"
-                    placeholder="Excerpt"
+                    placeholder="Excerpt (short summary)"
                     value={formData.excerpt}
                     onChange={handleChange}
                   />
@@ -213,7 +222,18 @@ export default function AdminDashboard() {
                     <label className="text-gray-300 mb-2 block">
                       Article Body
                     </label>
-                    <TipTapEditor ref={editorRef} content={formData.content} />
+                    <TipTapEditor
+                      ref={editorRef}
+                      initialContent={formData.content}
+                    />
+                    {/* Trigger live preview manually */}
+                    <Button
+                      type="button"
+                      onClick={handleEditorUpdate}
+                      className="mt-2 neon-btn w-full"
+                    >
+                      Update Preview
+                    </Button>
                   </div>
 
                   <div className="flex items-center gap-6 text-white">
@@ -258,7 +278,7 @@ export default function AdminDashboard() {
             <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
               <CardContent className="space-y-4 p-5">
                 <h2 className="font-japanese text-2xl font-semibold text-white">
-                  Preview
+                  Preview Panel
                 </h2>
 
                 <div className="bg-white rounded-md overflow-hidden text-black">
@@ -280,9 +300,7 @@ export default function AdminDashboard() {
                     <h1 className="text-2xl font-bold mb-2">
                       {formData.title || "Article Title"}
                     </h1>
-                    <p className="text-gray-600 mb-4">
-                      {formData.excerpt || "Article Excerpt"}
-                    </p>
+                    <p className="text-gray-600 mb-4">{formData.excerpt || ""}</p>
 
                     <div
                       className="prose max-w-none"
@@ -329,7 +347,6 @@ export default function AdminDashboard() {
                             ✒️
                           </Button>
                           <Button
-                            variant="destructive"
                             size="sm"
                             onClick={() => handleDelete(article.id)}
                             className="neon-btn-sm-red"

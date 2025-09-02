@@ -5,7 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
-import { CustomImage } from "./CustomImage"; // your extended Image with size/alignment
+import { CustomImage } from "./CustomImage";
 
 import {
   Bold as BoldIcon,
@@ -35,12 +35,18 @@ import {
 /**
  * TipTapEditor (forwardRef)
  * props:
- *  - content: initial HTML content (string)
+ *  - initialContent: string HTML
  */
-const TipTapEditor = forwardRef(({ content = "<p></p>" }, ref) => {
+const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
   const editor = useEditor({
-    extensions: [StarterKit, Underline, Highlight, CustomImage, Link.configure({ openOnClick: true })],
-    content,
+    extensions: [
+      StarterKit,
+      Underline,
+      Highlight,
+      CustomImage,
+      Link.configure({ openOnClick: true }),
+    ],
+    content: initialContent,
     editorProps: { attributes: { class: "tt-editor-content focus:outline-none" } },
   });
 
@@ -49,13 +55,13 @@ const TipTapEditor = forwardRef(({ content = "<p></p>" }, ref) => {
     getHTML: () => editor?.getHTML() || "",
   }));
 
-  // Update editor if parent content changes
+  // Update editor if initialContent changes
   useEffect(() => {
-    if (editor && typeof content === "string") {
+    if (editor && typeof initialContent === "string") {
       const existing = editor.getHTML();
-      if (content !== existing) editor.commands.setContent(content, false);
+      if (initialContent !== existing) editor.commands.setContent(initialContent, false);
     }
-  }, [content, editor]);
+  }, [initialContent, editor]);
 
   // Image insertion
   const addImage = useCallback(() => {
@@ -101,32 +107,44 @@ const TipTapEditor = forwardRef(({ content = "<p></p>" }, ref) => {
           <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Blockquote" className={`p-2 rounded ${editor.isActive("blockquote") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Quote size={14} /></button>
         </div>
 
-        {/* Links / Images / Alignment / Size */}
+        {/* Links / Images */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
           <button type="button" onClick={addLink} title="Insert Link" className="p-2 rounded hover:bg-zinc-800"><LinkIcon size={14} /></button>
           <button type="button" onClick={addImage} title="Insert Image" className="p-2 rounded hover:bg-zinc-800"><ImageIcon size={14} /></button>
+
+          {/* Image alignment */}
           <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()} title="Align Left" className="p-2 rounded hover:bg-zinc-800"><AlignLeft size={14} /></button>
           <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()} title="Align Center" className="p-2 rounded hover:bg-zinc-800"><AlignCenter size={14} /></button>
           <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()} title="Align Right" className="p-2 rounded hover:bg-zinc-800"><AlignRight size={14} /></button>
+
+          {/* Image size */}
           <button onClick={() => editor.chain().focus().updateAttributes("image", { size: "small" }).run()} title="Small" className="p-2 rounded hover:bg-zinc-800"><Minimize2 size={14} /></button>
           <button onClick={() => editor.chain().focus().updateAttributes("image", { size: "medium" }).run()} title="Medium" className="p-2 rounded hover:bg-zinc-800"><Square size={14} /></button>
           <button onClick={() => editor.chain().focus().updateAttributes("image", { size: "large" }).run()} title="Large" className="p-2 rounded hover:bg-zinc-800"><Maximize2 size={14} /></button>
         </div>
-         {/* Undo / Redo */}
+
+        {/* Undo / Redo */}
         <div className="ml-auto flex items-center gap-2">
           <button type="button" onClick={() => editor.chain().focus().undo().run()} title="Undo" className="p-2 rounded hover:bg-zinc-800"><RotateCcw size={14} /></button>
           <button type="button" onClick={() => editor.chain().focus().redo().run()} title="Redo" className="p-2 rounded hover:bg-zinc-800"><RotateCw size={14} /></button>
         </div>
-    </div>
+      </div>
 
-      
+      {/* Editor area */}
+      <div className="p-4">
+        <EditorContent editor={editor} />
+      </div>
 
-      {/* Editor */}
-      <EditorContent editor={editor} className="tt-editor-content p-3 min-h-[200px] bg-zinc-900 text-gray-100" />
+      <style jsx>{`
+        .tt-editor :global(.ProseMirror) { min-height: 220px; color: #e6eef8; font-size: 14px; line-height: 1.6; }
+        .tt-editor :global(.ProseMirror h1) { font-size: 1.8rem; margin: 0.6rem 0; }
+        .tt-editor :global(.ProseMirror h2) { font-size: 1.4rem; margin: 0.5rem 0; }
+        .tt-editor :global(.ProseMirror h3) { font-size: 1.2rem; margin: 0.4rem 0; }
+        .tt-editor :global(.ProseMirror img) { max-width: 100%; border-radius: 8px; display: block; margin: 0.75rem 0; }
+        .tt-editor :global(.ProseMirror blockquote) { border-left: 3px solid #2b2b2b; padding-left: 12px; color: #cdd6e6; background: rgba(255,255,255,0.02); }
+      `}</style>
     </div>
   );
 });
-
-TipTapEditor.displayName = "TipTapEditor";
 
 export default TipTapEditor;
