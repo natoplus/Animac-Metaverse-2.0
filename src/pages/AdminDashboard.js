@@ -83,7 +83,7 @@ export default function AdminDashboard() {
 
     const payload = {
       ...formData,
-      content: editorHTML, // only now update content
+      content: editorRef.current?.getHTML() || formData.content, // only read on submit
       tags: tagsArray,
       is_published: publish,
     };
