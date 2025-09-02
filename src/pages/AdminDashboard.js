@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  const editorRef = useRef(null); // ref for TipTapEditor
+  const editorRef = useRef(null); // <-- NEW ref for TipTapEditor
 
   useEffect(() => {
     loadArticles();
@@ -69,31 +69,32 @@ export default function AdminDashboard() {
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
 
-    if (editorRef.current) {
-      const htmlContent = editorRef.current.getHTML();
-      setFormData((prev) => ({ ...prev, content: htmlContent }));
-    }
-
     const tagsArray = formData.tags
       .split(",")
       .map((tag) => tag.trim())
       .filter(Boolean)
       .slice(0, 10);
 
+    // Pull content directly from editor ref
+    let contentHTML = formData.content;
+    if (editorRef.current) {
+      contentHTML = editorRef.current.getHTML();
+    }
+
     const payload = {
       ...formData,
       tags: tagsArray,
+      content: contentHTML,
       is_published: publish, // override based on button clicked
     };
 
-    console.log("📦 Payload to API:", payload);
-
     try {
+      let article;
       if (isEditing) {
-        await updateArticle(editingId, payload);
+        article = await updateArticle(editingId, payload);
         toast.success("✅ Article updated!");
       } else {
-        await createArticle(payload);
+        article = await createArticle(payload);
         toast.success(publish ? "✅ Article published!" : "✅ Draft saved!");
       }
 
@@ -109,7 +110,7 @@ export default function AdminDashboard() {
     setFormData({
       ...article,
       tags: Array.isArray(article.tags) ? article.tags.join(", ") : "",
-      content: article.content || "<p></p>",
+      content: article.content || "<p></p>", // assume HTML content in DB
     });
     setEditingId(article.id);
     setIsEditing(true);
@@ -138,6 +139,7 @@ export default function AdminDashboard() {
     setEditingId(null);
   };
 
+  // sanitize preview HTML
   const sanitizedBody = DOMPurify.sanitize(formData.content || "");
 
   return (
@@ -203,8 +205,8 @@ export default function AdminDashboard() {
                       Article Body
                     </label>
                     <TipTapEditor
-                      content={formData.content}
-                      editorRef={editorRef}
+                      ref={editorRef}
+                      initialContent={formData.content}
                     />
                   </div>
 
