@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // TipTap editor ref
+  // Ref for TipTap editor
   const editorRef = useRef(null);
 
   // Local preview state
@@ -63,27 +63,18 @@ export default function AdminDashboard() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => {
-      const updated = {
-        ...prev,
-        [name]: type === "checkbox" ? checked : value,
-      };
-      // Update preview for live dashboard changes
-      if (name === "title" || name === "excerpt" || name === "featured_image") {
-        setPreviewContent(editorRef.current?.getHTML() || "<p></p>");
-      }
-      return updated;
-    });
-  };
-
-  const handleEditorUpdate = () => {
-    // Update live preview only
-    setPreviewContent(editorRef.current?.getHTML() || "<p></p>");
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
+
+    // Get HTML from editor only when submitting
     const editorHTML = editorRef.current?.getHTML() || "<p></p>";
+    setPreviewContent(editorHTML); // update preview
 
     const tagsArray = formData.tags
       .split(",")
@@ -93,7 +84,7 @@ export default function AdminDashboard() {
 
     const payload = {
       ...formData,
-      content: editorHTML, // only read on submit
+      content: editorHTML,
       tags: tagsArray,
       is_published: publish,
     };
@@ -222,12 +213,7 @@ export default function AdminDashboard() {
                     <label className="text-gray-300 mb-2 block">
                       Article Body
                     </label>
-                    <TipTapEditor
-                      ref={editorRef}
-                      content={formData.content}
-                      // handle preview update on key stroke
-                      onUpdate={handleEditorUpdate}
-                    />
+                    <TipTapEditor ref={editorRef} content={formData.content} />
                   </div>
 
                   <div className="flex items-center gap-6 text-white">
@@ -272,7 +258,7 @@ export default function AdminDashboard() {
             <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
               <CardContent className="space-y-4 p-5">
                 <h2 className="font-japanese text-2xl font-semibold text-white">
-                  Live Preview
+                  Preview
                 </h2>
 
                 <div className="bg-white rounded-md overflow-hidden text-black">
@@ -295,7 +281,7 @@ export default function AdminDashboard() {
                       {formData.title || "Article Title"}
                     </h1>
                     <p className="text-gray-600 mb-4">
-                      {formData.excerpt || "Excerpt goes here..."}
+                      {formData.excerpt || "Article Excerpt"}
                     </p>
 
                     <div
