@@ -27,7 +27,7 @@ const getInitialForm = () => ({
   tags: "",
   featured_image: "",
   is_featured: true,
-  is_published: false, // default to draft
+  is_published: false,
 });
 
 export default function AdminDashboard() {
@@ -36,7 +36,11 @@ export default function AdminDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  const editorRef = useRef(null); // <-- NEW ref for TipTapEditor
+  // Ref for TipTap editor
+  const editorRef = useRef(null);
+
+  // Local preview state
+  const [previewContent, setPreviewContent] = useState(formData.content);
 
   useEffect(() => {
     loadArticles();
@@ -65,9 +69,11 @@ export default function AdminDashboard() {
     }));
   };
 
-  // Save draft or publish explicitly
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
+
+    // Get HTML from editor only when submitting
+    const editorHTML = editorRef.current?.getHTML() || "<p></p>";
 
     const tagsArray = formData.tags
       .split(",")
@@ -75,26 +81,19 @@ export default function AdminDashboard() {
       .filter(Boolean)
       .slice(0, 10);
 
-    // Pull content directly from editor ref
-    let contentHTML = formData.content;
-    if (editorRef.current) {
-      contentHTML = editorRef.current.getHTML();
-    }
-
     const payload = {
       ...formData,
+      content: editorHTML, // only now update content
       tags: tagsArray,
-      content: contentHTML,
-      is_published: publish, // override based on button clicked
+      is_published: publish,
     };
 
     try {
-      let article;
       if (isEditing) {
-        article = await updateArticle(editingId, payload);
+        await updateArticle(editingId, payload);
         toast.success("✅ Article updated!");
       } else {
-        article = await createArticle(payload);
+        await createArticle(payload);
         toast.success(publish ? "✅ Article published!" : "✅ Draft saved!");
       }
 
@@ -110,8 +109,9 @@ export default function AdminDashboard() {
     setFormData({
       ...article,
       tags: Array.isArray(article.tags) ? article.tags.join(", ") : "",
-      content: article.content || "<p></p>", // assume HTML content in DB
+      content: article.content || "<p></p>",
     });
+    setPreviewContent(article.content || "<p></p>");
     setEditingId(article.id);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -135,12 +135,12 @@ export default function AdminDashboard() {
 
   const resetForm = () => {
     setFormData(getInitialForm());
+    setPreviewContent("<p></p>");
     setIsEditing(false);
     setEditingId(null);
   };
 
-  // sanitize preview HTML
-  const sanitizedBody = DOMPurify.sanitize(formData.content || "");
+  const sanitizedBody = DOMPurify.sanitize(previewContent);
 
   return (
     <>
@@ -207,6 +207,7 @@ export default function AdminDashboard() {
                     <TipTapEditor
                       ref={editorRef}
                       initialContent={formData.content}
+                      onChange={(html) => setPreviewContent(html)}
                     />
                   </div>
 
@@ -275,9 +276,7 @@ export default function AdminDashboard() {
                     <h1 className="text-2xl font-bold mb-2">
                       {formData.title || "Article Title"}
                     </h1>
-                    <p className="text-gray-600 mb-4">
-                      {formData.excerpt || ""}
-                    </p>
+                    <p className="text-gray-600 mb-4">{formData.excerpt || ""}</p>
 
                     <div
                       className="prose max-w-none"
@@ -290,7 +289,7 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
-        {/* Existing articles list below */}
+        {/* Existing articles list */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -324,7 +323,8 @@ export default function AdminDashboard() {
                             ✒️
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant
+                            ="destructive"
                             size="sm"
                             onClick={() => handleDelete(article.id)}
                             className="neon-btn-sm-red"
