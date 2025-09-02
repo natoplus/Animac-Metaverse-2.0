@@ -21,8 +21,8 @@ import "../styles/admin.css";
 
 const getInitialForm = () => ({
   title: "",
-  content: "<p></p>",
   excerpt: "",
+  content: "<p></p>",
   category: "east",
   tags: "",
   featured_image: "",
@@ -35,7 +35,6 @@ export default function AdminDashboard() {
   const [formData, setFormData] = useState(getInitialForm());
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [previewVisible, setPreviewVisible] = useState(false);
 
   // TipTap editor ref
   const editorRef = useRef(null);
@@ -64,10 +63,22 @@ export default function AdminDashboard() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+      // Update preview for live dashboard changes
+      if (name === "title" || name === "excerpt" || name === "featured_image") {
+        setPreviewContent(editorRef.current?.getHTML() || "<p></p>");
+      }
+      return updated;
+    });
+  };
+
+  const handleEditorUpdate = () => {
+    // Update live preview only
+    setPreviewContent(editorRef.current?.getHTML() || "<p></p>");
   };
 
   const handleSubmit = async (e, publish = false) => {
@@ -109,11 +120,11 @@ export default function AdminDashboard() {
       ...article,
       tags: Array.isArray(article.tags) ? article.tags.join(", ") : "",
       content: article.content || "<p></p>",
+      excerpt: article.excerpt || "",
     });
     setPreviewContent(article.content || "<p></p>");
     setEditingId(article.id);
     setIsEditing(true);
-    setPreviewVisible(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -138,7 +149,6 @@ export default function AdminDashboard() {
     setPreviewContent("<p></p>");
     setIsEditing(false);
     setEditingId(null);
-    setPreviewVisible(false);
   };
 
   const sanitizedBody = DOMPurify.sanitize(previewContent);
@@ -180,6 +190,13 @@ export default function AdminDashboard() {
                   />
 
                   <Input
+                    name="excerpt"
+                    placeholder="Excerpt"
+                    value={formData.excerpt}
+                    onChange={handleChange}
+                  />
+
+                  <Input
                     name="featured_image"
                     placeholder="Cover Image URL (Imgur link)"
                     value={formData.featured_image}
@@ -208,7 +225,8 @@ export default function AdminDashboard() {
                     <TipTapEditor
                       ref={editorRef}
                       content={formData.content}
-                      onChange={(html) => setPreviewContent(html)} // only for dashboard preview
+                      // handle preview update on key stroke
+                      onUpdate={handleEditorUpdate}
                     />
                   </div>
 
@@ -240,64 +258,55 @@ export default function AdminDashboard() {
                       {isEditing ? "Publish Update" : "Publish"}
                     </Button>
                   </div>
-
-                  {/* Preview toggle */}
-                  <div className="mt-4 flex gap-2">
-                    <Button
-                      type="button"
-                      onClick={() => setPreviewVisible(!previewVisible)}
-                      className="neon-btn font-azonix text-white"
-                    >
-                      {previewVisible ? "Hide Preview" : "Show Preview"}
-                    </Button>
-                  </div>
                 </form>
               </CardContent>
             </Card>
           </motion.div>
 
           {/* Right: Preview */}
-          {previewVisible && (
-            <motion.div
-              initial={{ opacity: 0, x: 60 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
-              <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
-                <CardContent className="space-y-4 p-5">
-                  <h2 className="font-japanese text-2xl font-semibold text-white">
-                    Preview
-                  </h2>
+          <motion.div
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
+              <CardContent className="space-y-4 p-5">
+                <h2 className="font-japanese text-2xl font-semibold text-white">
+                  Live Preview
+                </h2>
 
-                  <div className="bg-white rounded-md overflow-hidden text-black">
-                    {formData.featured_image ? (
-                      <div className="w-full h-48 overflow-hidden bg-gray-200">
-                        <img
-                          src={formData.featured_image}
-                          alt="cover"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-500">
-                        Cover image preview
-                      </div>
-                    )}
-
-                    <div className="p-6">
-                      <h1 className="text-2xl font-bold mb-2">
-                        {formData.title || "Article Title"}
-                      </h1>
-                      <div
-                        className="prose max-w-none"
-                        dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+                <div className="bg-white rounded-md overflow-hidden text-black">
+                  {formData.featured_image ? (
+                    <div className="w-full h-48 overflow-hidden bg-gray-200">
+                      <img
+                        src={formData.featured_image}
+                        alt="cover"
+                        className="w-full h-full object-cover"
                       />
                     </div>
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-500">
+                      Cover image preview
+                    </div>
+                  )}
+
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-2">
+                      {formData.title || "Article Title"}
+                    </h1>
+                    <p className="text-gray-600 mb-4">
+                      {formData.excerpt || "Excerpt goes here..."}
+                    </p>
+
+                    <div
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+                    />
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
 
         {/* Existing articles list */}
