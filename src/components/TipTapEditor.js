@@ -36,9 +36,9 @@ import {
  * TipTapEditor (forwardRef)
  * props:
  *  - content: initial HTML content (string)
- *  - onChange: optional callback for live preview (does not auto-update backend)
+ *  - onUpdate: callback for live preview only
  */
-const TipTapEditor = forwardRef(({ content = "<p></p>", onChange }, ref) => {
+const TipTapEditor = forwardRef(({ content = "<p></p>", onUpdate }, ref) => {
   const editor = useEditor({
     extensions: [StarterKit, Underline, Highlight, CustomImage, Link.configure({ openOnClick: true })],
     content,
@@ -50,20 +50,20 @@ const TipTapEditor = forwardRef(({ content = "<p></p>", onChange }, ref) => {
     getHTML: () => editor?.getHTML() || "",
   }));
 
-  // Live preview updates
-  const handleEditorChange = useCallback(() => {
-    if (editor && onChange) {
-      onChange(editor.getHTML());
+  // Trigger preview update
+  const handleEditorUpdate = useCallback(() => {
+    if (editor && onUpdate) {
+      onUpdate(editor.getHTML());
     }
-  }, [editor, onChange]);
+  }, [editor, onUpdate]);
 
   useEffect(() => {
     if (!editor) return;
-    editor.on("update", handleEditorChange);
-    return () => editor.off("update", handleEditorChange);
-  }, [editor, handleEditorChange]);
+    editor.on("update", handleEditorUpdate);
+    return () => editor.off("update", handleEditorUpdate);
+  }, [editor, handleEditorUpdate]);
 
-  // Update editor if parent content changes
+  // Update editor if parent content changes (for edit)
   useEffect(() => {
     if (editor && typeof content === "string") {
       const existing = editor.getHTML();
