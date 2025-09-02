@@ -1,5 +1,5 @@
 // src/pages/AdminDashboard.js
-import React, { useEffect, useState, lazy, Suspense } from "react";
+import React, { useEffect, useState } from "react";
 import {
   fetchArticles,
   createArticle,
@@ -12,19 +12,16 @@ import Footer from "../components/Footer";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import { Textarea } from "../components/ui/textarea";
 import { motion } from "framer-motion";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { Toaster, toast } from "react-hot-toast";
-import "react-markdown-editor-lite/lib/index.css";
-import "../styles/admin.css";
 
-const MdEditor = lazy(() => import("react-markdown-editor-lite"));
+import TipTapEditor from "../components/TipTapEditor";
+import DOMPurify from "dompurify";
+import "../styles/admin.css";
 
 const getInitialForm = () => ({
   title: "",
-  content: "",
+  content: "<p></p>", // HTML content
   excerpt: "",
   category: "east",
   tags: "",
@@ -32,22 +29,6 @@ const getInitialForm = () => ({
   is_featured: true,
   is_published: true,
 });
-
-// Custom renderer for images inside Markdown
-const renderers = {
-  img: ({ node, ...props }) => (
-    <img
-      {...props}
-      style={{
-        maxWidth: "100%",
-        borderRadius: "8px",
-        margin: "10px 0",
-        display: "block",
-      }}
-      alt={props.alt || ""}
-    />
-  ),
-};
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
@@ -82,8 +63,9 @@ export default function AdminDashboard() {
     }));
   };
 
-  const handleEditorChange = ({ text }) => {
-    setFormData((prev) => ({ ...prev, content: text }));
+  // TipTapEditor will call this with HTML string
+  const handleEditorChange = (html) => {
+    setFormData((prev) => ({ ...prev, content: html }));
   };
 
   const handleSubmit = async (e) => {
@@ -98,7 +80,7 @@ export default function AdminDashboard() {
     const payload = {
       ...formData,
       tags: tagsArray,
-      published: formData.is_published, // Send both for redundancy
+      published: formData.is_published, // keep parity with your backend
     };
 
     console.log("📦 Payload to API:", payload);
@@ -125,6 +107,7 @@ export default function AdminDashboard() {
     setFormData({
       ...article,
       tags: Array.isArray(article.tags) ? article.tags.join(", ") : "",
+      content: article.content || "<p></p>", // assume HTML content in DB
     });
     setEditingId(article.id);
     setIsEditing(true);
@@ -153,6 +136,9 @@ export default function AdminDashboard() {
     setEditingId(null);
   };
 
+  // sanitize preview HTML
+  const sanitizedBody = DOMPurify.sanitize(formData.content || "");
+
   return (
     <>
       <Toaster position="top-center" />
@@ -161,114 +147,139 @@ export default function AdminDashboard() {
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="admin-panel space-y-10 max-w-4xl mx-auto py-10"
+        className="admin-panel space-y-10 max-w-6xl mx-auto py-10"
       >
         <h1 className="font-azonix text-4xl font-bold text-white text-center">
           ANIMAC Admin Panel
         </h1>
 
-        {/* Form */}
-        <motion.div
-          initial={{ opacity: 0, x: -60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <Card className="neon-red bg-black border border-red-700 shadow-xl">
-            <CardContent className="space-y-4 p-5">
-              <h2 className="font-japanese text-2xl font-semibold text-white">
-                {isEditing ? "Edit Article" : "Post New Article"}
-              </h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Form */}
+          <motion.div
+            initial={{ opacity: 0, x: -60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card className="neon-red bg-black border border-red-700 shadow-xl">
+              <CardContent className="space-y-4 p-5">
+                <h2 className="font-japanese text-2xl font-semibold text-white">
+                  {isEditing ? "Edit Article" : "Post New Article"}
+                </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <Input
-                  name="title"
-                  placeholder="Title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  required
-                />
-                <Textarea
-                  name="excerpt"
-                  placeholder="Excerpt"
-                  value={formData.excerpt}
-                  onChange={handleChange}
-                />
-
-                <Suspense
-                  fallback={<div className="text-white">Loading editor...</div>}
-                >
-                  <MdEditor
-                    value={formData.content}
-                    style={{ height: "300px", backgroundColor: "#111" }}
-                    renderHTML={(text) => (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={renderers}
-                      >
-                        {text}
-                      </ReactMarkdown>
-                    )}
-                    onChange={handleEditorChange}
-                    className="dark-mode"
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <Input
+                    name="title"
+                    placeholder="Title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    required
                   />
-                </Suspense>
 
-                <Input
-                  name="category"
-                  placeholder="Category (east/west)"
-                  value={formData.category}
-                  onChange={handleChange}
-                />
-                <Input
-                  name="tags"
-                  placeholder="Tags (comma-separated)"
-                  value={formData.tags}
-                  onChange={handleChange}
-                />
-                <Input
-                  name="featured_image"
-                  placeholder="Featured Image URL"
-                  value={formData.featured_image}
-                  onChange={handleChange}
-                />
+                  <Input
+                    name="featured_image"
+                    placeholder="Cover Image URL (Imgur link)"
+                    value={formData.featured_image}
+                    onChange={handleChange}
+                  />
 
-                <div className="flex gap-6 text-white">
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="is_featured"
-                      checked={formData.is_featured}
-                      onChange={handleChange}
-                    />{" "}
-                    Featured
-                  </label>
-                  <label>
-                    <input
-                      type="checkbox"
-                      name="is_published"
-                      checked={formData.is_published}
-                      onChange={handleChange}
-                    />{" "}
-                    Published
-                  </label>
+                  <Input
+                    name="category"
+                    placeholder="Category (east/west)"
+                    value={formData.category}
+                    onChange={handleChange}
+                  />
+
+                  <Input
+                    name="tags"
+                    placeholder="Tags (comma-separated)"
+                    value={formData.tags}
+                    onChange={handleChange}
+                  />
+
+                  {/* TipTap editor */}
+                  <div>
+                    <label className="text-gray-300 mb-2 block">Article Body</label>
+                    <TipTapEditor content={formData.content} onChange={handleEditorChange} />
+                  </div>
+
+                  <div className="flex items-center gap-6 text-white">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        name="is_featured"
+                        checked={formData.is_featured}
+                        onChange={handleChange}
+                      />
+                      Featured
+                    </label>
+
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        name="is_published"
+                        checked={formData.is_published}
+                        onChange={handleChange}
+                      />
+                      Published
+                    </label>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
+                  >
+                    {isEditing ? "Update Article" : "Submit Article"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Right: Live Preview */}
+          <motion.div
+            initial={{ opacity: 0, x: 60 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
+              <CardContent className="space-y-4 p-5">
+                <h2 className="font-japanese text-2xl font-semibold text-white">Live Preview</h2>
+
+                <div className="bg-white rounded-md overflow-hidden text-black">
+                  {/* Cover image */}
+                  {formData.featured_image ? (
+                    // show image if available
+                    // note: keep width responsive
+                    <div className="w-full h-48 overflow-hidden bg-gray-200">
+                      <img src={formData.featured_image} alt="cover" className="w-full h-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-500">
+                      Cover image preview
+                    </div>
+                  )}
+
+                  <div className="p-6">
+                    <h1 className="text-2xl font-bold mb-2">{formData.title || "Article Title"}</h1>
+                    <p className="text-gray-600 mb-4">{formData.excerpt || ""}</p>
+
+                    {/* Render sanitized HTML from editor */}
+                    <div
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{ __html: sanitizedBody }}
+                    />
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
 
-                <Button
-                  type="submit"
-                  className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
-                >
-                  {isEditing ? "Update Article" : "Submit Article"}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Articles List */}
+        {/* Existing articles list below */}
         <motion.div
-          initial={{ opacity: 0, x: 60 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
         >
           <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
             <CardContent className="space-y-4 p-5">
@@ -293,7 +304,7 @@ export default function AdminDashboard() {
                           <Button
                             size="sm"
                             onClick={() => handleEdit(article)}
-                            className=".neon-btn-sm-purple"
+                            className="neon-btn-sm-purple"
                           >
                             ✒️
                           </Button>
