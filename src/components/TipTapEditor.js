@@ -1,5 +1,5 @@
 // src/components/TipTapEditor.js
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -36,7 +36,7 @@ import {
  * TipTapEditor
  * props:
  *  - content: initial HTML content (string)
- *  - onChange: function(html) called whenever content updates
+ *  - onChange: function(html) called whenever content updates (debounced)
  */
 export default function TipTapEditor({ content = "<p></p>", onChange }) {
   const editor = useEditor({
@@ -48,16 +48,41 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
       Link.configure({ openOnClick: true }),
     ],
     content,
-    onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      onChange && onChange(html);
-    },
     editorProps: {
       attributes: {
         class: "tt-editor-content focus:outline-none",
       },
     },
   });
+
+  // Debounce ref
+  const debounceTimeout = useRef(null);
+
+  // Debounced onUpdate
+  const handleUpdate = useCallback(
+    (editorInstance) => {
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+
+      debounceTimeout.current = setTimeout(() => {
+        const html = editorInstance.getHTML();
+        onChange && onChange(html);
+      }, 400); // 400ms debounce delay
+    },
+    [onChange]
+  );
+
+  // Set editor onUpdate
+  useEffect(() => {
+    if (!editor) return;
+
+    const onUpdateHandler = ({ editor: ed }) => handleUpdate(ed);
+    editor.on("update", onUpdateHandler);
+
+    return () => {
+      editor.off("update", onUpdateHandler);
+      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+    };
+  }, [editor, handleUpdate]);
 
   // Update editor if parent content changes
   useEffect(() => {
