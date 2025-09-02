@@ -113,14 +113,14 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
           <button type="button" onClick={addImage} title="Insert Image" className="p-2 rounded hover:bg-zinc-800"><ImageIcon size={14} /></button>
 
           {/* Image alignment */}
-          <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()} title="Align Left" className="p-2 rounded hover:bg-zinc-800"><AlignLeft size={14} /></button>
-          <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()} title="Align Center" className="p-2 rounded hover:bg-zinc-800"><AlignCenter size={14} /></button>
-          <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()} title="Align Right" className="p-2 rounded hover:bg-zinc-800"><AlignRight size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()} title="Align Left" className="p-2 rounded hover:bg-zinc-800"><AlignLeft size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()} title="Align Center" className="p-2 rounded hover:bg-zinc-800"><AlignCenter size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()} title="Align Right" className="p-2 rounded hover:bg-zinc-800"><AlignRight size={14} /></button>
 
           {/* Image size */}
-          <button onClick={() => editor.chain().focus().updateAttributes("image", { size: "small" }).run()} title="Small" className="p-2 rounded hover:bg-zinc-800"><Minimize2 size={14} /></button>
-          <button onClick={() => editor.chain().focus().updateAttributes("image", { size: "medium" }).run()} title="Medium" className="p-2 rounded hover:bg-zinc-800"><Square size={14} /></button>
-          <button onClick={() => editor.chain().focus().updateAttributes("image", { size: "large" }).run()} title="Large" className="p-2 rounded hover:bg-zinc-800"><Maximize2 size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { size: "small" }).run()} title="Small" className="p-2 rounded hover:bg-zinc-800"><Minimize2 size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { size: "medium" }).run()} title="Medium" className="p-2 rounded hover:bg-zinc-800"><Square size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { size: "large" }).run()} title="Large" className="p-2 rounded hover:bg-zinc-800"><Maximize2 size={14} /></button>
         </div>
 
         {/* Undo / Redo */}
