@@ -15,6 +15,7 @@ import {
      AlignLeft, 
      AlignCenter, 
      AlignRight, 
+     Code as CodeIcon,
      Square, 
      Maximize2, 
      Minimize2,
