@@ -27,7 +27,7 @@ const getInitialForm = () => ({
   tags: "",
   featured_image: "",
   is_featured: true,
-  is_published: true,
+  is_published: false, // default to draft
 });
 
 export default function AdminDashboard() {
@@ -63,12 +63,13 @@ export default function AdminDashboard() {
     }));
   };
 
-  // TipTapEditor will call this with HTML string
+  // TipTapEditor only updates local state, not the backend
   const handleEditorChange = (html) => {
     setFormData((prev) => ({ ...prev, content: html }));
   };
 
-  const handleSubmit = async (e) => {
+  // Save draft or publish explicitly
+  const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
 
     const tagsArray = formData.tags
@@ -80,7 +81,7 @@ export default function AdminDashboard() {
     const payload = {
       ...formData,
       tags: tagsArray,
-      published: formData.is_published, // keep parity with your backend
+      is_published: publish, // override based on button clicked
     };
 
     console.log("📦 Payload to API:", payload);
@@ -92,7 +93,9 @@ export default function AdminDashboard() {
         toast.success("✅ Article updated!");
       } else {
         article = await createArticle(payload);
-        toast.success("✅ Article posted!");
+        toast.success(
+          publish ? "✅ Article published!" : "✅ Draft saved!"
+        );
       }
 
       resetForm();
@@ -166,7 +169,7 @@ export default function AdminDashboard() {
                   {isEditing ? "Edit Article" : "Post New Article"}
                 </h2>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form className="space-y-4">
                   <Input
                     name="title"
                     placeholder="Title"
@@ -198,8 +201,13 @@ export default function AdminDashboard() {
 
                   {/* TipTap editor */}
                   <div>
-                    <label className="text-gray-300 mb-2 block">Article Body</label>
-                    <TipTapEditor content={formData.content} onChange={handleEditorChange} />
+                    <label className="text-gray-300 mb-2 block">
+                      Article Body
+                    </label>
+                    <TipTapEditor
+                      content={formData.content}
+                      onChange={handleEditorChange}
+                    />
                   </div>
 
                   <div className="flex items-center gap-6 text-white">
@@ -212,24 +220,24 @@ export default function AdminDashboard() {
                       />
                       Featured
                     </label>
-
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        name="is_published"
-                        checked={formData.is_published}
-                        onChange={handleChange}
-                      />
-                      Published
-                    </label>
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
-                  >
-                    {isEditing ? "Update Article" : "Submit Article"}
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      onClick={(e) => handleSubmit(e, false)}
+                      className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
+                    >
+                      {isEditing ? "Update Draft" : "Save Draft"}
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={(e) => handleSubmit(e, true)}
+                      className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
+                    >
+                      {isEditing ? "Publish Update" : "Publish"}
+                    </Button>
+                  </div>
                 </form>
               </CardContent>
             </Card>
@@ -243,15 +251,19 @@ export default function AdminDashboard() {
           >
             <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
               <CardContent className="space-y-4 p-5">
-                <h2 className="font-japanese text-2xl font-semibold text-white">Live Preview</h2>
+                <h2 className="font-japanese text-2xl font-semibold text-white">
+                  Live Preview
+                </h2>
 
                 <div className="bg-white rounded-md overflow-hidden text-black">
                   {/* Cover image */}
                   {formData.featured_image ? (
-                    // show image if available
-                    // note: keep width responsive
                     <div className="w-full h-48 overflow-hidden bg-gray-200">
-                      <img src={formData.featured_image} alt="cover" className="w-full h-full object-cover" />
+                      <img
+                        src={formData.featured_image}
+                        alt="cover"
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   ) : (
                     <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-500">
@@ -260,10 +272,13 @@ export default function AdminDashboard() {
                   )}
 
                   <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-2">{formData.title || "Article Title"}</h1>
-                    <p className="text-gray-600 mb-4">{formData.excerpt || ""}</p>
+                    <h1 className="text-2xl font-bold mb-2">
+                      {formData.title || "Article Title"}
+                    </h1>
+                    <p className="text-gray-600 mb-4">
+                      {formData.excerpt || ""}
+                    </p>
 
-                    {/* Render sanitized HTML from editor */}
                     <div
                       className="prose max-w-none"
                       dangerouslySetInnerHTML={{ __html: sanitizedBody }}
