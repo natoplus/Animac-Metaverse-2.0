@@ -9,20 +9,25 @@ import Underline from "@tiptap/extension-underline";
 import { CustomImage } from "./CustomImage";
 import {
     Bold as BoldIcon,
-    Italic as ItalicIcon,
-    Underline as UnderlineIcon,
-    X as CloseIcon,
-    Code as CodeIcon,
-    Heading as HeadingIcon,
-    List as ListIcon,
-    ListOrdered as ListOrderedIcon,
-    Quote,
-    Image as ImageIcon,
-    Link as LinkIcon,
-    RotateCcw,
-    RotateCw,
-    Type
-} from "lucide-react";
+     Italic as ItalicIcon,
+     Underline as UnderlineIcon,
+    Strikethrough,
+     AlignLeft, 
+     AlignCenter, 
+     AlignRight, 
+     Square, 
+     Maximize2, 
+     Minimize2,
+     Heading as HeadingIcon,
+     List as ListIcon,
+     ListOrdered as ListOrderedIcon,
+     Quote,
+     Image as ImageIcon,
+     Link as LinkIcon,
+     RotateCcw,
+     RotateCw,
+     Type
+ } from "lucide-react";
 
 /**
  * TipTapEditor
@@ -38,7 +43,6 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
             StarterKit,
             Underline,
             Highlight,
-            Image,
             CustomImage,
             Link.configure({ openOnClick: true }),
         ],
@@ -188,12 +192,11 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         <Quote size={16} />
                     </button>
                     <button
-                        type="button"
-                        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                        title="Code Block"
-                        className={`p-2 rounded ${editor.isActive("codeBlock") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
+                        onClick={() => editor.chain().focus().toggleStrike().run()}
+                        title="Strikethrough"
+                        className={`p-2 rounded ${editor.isActive("strike") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                     >
-                        <CodeIcon size={16} />
+                        <Strikethrough size={16} />
                     </button>
                 </div>
 
@@ -210,21 +213,49 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                     <button onClick={() => editor.chain().focus().setImage({ src: prompt("Imgur link:"), width: "50%", alignment: "center" }).run()}>
                         <ImageIcon size={16} />
                     </button>
-                    <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()}>
-                        Align Left
+                    <button
+                        onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()}
+                        title="Align Left"
+                        className="p-2 rounded hover:bg-zinc-800"
+                    >
+                        <AlignLeft size={16} />
                     </button>
-                    <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()}>
-                        Align Center
+                    <button
+                        onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()}
+                        title="Align Center"
+                        className="p-2 rounded hover:bg-zinc-800"
+                    >
+                        <AlignCenter size={16} />
                     </button>
-                    <button onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()}>
-                        Align Right
+                    <button
+                        onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()}
+                        title="Align Right"
+                        className="p-2 rounded hover:bg-zinc-800"
+                    >
+                        <AlignRight size={16} />
                     </button>
 
-                    <button onClick={() => editor.chain().focus().updateAttributes("image", { width: "50%" }).run()}>
-                        50% Width
+                    <button
+                        onClick={() => editor.chain().focus().updateAttributes("image", { size: "small" }).run()}
+                        title="Small"
+                        className="p-2 rounded hover:bg-zinc-800"
+                    >
+                        <Minimize2 size={16} />
                     </button>
-                    <button onClick={() => editor.chain().focus().updateAttributes("image", { width: "100%" }).run()}>
-                        Full Width
+                    <button
+                        onClick={() => editor.chain().focus().updateAttributes("image", { size: "medium" }).run()}
+                        title="Medium"
+                        className="p-2 rounded hover:bg-zinc-800"
+                    >
+                        <Square size={16} />
+                    </button>
+
+                    <button
+                        onClick={() => editor.chain().focus().updateAttributes("image", { size: "large" }).run()}
+                        title="Large"
+                        className="p-2 rounded hover:bg-zinc-800"
+                    >
+                        <Maximize2 size={16} />
                     </button>
 
                     <button onClick={() => editor.chain().focus().updateAttributes("image", { style: "border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" }).run()}>
@@ -282,15 +313,15 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
           color: #cdd6e6;
           background: rgba(255,255,255,0.01);
         }
-        .tiptap img[data-align="left"] {
+        .tt-editor img[data-align="left"] {
           float: left;
           margin: 0 1rem 1rem 0;
         }
-        .tiptap img[data-align="right"] {
+        .tt-editor img[data-align="right"] {
           float: right;
           margin: 0 0 1rem 1rem;
         }
-        .tiptap img[data-align="center"] {
+        .tt-editor img[data-align="center"] {
           display: block;
           margin: 1rem auto;
         }
