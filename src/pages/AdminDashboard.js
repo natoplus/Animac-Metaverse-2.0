@@ -1,5 +1,5 @@
 // src/pages/AdminDashboard.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   fetchArticles,
   createArticle,
@@ -36,6 +36,8 @@ export default function AdminDashboard() {
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  const editorRef = useRef(null); // ref for TipTapEditor
+
   useEffect(() => {
     loadArticles();
   }, []);
@@ -63,14 +65,14 @@ export default function AdminDashboard() {
     }));
   };
 
-  // TipTapEditor only updates local state, not the backend
-  const handleEditorChange = (html) => {
-    setFormData((prev) => ({ ...prev, content: html }));
-  };
-
   // Save draft or publish explicitly
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
+
+    if (editorRef.current) {
+      const htmlContent = editorRef.current.getHTML();
+      setFormData((prev) => ({ ...prev, content: htmlContent }));
+    }
 
     const tagsArray = formData.tags
       .split(",")
@@ -87,15 +89,12 @@ export default function AdminDashboard() {
     console.log("📦 Payload to API:", payload);
 
     try {
-      let article;
       if (isEditing) {
-        article = await updateArticle(editingId, payload);
+        await updateArticle(editingId, payload);
         toast.success("✅ Article updated!");
       } else {
-        article = await createArticle(payload);
-        toast.success(
-          publish ? "✅ Article published!" : "✅ Draft saved!"
-        );
+        await createArticle(payload);
+        toast.success(publish ? "✅ Article published!" : "✅ Draft saved!");
       }
 
       resetForm();
@@ -110,7 +109,7 @@ export default function AdminDashboard() {
     setFormData({
       ...article,
       tags: Array.isArray(article.tags) ? article.tags.join(", ") : "",
-      content: article.content || "<p></p>", // assume HTML content in DB
+      content: article.content || "<p></p>",
     });
     setEditingId(article.id);
     setIsEditing(true);
@@ -139,7 +138,6 @@ export default function AdminDashboard() {
     setEditingId(null);
   };
 
-  // sanitize preview HTML
   const sanitizedBody = DOMPurify.sanitize(formData.content || "");
 
   return (
@@ -206,7 +204,7 @@ export default function AdminDashboard() {
                     </label>
                     <TipTapEditor
                       content={formData.content}
-                      onChange={handleEditorChange}
+                      editorRef={editorRef}
                     />
                   </div>
 

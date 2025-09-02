@@ -1,5 +1,5 @@
 // src/components/TipTapEditor.js
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useCallback } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -36,9 +36,9 @@ import {
  * TipTapEditor
  * props:
  *  - content: initial HTML content (string)
- *  - onChange: function(html) called whenever content updates (debounced)
+ *  - editorRef: React ref to access editor instance externally
  */
-export default function TipTapEditor({ content = "<p></p>", onChange }) {
+export default function TipTapEditor({ content = "<p></p>", editorRef }) {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -55,34 +55,12 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
     },
   });
 
-  // Debounce ref
-  const debounceTimeout = useRef(null);
-
-  // Debounced onUpdate
-  const handleUpdate = useCallback(
-    (editorInstance) => {
-      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-
-      debounceTimeout.current = setTimeout(() => {
-        const html = editorInstance.getHTML();
-        onChange && onChange(html);
-      }, 400); // 400ms debounce delay
-    },
-    [onChange]
-  );
-
-  // Set editor onUpdate
+  // Expose editor instance to parent via ref
   useEffect(() => {
-    if (!editor) return;
-
-    const onUpdateHandler = ({ editor: ed }) => handleUpdate(ed);
-    editor.on("update", onUpdateHandler);
-
-    return () => {
-      editor.off("update", onUpdateHandler);
-      if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-    };
-  }, [editor, handleUpdate]);
+    if (editorRef && editor) {
+      editorRef.current = editor;
+    }
+  }, [editor, editorRef]);
 
   // Update editor if parent content changes
   useEffect(() => {
@@ -186,9 +164,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
           onClick={() => editor.chain().focus().toggleHighlight().run()}
           title="Highlight"
           className={`p-2 rounded ${
-            editor.isActive("highlight")
-              ? "bg-yellow-600 text-black"
-              : "hover:bg-zinc-800"
+            editor.isActive("highlight") ? "bg-yellow-600 text-black" : "hover:bg-zinc-800"
           }`}
         >
           <Type size={14} />
@@ -199,9 +175,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
           <button
             onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
             className={`p-2 rounded ${
-              editor.isActive("heading", { level: 1 })
-                ? "bg-zinc-700"
-                : "hover:bg-zinc-800"
+              editor.isActive("heading", { level: 1 }) ? "bg-zinc-700" : "hover:bg-zinc-800"
             }`}
           >
             <Heading1 size={14} />
@@ -209,9 +183,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
           <button
             onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
             className={`p-2 rounded ${
-              editor.isActive("heading", { level: 2 })
-                ? "bg-zinc-700"
-                : "hover:bg-zinc-800"
+              editor.isActive("heading", { level: 2 }) ? "bg-zinc-700" : "hover:bg-zinc-800"
             }`}
           >
             <Heading2 size={14} />
@@ -219,9 +191,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
           <button
             onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
             className={`p-2 rounded ${
-              editor.isActive("heading", { level: 3 })
-                ? "bg-zinc-700"
-                : "hover:bg-zinc-800"
+              editor.isActive("heading", { level: 3 }) ? "bg-zinc-700" : "hover:bg-zinc-800"
             }`}
           >
             <Heading3 size={14} />
@@ -245,9 +215,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
             onClick={() => editor.chain().focus().toggleOrderedList().run()}
             title="Numbered list"
             className={`p-2 rounded ${
-              editor.isActive("orderedList")
-                ? "bg-zinc-700"
-                : "hover:bg-zinc-800"
+              editor.isActive("orderedList") ? "bg-zinc-700" : "hover:bg-zinc-800"
             }`}
           >
             <ListOrderedIcon size={14} />
@@ -257,9 +225,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
             onClick={() => editor.chain().focus().toggleBlockquote().run()}
             title="Blockquote"
             className={`p-2 rounded ${
-              editor.isActive("blockquote")
-                ? "bg-zinc-700"
-                : "hover:bg-zinc-800"
+              editor.isActive("blockquote") ? "bg-zinc-700" : "hover:bg-zinc-800"
             }`}
           >
             <Quote size={14} />
@@ -268,46 +234,31 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
 
         {/* Links & Images */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={addLink}
-            title="Insert Link"
-            className="p-2 rounded hover:bg-zinc-800"
-          >
+          <button type="button" onClick={addLink} title="Insert Link" className="p-2 rounded hover:bg-zinc-800">
             <LinkIcon size={14} />
           </button>
 
-          <button
-            onClick={addImage}
-            title="Insert Image"
-            className="p-2 rounded hover:bg-zinc-800"
-          >
+          <button onClick={addImage} title="Insert Image" className="p-2 rounded hover:bg-zinc-800">
             <ImageIcon size={14} />
           </button>
 
           {/* Image alignment */}
           <button
-            onClick={() =>
-              editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()
-            }
+            onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()}
             title="Align Left"
             className="p-2 rounded hover:bg-zinc-800"
           >
             <AlignLeft size={14} />
           </button>
           <button
-            onClick={() =>
-              editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()
-            }
+            onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()}
             title="Align Center"
             className="p-2 rounded hover:bg-zinc-800"
           >
             <AlignCenter size={14} />
           </button>
           <button
-            onClick={() =>
-              editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()
-            }
+            onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()}
             title="Align Right"
             className="p-2 rounded hover:bg-zinc-800"
           >
@@ -316,27 +267,21 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
 
           {/* Image size */}
           <button
-            onClick={() =>
-              editor.chain().focus().updateAttributes("image", { size: "small" }).run()
-            }
+            onClick={() => editor.chain().focus().updateAttributes("image", { size: "small" }).run()}
             title="Small"
             className="p-2 rounded hover:bg-zinc-800"
           >
             <Minimize2 size={14} />
           </button>
           <button
-            onClick={() =>
-              editor.chain().focus().updateAttributes("image", { size: "medium" }).run()
-            }
+            onClick={() => editor.chain().focus().updateAttributes("image", { size: "medium" }).run()}
             title="Medium"
             className="p-2 rounded hover:bg-zinc-800"
           >
             <Square size={14} />
           </button>
           <button
-            onClick={() =>
-              editor.chain().focus().updateAttributes("image", { size: "large" }).run()
-            }
+            onClick={() => editor.chain().focus().updateAttributes("image", { size: "large" }).run()}
             title="Large"
             className="p-2 rounded hover:bg-zinc-800"
           >
