@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
+import Quote from "@tiptap/extension-blockquote";
 import { CustomImage } from "./CustomImage";
 
 import {
@@ -95,9 +96,9 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
 
         {/* Headings */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
-          <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={`p-2 rounded ${editor.isActive("heading", { level: 1 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Heading1 size={14} /></button>
-          <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={`p-2 rounded ${editor.isActive("heading", { level: 2 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Heading2 size={14} /></button>
-          <button onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={`p-2 rounded ${editor.isActive("heading", { level: 3 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Heading3 size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={`p-2 rounded ${editor.isActive("heading", { level: 1 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Heading1 size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={`p-2 rounded ${editor.isActive("heading", { level: 2 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Heading2 size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} className={`p-2 rounded ${editor.isActive("heading", { level: 3 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Heading3 size={14} /></button>
         </div>
 
         {/* Lists / Blockquote */}
