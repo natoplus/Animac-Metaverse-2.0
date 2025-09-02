@@ -19,6 +19,9 @@ import {
      Square, 
      Maximize2, 
      Minimize2,
+     Heading1,
+     Heading2,
+     Heading3,
      Heading as HeadingIcon,
      List as ListIcon,
      ListOrdered as ListOrderedIcon,
@@ -98,7 +101,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                     title="Bold"
                     className={`p-2 rounded ${editor.isActive("bold") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                 >
-                    <BoldIcon size={10} />
+                    <BoldIcon size={13} />
                 </button>
 
                 <button
@@ -107,7 +110,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                     title="Italic"
                     className={`p-2 rounded ${editor.isActive("italic") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                 >
-                    <ItalicIcon size={10} />
+                    <ItalicIcon size={13} />
                 </button>
 
                 <button
@@ -116,7 +119,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                     title="Underline"
                     className={`p-2 rounded ${editor.isActive("underline") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                 >
-                    <UnderlineIcon size={10} />
+                    <UnderlineIcon size={13} />
                 </button>
 
                 <button
@@ -125,7 +128,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                     title="Strike"
                     className={`p-2 rounded ${editor.isActive("strike") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                 >
-                    <CodeIcon size={10} />
+                    <CodeIcon size={13} />
                 </button>
 
                 <button
@@ -134,33 +137,27 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                     title="Highlight"
                     className={`p-2 rounded ${editor.isActive("highlight") ? "bg-yellow-600 text-black" : "hover:bg-zinc-800"}`}
                 >
-                    <Type size={10} />
+                    <Type size={13} />
                 </button>
 
                 <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
                     <button
-                        type="button"
                         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-                        title="H1"
-                        className={`p-2 rounded ${editor.isActive("heading", { level: 1 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
+                        className={editor.isActive("heading", { level: 1 }) ? "bg-gray-700 p-2 rounded" : "p-2"}
                     >
-                        H1
+                        <Heading1 size={13} />
                     </button>
                     <button
-                        type="button"
                         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-                        title="H2"
-                        className={`p-2 rounded ${editor.isActive("heading", { level: 2 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
+                        className={editor.isActive("heading", { level: 2 }) ? "bg-gray-700 p-2 rounded" : "p-2"}
                     >
-                        H2
+                        <Heading2 size={13} />
                     </button>
                     <button
-                        type="button"
                         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-                        title="H3"
-                        className={`p-2 rounded ${editor.isActive("heading", { level: 3 }) ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
+                        className={editor.isActive("heading", { level: 3 }) ? "bg-gray-700 p-2 rounded" : "p-2"}
                     >
-                        H3
+                        <Heading3 size={13} />
                     </button>
                 </div>
 
@@ -171,7 +168,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         title="Bulleted list"
                         className={`p-2 rounded ${editor.isActive("bulletList") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                     >
-                        <ListIcon size={10} />
+                        <ListIcon size={13} />
                     </button>
                     <button
                         type="button"
@@ -179,7 +176,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         title="Numbered list"
                         className={`p-2 rounded ${editor.isActive("orderedList") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                     >
-                        <ListOrderedIcon size={10} />
+                        <ListOrderedIcon size={13} />
                     </button>
                 </div>
 
@@ -190,14 +187,14 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         title="Blockquote"
                         className={`p-2 rounded ${editor.isActive("blockquote") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                     >
-                        <Quote size={10} />
+                        <Quote size={13} />
                     </button>
                     <button
                         onClick={() => editor.chain().focus().toggleStrike().run()}
                         title="Strikethrough"
                         className={`p-2 rounded ${editor.isActive("strike") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}
                     >
-                        <Strikethrough size={10} />
+                        <Strikethrough size={13} />
                     </button>
                 </div>
 
@@ -208,32 +205,32 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         title="Insert Link"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <LinkIcon size={10} />
+                        <LinkIcon size={13} />
                     </button>
 
                     <button onClick={() => editor.chain().focus().setImage({ src: prompt("Imgur link:"), width: "50%", alignment: "center" }).run()}>
-                        <ImageIcon size={10} />
+                        <ImageIcon size={13} />
                     </button>
                     <button
                         onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()}
                         title="Align Left"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <AlignLeft size={10} />
+                        <AlignLeft size={13} />
                     </button>
                     <button
                         onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()}
                         title="Align Center"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <AlignCenter size={10} />
+                        <AlignCenter size={13} />
                     </button>
                     <button
                         onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()}
                         title="Align Right"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <AlignRight size={10} />
+                        <AlignRight size={13} />
                     </button>
 
                     <button
@@ -241,14 +238,14 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         title="Small"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <Minimize2 size={10} />
+                        <Minimize2 size={13} />
                     </button>
                     <button
                         onClick={() => editor.chain().focus().updateAttributes("image", { size: "medium" }).run()}
                         title="Medium"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <Square size={10} />
+                        <Square size={13} />
                     </button>
 
                     <button
@@ -256,7 +253,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         title="Large"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <Maximize2 size={10} />
+                        <Maximize2 size={13} />
                     </button>
 
                     <button onClick={() => editor.chain().focus().updateAttributes("image", { style: "border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.3);" }).run()}>
@@ -268,7 +265,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         title="Undo"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <RotateCcw size={10} />
+                        <RotateCcw size={13} />
                     </button>
 
                     <button
@@ -277,7 +274,7 @@ export default function TipTapEditor({ content = "<p></p>", onChange }) {
                         title="Redo"
                         className="p-2 rounded hover:bg-zinc-800"
                     >
-                        <RotateCw size={10} />
+                        <RotateCw size={13} />
                     </button>
                 </div>
             </div>
