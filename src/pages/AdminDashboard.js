@@ -14,7 +14,6 @@ import { Card, CardContent } from "../components/ui/card";
 import { Trash2, Edit2, Save, Eye, EyeOff, Search } from "lucide-react";
 
 export default function AdminDashboard() {
-  // ----- States -----
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -33,7 +32,6 @@ export default function AdminDashboard() {
   const [tagInput, setTagInput] = useState("");
   const editorRef = useRef(null);
 
-  // ----- Fetch Articles -----
   const loadArticles = useCallback(async () => {
     setLoading(true);
     const allArticles = await fetchArticles();
@@ -45,7 +43,6 @@ export default function AdminDashboard() {
     loadArticles();
   }, [loadArticles]);
 
-  // ----- Handle Edit -----
   const handleEdit = (article) => {
     setSelectedArticle(article);
     setTitle(article.title);
@@ -60,14 +57,12 @@ export default function AdminDashboard() {
     }
   };
 
-  // ----- Handle Delete -----
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this article?")) return;
     await deleteArticle(id);
     loadArticles();
   };
 
-  // ----- Handle Save / Update -----
   const handleSave = async () => {
     const content = editorRef.current?.getHTML() || "";
     const payload = {
@@ -100,7 +95,6 @@ export default function AdminDashboard() {
     setTagInput("");
   };
 
-  // ----- Auto-save Draft -----
   useEffect(() => {
     if (!autoSave) return;
     const interval = setInterval(() => {
@@ -110,21 +104,15 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [autoSave, selectedArticle, title, excerpt, category, tags, featuredImage, previewContent]);
 
-  // ----- Editor Change Handler -----
-  const handleEditorChange = (html) => {
-    setPreviewContent(html);
-  };
+  const handleEditorChange = (html) => setPreviewContent(html);
 
-  // ----- Word count / Read time -----
   const wordCount = previewContent?.split(/\s+/).length || 0;
   const readTime = Math.ceil(wordCount / 200);
 
-  // ----- Filter Articles -----
   const filteredArticles = articles
     .filter((a) => a.title.toLowerCase().includes(searchTerm.toLowerCase()))
     .filter((a) => (a.is_published ? publishedVisible : draftsVisible));
 
-  // ----- Add tag via input -----
   const handleTagInputKey = (e) => {
     if (e.key === "Enter" && tagInput.trim()) {
       setTags([...tags, tagInput.trim()]);
@@ -132,40 +120,38 @@ export default function AdminDashboard() {
     }
   };
 
-  // ----- Animation Variants -----
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
 
-  // ----- Split Drafts / Published -----
   const draftArticles = filteredArticles.filter((a) => !a.is_published);
   const publishedArticles = filteredArticles.filter((a) => a.is_published);
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-6 font-sans">
-      <h1 className="text-3xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-blue-500">
+      <h1 className="text-3xl font-bold mb-6 font-azonix bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-blue-500">
         Admin Dashboard
       </h1>
 
       {/* Search & Filters */}
-      <div className="flex bg-gray-850 flex-wrap gap-4 mb-4 items-center">
+      <div className="flex flex-wrap gap-4 mb-4 items-center">
         <Input
           placeholder="Search articles..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 bg-gray-800 border-gray-700 focus:border-blue-400 placeholder-gray-400 text-gray-100"
+          className="flex-1 bg-gray-800 border border-gray-700 focus:border-blue-400 placeholder-gray-400 text-gray-100"
           icon={<Search size={16} />}
         />
         <div className="flex gap-2">
           <Button
-            className="bg-gray-800 border border-gray-700 hover:border-red-500 transition-colors"
+            className="bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white px-4 py-2 rounded-[6px]"
             onClick={() => setDraftsVisible(!draftsVisible)}
           >
             {draftsVisible ? <Eye size={16} /> : <EyeOff size={16} />} Drafts
           </Button>
           <Button
-            className="bg-gray-800 border border-gray-700 hover:border-blue-500 transition-colors"
+            className="bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white px-4 py-2 rounded-[6px]"
             onClick={() => setPublishedVisible(!publishedVisible)}
           >
             {publishedVisible ? <Eye size={16} /> : <EyeOff size={16} />} Published
@@ -177,13 +163,13 @@ export default function AdminDashboard() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Editor */}
         <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
-          <Card className="mb-4 !bg-gray-850 border border-gray-700 hover:border-blue-500 transition-colors duration-300 shadow-md">
+          <Card className="mb-4 bg-gray-850 border border-gray-700 rounded-[6px] shadow-md animate-pulse">
             <CardContent>
               <Input
                 placeholder="Article Title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mb-2 !bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
+                className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <Input
                 placeholder="Excerpt"
@@ -197,7 +183,6 @@ export default function AdminDashboard() {
                 onChange={(e) => setCategory(e.target.value)}
                 className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
-              {/* Tags */}
               <div className="flex gap-2 mb-2 flex-wrap">
                 {tags.map((t, i) => (
                   <span
@@ -256,7 +241,7 @@ export default function AdminDashboard() {
               />
 
               <Button
-                className="mt-4 bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white flex items-center gap-2 transition-all duration-300"
+                className="mt-4 bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white flex items-center gap-2 transition-all duration-300 rounded-[6px]"
                 onClick={handleSave}
               >
                 <Save size={16} /> Save Article
@@ -267,13 +252,13 @@ export default function AdminDashboard() {
 
         {/* Preview */}
         <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
-          <Card className="!bg-gray-850 border border-gray-700 hover:border-red-500 transition-colors duration-300 shadow-md">
+          <Card className="bg-gray-850 border border-gray-700 rounded-[6px] shadow-md">
             <CardContent>
-              <h2 className="!bg-gray-850 text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-400">
+              <h2 className="font-azonix text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-400">
                 Live Preview
               </h2>
               <div
-                className="prose prose-invert max-w-full overflow-auto border rounded p-4 bg-gray-800"
+                className="prose prose-invert max-w-full overflow-auto border rounded-[6px] p-4 bg-gray-800"
                 dangerouslySetInnerHTML={{ __html: previewContent }}
               />
             </CardContent>
@@ -281,13 +266,12 @@ export default function AdminDashboard() {
         </motion.div>
       </div>
 
-      {/* Articles List with Collapse */}
+      {/* Articles List */}
       <div className="mt-8 space-y-4">
-        {/* Drafts */}
         {draftArticles.length > 0 && (
           <div>
             <Button
-              className="w-full text-left bg-gray-800 border border-gray-700 mb-2 px-4 py-2 flex justify-between items-center"
+              className="w-full text-left bg-gray-800 border border-gray-700 mb-2 px-4 py-2 flex justify-between items-center rounded-[6px]"
               onClick={() => setDraftsVisible(!draftsVisible)}
             >
               <span>Drafts ({draftArticles.length})</span>
@@ -305,11 +289,13 @@ export default function AdminDashboard() {
                   {draftArticles.map((article) => (
                     <Card
                       key={article.id}
-                      className="flex justify-between items-center p-4 !bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300 opacity-80"
+                      className="flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-[6px] hover:shadow-lg transition-shadow duration-300 opacity-90"
                     >
                       <div>
-                        <h3 className="font-semibold">{article.title}</h3>
-                        <span className="text-xs text-gray-400 animate-pulse">Draft</span>
+                        <h3 className="font-azonix font-semibold text-white">{article.title}</h3>
+                        <span className="text-xs px-2 py-1 border border-red-500 text-red-500 rounded-[4px] inline-block mt-1">
+                          Draft
+                        </span>
                         <div className="text-sm text-gray-400">
                           {article.category} | {article.tags?.join(", ")}
                         </div>
@@ -336,11 +322,10 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* Published */}
         {publishedArticles.length > 0 && (
           <div>
             <Button
-              className="w-full text-left bg-gray-800 border border-gray-700 mb-2 px-4 py-2 flex justify-between items-center"
+              className="w-full text-left bg-gray-800 border border-gray-700 mb-2 px-4 py-2 flex justify-between items-center rounded-[6px]"
               onClick={() => setPublishedVisible(!publishedVisible)}
             >
               <span>Published ({publishedArticles.length})</span>
@@ -353,16 +338,18 @@ export default function AdminDashboard() {
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-2 bg-gray-900 border"
+                  className="space-y-2"
                 >
                   {publishedArticles.map((article) => (
                     <Card
                       key={article.id}
-                      className="flex justify-between items-center p-4 !bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300"
+                      className="flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-[6px] hover:shadow-lg transition-shadow duration-300"
                     >
                       <div>
-                        <h3 className="font-semibold">{article.title}</h3>
-                        <span className="text-xs text-green-400 animate-pulse">Published</span>
+                        <h3 className="font-azonix font-semibold text-white">{article.title}</h3>
+                        <span className="text-xs px-2 py-1 border border-green-500 text-green-500 rounded-[4px] inline-block mt-1">
+                          Published
+                        </span>
                         <div className="text-sm text-gray-400">
                           {article.category} | {article.tags?.join(", ")}
                         </div>
