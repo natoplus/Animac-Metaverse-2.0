@@ -5,6 +5,7 @@ import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Highlight from "@tiptap/extension-highlight";
 import Underline from "@tiptap/extension-underline";
+import { TextAlign } from '@tiptap/extension-text-align';
 import { CustomImage } from "./CustomImage";
 
 import {
@@ -45,6 +46,7 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>", onUpdate }, ref) 
       Underline,
       Highlight,
       CustomImage,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Link.configure({ openOnClick: true }),
     ],
     content: initialContent,
@@ -111,10 +113,10 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>", onUpdate }, ref) 
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
           <button type="button" onClick={addLink} className="p-2 rounded hover:bg-zinc-800"><LinkIcon size={14} /></button>
           <button type="button" onClick={addImage} className="p-2 rounded hover:bg-zinc-800"><ImageIcon size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()} title="Align Left" className="p-2 rounded hover:bg-zinc-800"><AlignLeft size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()} title="Align Center" className="p-2 rounded hover:bg-zinc-800"><AlignCenter size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()} title="Align Right" className="p-2 rounded hover:bg-zinc-800"><AlignRight size={14} /></button>
-        </div>
+          <button type="button" onClick={() => editor.chain().focus().setTextAlign("left").run()} title="Align Left" className="p-2 rounded hover:bg-zinc-800"><AlignLeft size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().setTextAlign("center").run()} title="Align Center" className="p-2 rounded hover:bg-zinc-800"><AlignCenter size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().setTextAlign("right").run()} title="Align Right" className="p-2 rounded hover:bg-zinc-800"><AlignRight size={14} /></button>
+              </div>
 
         {/* Image size */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">

@@ -250,7 +250,7 @@ export default function AdminDashboard() {
                     onChange={(e) =>
                       setArticleForm({ ...articleForm, is_featured: e.target.checked })
                     }
-                    className="form-checkbox h-5 w-5 text-blue-500"
+                    className="accent-red-500"
                   />
                   <span>Featured</span>
                 </label>
