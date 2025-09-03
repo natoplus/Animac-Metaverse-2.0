@@ -67,22 +67,11 @@ export default function AdminDashboard() {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
-
-    // Update preview for live WYSIWYG
-    if (name === "excerpt") return; // handle excerpt separately if needed
-    if (name === "title" || name === "featured_image" || name === "category") return;
-  };
-
-  const handleEditorUpdate = () => {
-    // Update live preview content but do NOT submit
-    const editorHTML = editorRef.current?.getHTML() || "<p></p>";
-    setPreviewContent(editorHTML);
   };
 
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
 
-    // Get HTML from editor only on submit
     const editorHTML = editorRef.current?.getHTML() || "<p></p>";
 
     const tagsArray = formData.tags
@@ -93,7 +82,7 @@ export default function AdminDashboard() {
 
     const payload = {
       ...formData,
-      content: editorHTML,
+      content: editorHTML, // only read on submit
       tags: tagsArray,
       is_published: publish,
     };
@@ -120,7 +109,6 @@ export default function AdminDashboard() {
       ...article,
       tags: Array.isArray(article.tags) ? article.tags.join(", ") : "",
       content: article.content || "<p></p>",
-      excerpt: article.excerpt || "",
     });
     setPreviewContent(article.content || "<p></p>");
     setEditingId(article.id);
@@ -191,7 +179,7 @@ export default function AdminDashboard() {
 
                   <Input
                     name="excerpt"
-                    placeholder="Excerpt (short summary)"
+                    placeholder="Excerpt"
                     value={formData.excerpt}
                     onChange={handleChange}
                   />
@@ -226,14 +214,6 @@ export default function AdminDashboard() {
                       ref={editorRef}
                       initialContent={formData.content}
                     />
-                    {/* Trigger live preview manually */}
-                    <Button
-                      type="button"
-                      onClick={handleEditorUpdate}
-                      className="mt-2 neon-btn w-full"
-                    >
-                      Update Preview
-                    </Button>
                   </div>
 
                   <div className="flex items-center gap-6 text-white">
@@ -269,7 +249,7 @@ export default function AdminDashboard() {
             </Card>
           </motion.div>
 
-          {/* Right: Preview */}
+          {/* Right: Live Preview */}
           <motion.div
             initial={{ opacity: 0, x: 60 }}
             animate={{ opacity: 1, x: 0 }}
@@ -278,10 +258,11 @@ export default function AdminDashboard() {
             <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
               <CardContent className="space-y-4 p-5">
                 <h2 className="font-japanese text-2xl font-semibold text-white">
-                  Preview Panel
+                  Live Preview
                 </h2>
 
                 <div className="bg-white rounded-md overflow-hidden text-black">
+                  {/* Cover image */}
                   {formData.featured_image ? (
                     <div className="w-full h-48 overflow-hidden bg-gray-200">
                       <img
@@ -313,7 +294,7 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
-        {/* Existing articles list */}
+        {/* Existing articles + drafts */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -365,8 +346,8 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </motion.div>
-        <Footer />
       </motion.div>
+      <Footer />
     </>
   );
 }
