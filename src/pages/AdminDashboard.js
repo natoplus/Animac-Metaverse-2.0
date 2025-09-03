@@ -21,13 +21,13 @@ import "../styles/admin.css";
 
 const getInitialForm = () => ({
   title: "",
-  content: "<p></p>", // HTML content
+  content: "<p></p>",
   excerpt: "",
   category: "east",
   tags: "",
   featured_image: "",
   is_featured: true,
-  is_published: false, // default to draft
+  is_published: false,
 });
 
 export default function AdminDashboard() {
@@ -35,12 +35,9 @@ export default function AdminDashboard() {
   const [formData, setFormData] = useState(getInitialForm());
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
-
-  // Ref for TipTap editor
-  const editorRef = useRef(null);
-
-  // Live preview state
   const [previewContent, setPreviewContent] = useState(formData.content);
+
+  const editorRef = useRef(null);
 
   useEffect(() => {
     loadArticles();
@@ -56,7 +53,7 @@ export default function AdminDashboard() {
         setArticles([]);
       }
     } catch (err) {
-      console.error("Failed to load articles", err);
+      console.error(err);
       toast.error("❌ Failed to load articles");
     }
   };
@@ -71,7 +68,6 @@ export default function AdminDashboard() {
 
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
-
     const editorHTML = editorRef.current?.getHTML() || "<p></p>";
 
     const tagsArray = formData.tags
@@ -179,7 +175,7 @@ export default function AdminDashboard() {
 
                   <Input
                     name="featured_image"
-                    placeholder="Cover Image URL (Imgur link)"
+                    placeholder="Cover Image URL"
                     value={formData.featured_image}
                     onChange={handleChange}
                   />
@@ -207,13 +203,11 @@ export default function AdminDashboard() {
 
                   {/* TipTap editor */}
                   <div>
-                    <label className="text-gray-300 mb-2 block">
-                      Article Body
-                    </label>
+                    <label className="text-gray-300 mb-2 block">Article Body</label>
                     <TipTapEditor
                       ref={editorRef}
                       initialContent={formData.content}
-                      onChange={(html) => setPreviewContent(html)} // live preview
+                      onUpdate={(html) => setPreviewContent(html)} // live preview
                     />
                   </div>
 
@@ -263,7 +257,6 @@ export default function AdminDashboard() {
                 </h2>
 
                 <div className="bg-white rounded-md overflow-hidden text-black">
-                  {/* Cover image */}
                   {formData.featured_image ? (
                     <div className="w-full h-48 overflow-hidden bg-gray-200">
                       <img
@@ -283,7 +276,6 @@ export default function AdminDashboard() {
                       {formData.title || "Article Title"}
                     </h1>
                     <p className="text-gray-600 mb-4">{formData.excerpt || ""}</p>
-
                     <div
                       className="prose max-w-none"
                       dangerouslySetInnerHTML={{ __html: sanitizedBody }}
@@ -295,7 +287,7 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
-        {/* Existing articles list */}
+        {/* Articles list with draft badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -316,8 +308,8 @@ export default function AdminDashboard() {
                       className="border-b border-gray-700 pb-2 text-white"
                     >
                       <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <strong>{article.title}</strong>
+                        <div>
+                          <strong>{article.title}</strong>{" "}
                           <span
                             className={`px-2 py-1 text-xs rounded-full font-semibold ${
                               article.is_published
@@ -326,7 +318,7 @@ export default function AdminDashboard() {
                             }`}
                           >
                             {article.is_published ? "Published" : "Draft"}
-                          </span>
+                          </span>{" "}
                           <span className="text-gray-400">({article.category})</span>
                         </div>
                         <div className="space-x-3">
