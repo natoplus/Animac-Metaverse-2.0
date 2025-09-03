@@ -1,353 +1,183 @@
 // src/pages/AdminDashboard.js
 import React, { useEffect, useState, useRef } from "react";
-import {
-  fetchArticles,
-  createArticle,
-  updateArticle,
-  deleteArticle,
-} from "../utils/api";
-
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+import { fetchArticles, createArticle, updateArticle, deleteArticle } from "../utils/api";
+import TipTapEditor from "../components/TipTapEditor";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import { motion } from "framer-motion";
-import { Toaster, toast } from "react-hot-toast";
-
-import TipTapEditor from "../components/TipTapEditor";
-import DOMPurify from "dompurify";
-import "../styles/admin.css";
-
-const getInitialForm = () => ({
-  title: "",
-  content: "<p></p>",
-  excerpt: "",
-  category: "east",
-  tags: "",
-  featured_image: "",
-  is_featured: true,
-  is_published: false,
-});
+import { Pencil, Trash2 } from "lucide-react";
 
 export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
-  const [formData, setFormData] = useState(getInitialForm());
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [previewContent, setPreviewContent] = useState(formData.content);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    id: null,
+    title: "",
+    excerpt: "",
+    category: "east",
+    featured_image: "",
+    content: "",
+    is_published: false,
+  });
+  const editorRef = useRef();
 
-  const editorRef = useRef(null);
+  const getTheme = (category) => {
+    const cat = category?.toLowerCase();
+    const map = {
+      east: ["from-east-900/50 via-netflix-dark to-netflix-black", "neon-glow border-east-400 text-east-300 bg-east-800/20"],
+      west: ["from-west-900/50 via-netflix-dark to-netflix-black", "neon-glow border-west-400 text-west-300 bg-west-800/20"],
+    };
+    return {
+      gradient: map[cat]?.[0] || "from-gray-900 via-netflix-dark to-netflix-black",
+      badge: map[cat]?.[1] || "neon-glow border-gray-500 text-gray-300 bg-gray-800/20",
+    };
+  };
+
+  const loadArticles = async () => {
+    setLoading(true);
+    const data = await fetchArticles({ limit: 50 }); // fetch all including drafts
+    setArticles(data);
+    setLoading(false);
+  };
 
   useEffect(() => {
     loadArticles();
   }, []);
 
-  const loadArticles = async () => {
-    try {
-      const data = await fetchArticles();
-      if (Array.isArray(data)) {
-        const unique = Array.from(new Map(data.map((a) => [a.id, a])).values());
-        setArticles(unique);
-      } else {
-        setArticles([]);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("❌ Failed to load articles");
-    }
+  const handleInputChange = (e) => {
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+  const handleDraftToggle = () => {
+    setFormData((prev) => ({ ...prev, is_published: !prev.is_published }));
   };
 
-  const handleSubmit = async (e, publish = false) => {
-    e.preventDefault();
-    const editorHTML = editorRef.current?.getHTML() || "<p></p>";
+  const handleSubmit = async () => {
+    const content = editorRef.current?.getHTML() || "";
+    const payload = { ...formData, content };
+    if (!formData.title.trim()) return alert("Title required");
 
-    const tagsArray = formData.tags
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean)
-      .slice(0, 10);
-
-    const payload = {
-      ...formData,
-      content: editorHTML,
-      tags: tagsArray,
-      is_published: publish,
-    };
-
-    try {
-      if (isEditing) {
-        await updateArticle(editingId, payload);
-        toast.success("✅ Article updated!");
-      } else {
-        await createArticle(payload);
-        toast.success(publish ? "✅ Article published!" : "✅ Draft saved!");
-      }
-
-      resetForm();
-      await loadArticles();
-    } catch (err) {
-      console.error(err);
-      toast.error("❌ Operation failed. Check console.");
+    if (formData.id) {
+      await updateArticle(formData.id, payload);
+    } else {
+      await createArticle(payload);
     }
+    setFormData({
+      id: null,
+      title: "",
+      excerpt: "",
+      category: "east",
+      featured_image: "",
+      content: "",
+      is_published: false,
+    });
+    loadArticles();
   };
 
   const handleEdit = (article) => {
-    setFormData({
-      ...article,
-      tags: Array.isArray(article.tags) ? article.tags.join(", ") : "",
-      content: article.content || "<p></p>",
-    });
-    setPreviewContent(article.content || "<p></p>");
-    setEditingId(article.id);
-    setIsEditing(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    setFormData({ ...article });
   };
 
   const handleDelete = async (id) => {
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this article?"
-    );
-    if (!confirmed) return;
-
-    try {
+    if (window.confirm("Are you sure you want to delete this article?")) {
       await deleteArticle(id);
-      toast.success("🗑️ Article deleted");
-      await loadArticles();
-    } catch (err) {
-      console.error(err);
-      toast.error("❌ Failed to delete article.");
+      loadArticles();
     }
   };
 
-  const resetForm = () => {
-    setFormData(getInitialForm());
-    setPreviewContent("<p></p>");
-    setIsEditing(false);
-    setEditingId(null);
-  };
-
-  const sanitizedBody = DOMPurify.sanitize(previewContent);
-
   return (
-    <>
-      <Toaster position="top-center" />
-      <Header />
-      <motion.div
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="admin-panel space-y-10 max-w-6xl mx-auto py-10"
-      >
-        <h1 className="font-azonix text-4xl font-bold text-white text-center">
-          ANIMAC Admin Panel
-        </h1>
+    <div className="container mx-auto px-4 py-10">
+      <h1 className="text-3xl font-bold mb-6 text-white">Admin Dashboard</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Left: Form */}
-          <motion.div
-            initial={{ opacity: 0, x: -60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <Card className="neon-red bg-black border border-red-700 shadow-xl">
-              <CardContent className="space-y-4 p-5">
-                <h2 className="font-japanese text-2xl font-semibold text-white">
-                  {isEditing ? "Edit Article" : "Post New Article"}
-                </h2>
+      {/* Article Form */}
+      <Card className="mb-8 bg-zinc-900 text-gray-100 border border-gray-700">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Input
+              placeholder="Article Title"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+            />
+            <Input
+              placeholder="Excerpt"
+              name="excerpt"
+              value={formData.excerpt}
+              onChange={handleInputChange}
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <Input
+              placeholder="Featured Image URL"
+              name="featured_image"
+              value={formData.featured_image}
+              onChange={handleInputChange}
+            />
+            {formData.featured_image && (
+              <div className="flex items-center justify-center border rounded-lg overflow-hidden bg-black">
+                <img src={formData.featured_image} alt="Preview" className="max-h-40 object-contain" />
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-4 mb-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.is_published}
+                onChange={handleDraftToggle}
+              />
+              Publish
+            </label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleInputChange}
+              className="bg-zinc-800 text-white px-2 py-1 rounded"
+            >
+              <option value="east">East</option>
+              <option value="west">West</option>
+            </select>
+          </div>
 
-                <form className="space-y-4">
-                  <Input
-                    name="title"
-                    placeholder="Title"
-                    value={formData.title}
-                    onChange={handleChange}
-                    required
-                  />
+          <div className="mb-4">
+            <TipTapEditor ref={editorRef} initialContent={formData.content} />
+          </div>
 
-                  <Input
-                    name="featured_image"
-                    placeholder="Cover Image URL"
-                    value={formData.featured_image}
-                    onChange={handleChange}
-                  />
+          <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700">
+            {formData.id ? "Update Article" : "Create Article"}
+          </Button>
+        </CardContent>
+      </Card>
 
-                  <Input
-                    name="category"
-                    placeholder="Category (east/west)"
-                    value={formData.category}
-                    onChange={handleChange}
-                  />
-
-                  <Input
-                    name="excerpt"
-                    placeholder="Excerpt"
-                    value={formData.excerpt}
-                    onChange={handleChange}
-                  />
-
-                  <Input
-                    name="tags"
-                    placeholder="Tags (comma-separated)"
-                    value={formData.tags}
-                    onChange={handleChange}
-                  />
-
-                  {/* TipTap editor */}
-                  <div>
-                    <label className="text-gray-300 mb-2 block">Article Body</label>
-                    <TipTapEditor
-                      ref={editorRef}
-                      initialContent={formData.content}
-                      onUpdate={(html) => setPreviewContent(html)} // live preview
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-6 text-white">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        name="is_featured"
-                        checked={formData.is_featured}
-                        onChange={handleChange}
-                      />
-                      Featured
-                    </label>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button
-                      type="button"
-                      onClick={(e) => handleSubmit(e, false)}
-                      className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
-                    >
-                      {isEditing ? "Update Draft" : "Save Draft"}
-                    </Button>
-                    <Button
-                      type="button"
-                      onClick={(e) => handleSubmit(e, true)}
-                      className="w-full neon-btn font-azonix font-bold border-white tracking-wider text-lg"
-                    >
-                      {isEditing ? "Publish Update" : "Publish"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Right: Live Preview */}
-          <motion.div
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
-              <CardContent className="space-y-4 p-5">
-                <h2 className="font-japanese text-2xl font-semibold text-white">
-                  Live Preview
-                </h2>
-
-                <div className="bg-white rounded-md overflow-hidden text-black">
-                  {formData.featured_image ? (
-                    <div className="w-full h-48 overflow-hidden bg-gray-200">
-                      <img
-                        src={formData.featured_image}
-                        alt="cover"
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-full h-48 bg-gray-100 flex items-center justify-center text-gray-500">
-                      Cover image preview
-                    </div>
-                  )}
-
-                  <div className="p-6">
-                    <h1 className="text-2xl font-bold mb-2">
-                      {formData.title || "Article Title"}
-                    </h1>
-                    <p className="text-gray-600 mb-4">{formData.excerpt || ""}</p>
-                    <div
-                      className="prose max-w-none"
-                      dangerouslySetInnerHTML={{ __html: sanitizedBody }}
-                    />
-                  </div>
+      {/* Article List */}
+      <h2 className="text-2xl font-semibold mb-4 text-white">Articles</h2>
+      {loading ? (
+        <p className="text-gray-400">Loading...</p>
+      ) : (
+        <div className="grid gap-4">
+          {articles.map((a) => {
+            const theme = getTheme(a.category);
+            return (
+              <Card key={a.id} className={`flex items-center justify-between p-4 ${theme.badge}`}>
+                <div>
+                  <h3 className="font-bold text-white">
+                    {a.title} {!a.is_published && <span className="text-yellow-300 italic">(Draft)</span>}
+                  </h3>
+                  <p className="text-gray-300 text-sm">{a.excerpt}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => handleEdit(a)} title="Edit">
+                    <Pencil size={18} />
+                  </button>
+                  <button onClick={() => handleDelete(a.id)} title="Delete">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </Card>
+            );
+          })}
         </div>
-
-        {/* Articles list with draft badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.3 }}
-        >
-          <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
-            <CardContent className="space-y-4 p-5">
-              <h2 className="font-japanese text-2xl font-semibold text-white">
-                Existing Articles
-              </h2>
-              {articles.length === 0 ? (
-                <p className="text-gray-400">No articles found.</p>
-              ) : (
-                <ul className="space-y-4">
-                  {articles.map((article) => (
-                    <li
-                      key={article.id}
-                      className="border-b border-gray-700 pb-2 text-white"
-                    >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <strong>{article.title}</strong>{" "}
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full font-semibold ${
-                              article.is_published
-                                ? "bg-green-600 text-white"
-                                : "bg-yellow-500 text-black"
-                            }`}
-                          >
-                            {article.is_published ? "Published" : "Draft"}
-                          </span>{" "}
-                          <span className="text-gray-400">({article.category})</span>
-                        </div>
-                        <div className="space-x-3">
-                          <Button
-                            size="sm"
-                            onClick={() => handleEdit(article)}
-                            className="neon-btn-sm-purple"
-                          >
-                            ✒️
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(article.id)}
-                            className="neon-btn-sm-red"
-                          >
-                            🗑️
-                          </Button>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      </motion.div>
-      <Footer />
-    </>
+      )}
+    </div>
   );
 }
