@@ -143,9 +143,17 @@ async def create_article(article: ArticleBase):
         raise HTTPException(status_code=500, detail="Failed to create article")
 
 @app.get("/api/articles", response_model=List[ArticleResponse])
-async def get_articles(category: Optional[str] = None, featured: Optional[bool] = None, is_published: Optional[bool] = True, limit: int = 20, skip: int = 0):
+async def get_articles(
+    category: Optional[str] = None,
+    featured: Optional[bool] = None,
+    is_published: Optional[bool] = None,  # changed default to None
+    limit: int = 20,
+    skip: int = 0
+):
     try:
         query = supabase.table("articles").select("*")
+        
+        # Apply filters only if not None
         if is_published is not None:
             query = query.eq("is_published", is_published)
         if category:
@@ -158,6 +166,7 @@ async def get_articles(category: Optional[str] = None, featured: Optional[bool] 
     except Exception as e:
         logging.error("❌ Error fetching articles:", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal Server Error")
+
 
 @app.get("/api/articles/by-id/{article_id}", response_model=ArticleResponse)
 async def get_article_by_id(article_id: str):
