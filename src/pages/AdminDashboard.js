@@ -17,12 +17,16 @@ export default function AdminDashboard() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedArticle, setSelectedArticle] = useState(null);
-  const [title, setTitle] = useState("");
-  const [excerpt, setExcerpt] = useState("");
-  const [category, setCategory] = useState("");
-  const [tags, setTags] = useState([]);
-  const [featuredImage, setFeaturedImage] = useState("");
-  const [isDraft, setIsDraft] = useState(true);
+  const [articleForm, setArticleForm] = useState({
+    title: "",
+    excerpt: "",
+    category: "",
+    tags: [],
+    featured_image: "",
+    content: "",
+    is_featured: false,
+    is_published: false, // false = draft, true = published
+  });
   const [autoSave, setAutoSave] = useState(false);
   const [previewContent, setPreviewContent] = useState("");
   const [showPreview, setShowPreview] = useState(true);
@@ -43,14 +47,34 @@ export default function AdminDashboard() {
     loadArticles();
   }, [loadArticles]);
 
-   const handleEdit = (article) => {
+  const resetForm = () => {
+    setSelectedArticle(null);
+    setArticleForm({
+      title: "",
+      excerpt: "",
+      category: "",
+      tags: [],
+      featured_image: "",
+      content: "",
+      is_featured: false,
+      is_published: false,
+    });
+    setPreviewContent("");
+    setTagInput("");
+  };
+
+  const handleEdit = (article) => {
     setSelectedArticle(article);
-    setTitle(article.title);
-    setExcerpt(article.excerpt || "");
-    setCategory(article.category || "");
-    setTags(article.tags || []);
-    setFeaturedImage(article.featured_image || "");
-    setIsDraft(!article.is_published);
+    setArticleForm({
+      title: article.title,
+      excerpt: article.excerpt || "",
+      category: article.category || "",
+      tags: article.tags || [],
+      featured_image: article.featured_image || "",
+      content: article.content || "",
+      is_featured: article.is_featured || false,
+      is_published: article.is_published,
+    });
     setPreviewContent(article.content || "");
     if (editorRef.current?.setContent) {
       editorRef.current.setContent(article.content || "");
@@ -66,14 +90,8 @@ export default function AdminDashboard() {
   const handleSave = async () => {
     const content = editorRef.current?.getHTML() || "";
     const payload = {
-      title,
-      excerpt,
-      category,
-      tags,
-      featured_image: featuredImage,
+      ...articleForm,
       content,
-      is_featured: false,
-      is_published: !isDraft,
     };
     if (selectedArticle) {
       await updateArticle(selectedArticle.id, payload);
@@ -84,19 +102,7 @@ export default function AdminDashboard() {
     loadArticles();
   };
 
-  const resetForm = () => {
-    setSelectedArticle(null);
-    setTitle("");
-    setExcerpt("");
-    setCategory("");
-    setTags([]);
-    setFeaturedImage("");
-    setIsDraft(true);
-    setPreviewContent("");
-    setTagInput("");
-  };
-
-  // ----- Auto-save Draft -----
+  // Auto-save draft
   useEffect(() => {
     if (!autoSave || !selectedArticle) return;
 
@@ -107,26 +113,24 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [autoSave, selectedArticle]);
 
-  // ----- Editor Change Handler -----
-  const handleEditorChange = (html) => setPreviewContent(html);
+  const handleEditorChange = (html) => {
+    setPreviewContent(html);
+    setArticleForm({ ...articleForm, content: html });
+  };
 
-  // ----- Word count / Read time -----
   const wordCount = previewContent?.trim().split(/\s+/).length || 0;
   const readTime = Math.ceil(wordCount / 200);
 
-  // ----- Filter Articles by search term -----
   const filteredArticles = articles.filter((a) =>
     a.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Separate drafts and published articles
   const draftArticles = filteredArticles.filter((a) => !a?.is_published);
   const publishedArticles = filteredArticles.filter((a) => a?.is_published);
 
-  // ----- Add tag via input -----
   const handleTagInputKey = (e) => {
     if (e.key === "Enter" && tagInput.trim()) {
-      setTags([...tags, tagInput.trim()]);
+      setArticleForm({ ...articleForm, tags: [...articleForm.tags, tagInput.trim()] });
       setTagInput("");
     }
   };
@@ -177,28 +181,28 @@ export default function AdminDashboard() {
             <CardContent>
               <Input
                 placeholder="Article Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                value={articleForm.title}
+                onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <Input
                 placeholder="Excerpt"
-                value={excerpt}
-                onChange={(e) => setExcerpt(e.target.value)}
+                value={articleForm.excerpt}
+                onChange={(e) => setArticleForm({ ...articleForm, excerpt: e.target.value })}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <Input
                 placeholder="Category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={articleForm.category}
+                onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <div className="flex gap-2 mb-3 flex-wrap">
-                {tags.map((t, i) => (
+                {articleForm.tags.map((t, i) => (
                   <span
                     key={i}
                     className="bg-gradient-to-r from-red-500 to-blue-500 px-2 py-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => setTags(tags.filter((tag) => tag !== t))}
+                    onClick={() => setArticleForm({ ...articleForm, tags: articleForm.tags.filter((tag) => tag !== t) })}
                   >
                     {t} &times;
                   </span>
@@ -215,8 +219,8 @@ export default function AdminDashboard() {
 
               <Input
                 placeholder="Featured Image URL"
-                value={featuredImage}
-                onChange={(e) => setFeaturedImage(e.target.value)}
+                value={articleForm.featured_image}
+                onChange={(e) => setArticleForm({ ...articleForm, featured_image: e.target.value })}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
 
@@ -224,8 +228,8 @@ export default function AdminDashboard() {
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={isDraft}
-                    onChange={(e) => setIsDraft(e.target.checked)}
+                    checked={!articleForm.is_published}
+                    onChange={(e) => setArticleForm({ ...articleForm, is_published: !e.target.checked })}
                     className="accent-blue-500"
                   />
                   Save as Draft
@@ -278,17 +282,13 @@ export default function AdminDashboard() {
               <h2 className="font-azonix text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-400">
                 Live Preview
               </h2>
-
-              {/* Featured Image */}
-              {featuredImage && (
+              {articleForm.featured_image && (
                 <img
-                  src={featuredImage}
+                  src={articleForm.featured_image}
                   alt="Featured"
                   className="w-full max-h-64 object-cover rounded-[6px] mb-4 shadow-md"
                 />
               )}
-
-              {/* Article Content */}
               <div
                 className="prose prose-invert max-w-full overflow-auto border rounded-[6px] p-4 bg-gray-800"
                 dangerouslySetInnerHTML={{ __html: previewContent }}
@@ -353,6 +353,13 @@ export default function AdminDashboard() {
             </AnimatePresence>
           </div>
         )}
+
+        {article.is_featured && (
+          <span className="text-xs px-2 py-1 ml-2 border border-yellow-400 text-yellow-400 rounded">
+            Featured
+          </span>
+        )}
+
 
         {publishedArticles.length > 0 && (
           <div>
