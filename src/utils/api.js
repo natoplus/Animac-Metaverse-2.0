@@ -42,14 +42,16 @@ export const fetchArticles = async (params = {}) => {
   }
 };
 
-export const fetchDrafts = async (draftsOnly = true) => {
+export const fetchDrafts = async () => {
   try {
-    return await fetchArticles({ is_published: draftsOnly ? false : true });
+    const res = await api.get('/api/articles', { params: { is_published: false } });
+    return res.data || [];
   } catch (err) {
     console.error('❌ Error fetching drafts:', err.message);
     return [];
   }
 };
+
 
 export const getArticle = async (id) => {
   try {

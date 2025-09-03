@@ -72,6 +72,7 @@ export default function AdminDashboard() {
       tags,
       featured_image: featuredImage,
       content,
+      is_featured: false,
       is_published: !isDraft,
     };
     if (selectedArticle) {
@@ -178,21 +179,21 @@ export default function AdminDashboard() {
                 placeholder="Article Title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
+                className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <Input
                 placeholder="Excerpt"
                 value={excerpt}
                 onChange={(e) => setExcerpt(e.target.value)}
-                className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
+                className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <Input
                 placeholder="Category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
+                className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
-              <div className="flex gap-2 mb-2 flex-wrap">
+              <div className="flex gap-2 mb-3 flex-wrap">
                 {tags.map((t, i) => (
                   <span
                     key={i}
@@ -216,10 +217,10 @@ export default function AdminDashboard() {
                 placeholder="Featured Image URL"
                 value={featuredImage}
                 onChange={(e) => setFeaturedImage(e.target.value)}
-                className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
+                className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
 
-              <div className="flex flex-wrap items-center gap-4 mb-2">
+              <div className="flex flex-wrap items-center gap-4 mb-3">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
@@ -237,6 +238,17 @@ export default function AdminDashboard() {
                     className="accent-red-500"
                   />
                   Auto-save Draft
+                </label>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={articleForm.is_featured}
+                    onChange={(e) =>
+                      setArticleForm({ ...articleForm, is_featured: e.target.checked })
+                    }
+                    className="form-checkbox h-5 w-5 text-blue-500"
+                  />
+                  <span>Featured</span>
                 </label>
                 <span className="ml-auto text-sm text-gray-400">
                   {wordCount} words | {readTime} min read
