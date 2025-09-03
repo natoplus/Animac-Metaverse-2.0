@@ -33,11 +33,12 @@ import {
 } from "lucide-react";
 
 /**
- * TipTapEditor (forwardRef)
- * props:
+ * TipTapEditor
+ * Props:
  *  - initialContent: string HTML
+ *  - onUpdate: function(html) => called whenever content changes
  */
-const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
+const TipTapEditor = forwardRef(({ initialContent = "<p></p>", onUpdate }, ref) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -47,15 +48,16 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
       Link.configure({ openOnClick: true }),
     ],
     content: initialContent,
+    onUpdate: ({ editor }) => {
+      if (onUpdate) onUpdate(editor.getHTML());
+    },
     editorProps: { attributes: { class: "tt-editor-content focus:outline-none" } },
   });
 
-  // Expose editor instance to parent via ref
   useImperativeHandle(ref, () => ({
     getHTML: () => editor?.getHTML() || "",
   }));
 
-  // Update editor if initialContent changes
   useEffect(() => {
     if (editor && typeof initialContent === "string") {
       const existing = editor.getHTML();
@@ -63,7 +65,6 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
     }
   }, [initialContent, editor]);
 
-  // Image insertion
   const addImage = useCallback(() => {
     const url = window.prompt("Paste Imgur Image URL (direct .jpg/.png/.webp):");
     if (!url) return;
@@ -72,7 +73,6 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
     editor.chain().focus().setImage({ src: url }).run();
   }, [editor]);
 
-  // Link insertion
   const addLink = useCallback(() => {
     const url = window.prompt("Enter the link URL (https://...)");
     if (!url) return;
@@ -86,12 +86,12 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
       {/* Toolbar */}
       <div className="tt-toolbar flex flex-wrap gap-2 p-2 border-b border-zinc-800">
         {/* Bold / Italic / Underline / Strike / Code / Highlight */}
-        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} title="Bold" className={`p-2 rounded ${editor.isActive("bold") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><BoldIcon size={14} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} title="Italic" className={`p-2 rounded ${editor.isActive("italic") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><ItalicIcon size={14} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} title="Underline" className={`p-2 rounded ${editor.isActive("underline") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><UnderlineIcon size={14} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleStrike().run()} title="Strikethrough" className={`p-2 rounded ${editor.isActive("strike") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Strikethrough size={14} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleCode().run()} title="Inline Code" className={`p-2 rounded ${editor.isActive("code") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><CodeIcon size={14} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleHighlight().run()} title="Highlight" className={`p-2 rounded ${editor.isActive("highlight") ? "bg-yellow-600 text-black" : "hover:bg-zinc-800"}`}><Type size={14} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={`p-2 rounded ${editor.isActive("bold") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><BoldIcon size={14} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={`p-2 rounded ${editor.isActive("italic") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><ItalicIcon size={14} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={`p-2 rounded ${editor.isActive("underline") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><UnderlineIcon size={14} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleStrike().run()} className={`p-2 rounded ${editor.isActive("strike") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Strikethrough size={14} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleCode().run()} className={`p-2 rounded ${editor.isActive("code") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><CodeIcon size={14} /></button>
+        <button type="button" onClick={() => editor.chain().focus().toggleHighlight().run()} className={`p-2 rounded ${editor.isActive("highlight") ? "bg-yellow-600 text-black" : "hover:bg-zinc-800"}`}><Type size={14} /></button>
 
         {/* Headings */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
@@ -102,22 +102,22 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
 
         {/* Lists / Blockquote */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
-          <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} title="Bulleted list" className={`p-2 rounded ${editor.isActive("bulletList") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><ListIcon size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} title="Numbered list" className={`p-2 rounded ${editor.isActive("orderedList") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><ListOrderedIcon size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} title="Blockquote" className={`p-2 rounded ${editor.isActive("blockquote") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Quote size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={`p-2 rounded ${editor.isActive("bulletList") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><ListIcon size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={`p-2 rounded ${editor.isActive("orderedList") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><ListOrderedIcon size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().toggleBlockquote().run()} className={`p-2 rounded ${editor.isActive("blockquote") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Quote size={14} /></button>
         </div>
 
         {/* Links / Images */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
-          <button type="button" onClick={addLink} title="Insert Link" className="p-2 rounded hover:bg-zinc-800"><LinkIcon size={14} /></button>
-          <button type="button" onClick={addImage} title="Insert Image" className="p-2 rounded hover:bg-zinc-800"><ImageIcon size={14} /></button>
-
-          {/* Image alignment */}
+          <button type="button" onClick={addLink} className="p-2 rounded hover:bg-zinc-800"><LinkIcon size={14} /></button>
+          <button type="button" onClick={addImage} className="p-2 rounded hover:bg-zinc-800"><ImageIcon size={14} /></button>
           <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "left" }).run()} title="Align Left" className="p-2 rounded hover:bg-zinc-800"><AlignLeft size={14} /></button>
           <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "center" }).run()} title="Align Center" className="p-2 rounded hover:bg-zinc-800"><AlignCenter size={14} /></button>
           <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { alignment: "right" }).run()} title="Align Right" className="p-2 rounded hover:bg-zinc-800"><AlignRight size={14} /></button>
+        </div>
 
-          {/* Image size */}
+        {/* Image size */}
+        <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
           <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { size: "small" }).run()} title="Small" className="p-2 rounded hover:bg-zinc-800"><Minimize2 size={14} /></button>
           <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { size: "medium" }).run()} title="Medium" className="p-2 rounded hover:bg-zinc-800"><Square size={14} /></button>
           <button type="button" onClick={() => editor.chain().focus().updateAttributes("image", { size: "large" }).run()} title="Large" className="p-2 rounded hover:bg-zinc-800"><Maximize2 size={14} /></button>
@@ -125,8 +125,8 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>" }, ref) => {
 
         {/* Undo / Redo */}
         <div className="ml-auto flex items-center gap-2">
-          <button type="button" onClick={() => editor.chain().focus().undo().run()} title="Undo" className="p-2 rounded hover:bg-zinc-800"><RotateCcw size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().redo().run()} title="Redo" className="p-2 rounded hover:bg-zinc-800"><RotateCw size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().undo().run()} className="p-2 rounded hover:bg-zinc-800"><RotateCcw size={14} /></button>
+          <button type="button" onClick={() => editor.chain().focus().redo().run()} className="p-2 rounded hover:bg-zinc-800"><RotateCw size={14} /></button>
         </div>
       </div>
 
