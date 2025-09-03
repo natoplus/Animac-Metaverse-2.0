@@ -1,7 +1,6 @@
 // src/pages/ArticlePage.js
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import ReactMarkdown from 'react-markdown';
 import DOMPurify from 'dompurify';
 import { useParams, Link } from 'react-router-dom';
 import SEO from '../components/SEO';
@@ -240,9 +239,11 @@ const ArticlePage = () => {
             </div>
 
             {/* Body */}
-            <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
-              <ReactMarkdown>{DOMPurify.sanitize(article.content)}</ReactMarkdown>
-            </div>
+            <div
+              className="prose prose-invert max-w-none text-lg space-y-6 font-inter"
+              dangerouslySetInnerHTML={{ __html: article.content }}
+            />
+
 
             {/* End Divider */}
             <div className="mt-14 mb-10 relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
