@@ -322,7 +322,7 @@ export default function AdminDashboard() {
           <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
             <CardContent className="space-y-4 p-5">
               <h2 className="font-japanese text-2xl font-semibold text-white">
-                Existing Articles
+                Existing Articles & Drafts
               </h2>
               {articles.length === 0 ? (
                 <p className="text-gray-400">No articles found.</p>
@@ -336,7 +336,9 @@ export default function AdminDashboard() {
                       <div className="flex justify-between items-center">
                         <div>
                           <strong>{article.title}</strong> — {article.category} —{" "}
-                          {article.is_published ? "✅" : "❌"}
+                          {article.is_published ? "✅ Published" : (
+                            <span className="text-red-500 font-bold ml-1">DRAFT</span>
+                          )}
                         </div>
                         <div className="space-x-3">
                           <Button
@@ -347,6 +349,7 @@ export default function AdminDashboard() {
                             ✒️
                           </Button>
                           <Button
+                            variant="destructive"
                             size="sm"
                             onClick={() => handleDelete(article.id)}
                             className="neon-btn-sm-red"
@@ -362,8 +365,8 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </motion.div>
+        <Footer />
       </motion.div>
-      <Footer />
     </>
   );
 }
