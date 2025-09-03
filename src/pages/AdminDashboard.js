@@ -11,31 +11,7 @@ import TipTapEditor from "../components/TipTapEditor";
 import { Input } from "../components/ui/input";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import {
-  Trash2,
-  Edit2,
-  Save,
-  Eye,
-  EyeOff,
-  Search,
-} from "lucide-react";
-
-// ------------------------------
-// AdminDashboard Component
-// ------------------------------
-// Features:
-// - TipTap editor with inline image resizing
-// - Live preview panel (responsive)
-// - Drafts / Published toggle
-// - Search and sort articles
-// - Auto-save toggle
-// - Word count / read time
-// - Tag autocomplete dropdown
-// - Featured image input
-// - Sleek dark theme with red-blue gradients
-// - Minimalist icons with hover light effects
-// - Animations on cards, buttons, and editor changes
-// ------------------------------
+import { Trash2, Edit2, Save, Eye, EyeOff, Search } from "lucide-react";
 
 export default function AdminDashboard() {
   // ----- States -----
@@ -69,7 +45,7 @@ export default function AdminDashboard() {
     loadArticles();
   }, [loadArticles]);
 
-  // ----- Handle Article Edit -----
+  // ----- Handle Edit -----
   const handleEdit = (article) => {
     setSelectedArticle(article);
     setTitle(article.title);
@@ -130,7 +106,7 @@ export default function AdminDashboard() {
     const interval = setInterval(() => {
       if (!selectedArticle) return;
       handleSave();
-    }, 30000); // every 30 seconds
+    }, 30000);
     return () => clearInterval(interval);
   }, [autoSave, selectedArticle, title, excerpt, category, tags, featuredImage, previewContent]);
 
@@ -143,12 +119,10 @@ export default function AdminDashboard() {
   const wordCount = previewContent?.split(/\s+/).length || 0;
   const readTime = Math.ceil(wordCount / 200);
 
-  // ----- Filter & Search Articles -----
+  // ----- Filter Articles -----
   const filteredArticles = articles
     .filter((a) => a.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter((a) =>
-      a.is_published ? publishedVisible : draftsVisible
-    );
+    .filter((a) => (a.is_published ? publishedVisible : draftsVisible));
 
   // ----- Add tag via input -----
   const handleTagInputKey = (e) => {
@@ -164,14 +138,17 @@ export default function AdminDashboard() {
     visible: { opacity: 1, y: 0 },
   };
 
+  // ----- Split Drafts / Published -----
+  const draftArticles = filteredArticles.filter((a) => !a.is_published);
+  const publishedArticles = filteredArticles.filter((a) => a.is_published);
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-6 font-sans">
-      {/* --- Header --- */}
       <h1 className="text-3xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-blue-500">
         Admin Dashboard
       </h1>
 
-      {/* --- Search & Filters --- */}
+      {/* Search & Filters */}
       <div className="flex flex-wrap gap-4 mb-4 items-center">
         <Input
           placeholder="Search articles..."
@@ -182,13 +159,13 @@ export default function AdminDashboard() {
         />
         <div className="flex gap-2">
           <Button
-            className={`bg-gray-800 border border-gray-700 hover:border-red-500 transition-colors`}
+            className="bg-gray-800 border border-gray-700 hover:border-red-500 transition-colors"
             onClick={() => setDraftsVisible(!draftsVisible)}
           >
             {draftsVisible ? <Eye size={16} /> : <EyeOff size={16} />} Drafts
           </Button>
           <Button
-            className={`bg-gray-800 border border-gray-700 hover:border-blue-500 transition-colors`}
+            className="bg-gray-800 border border-gray-700 hover:border-blue-500 transition-colors"
             onClick={() => setPublishedVisible(!publishedVisible)}
           >
             {publishedVisible ? <Eye size={16} /> : <EyeOff size={16} />} Published
@@ -196,18 +173,12 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* --- Editor + Preview Panel --- */}
+      {/* Editor + Preview */}
       <div className="flex flex-col lg:flex-row gap-6">
-        {/* --- Editor Panel --- */}
-        <motion.div
-          className="flex-1"
-          initial="hidden"
-          animate="visible"
-          variants={cardVariants}
-        >
+        {/* Editor */}
+        <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
           <Card className="mb-4 bg-gray-850 border border-gray-700 hover:border-blue-500 transition-colors duration-300 shadow-md">
             <CardContent>
-              {/* --- Inputs --- */}
               <Input
                 placeholder="Article Title"
                 value={title}
@@ -226,8 +197,7 @@ export default function AdminDashboard() {
                 onChange={(e) => setCategory(e.target.value)}
                 className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
-
-              {/* --- Tags Input --- */}
+              {/* Tags */}
               <div className="flex gap-2 mb-2 flex-wrap">
                 {tags.map((t, i) => (
                   <span
@@ -255,7 +225,6 @@ export default function AdminDashboard() {
                 className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
 
-              {/* Draft & Auto-save */}
               <div className="flex flex-wrap items-center gap-4 mb-2">
                 <label className="flex items-center gap-2">
                   <input
@@ -280,14 +249,12 @@ export default function AdminDashboard() {
                 </span>
               </div>
 
-              {/* TipTap Editor */}
               <TipTapEditor
                 ref={editorRef}
                 initialContent={previewContent}
                 onUpdate={handleEditorChange}
               />
 
-              {/* Save Button */}
               <Button
                 className="mt-4 bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white flex items-center gap-2 transition-all duration-300"
                 onClick={handleSave}
@@ -298,13 +265,8 @@ export default function AdminDashboard() {
           </Card>
         </motion.div>
 
-        {/* --- Preview Panel --- */}
-        <motion.div
-          className="flex-1"
-          initial="hidden"
-          animate="visible"
-          variants={cardVariants}
-        >
+        {/* Preview */}
+        <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
           <Card className="bg-gray-850 border border-gray-700 hover:border-red-500 transition-colors duration-300 shadow-md">
             <CardContent>
               <h2 className="text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-400">
@@ -319,63 +281,113 @@ export default function AdminDashboard() {
         </motion.div>
       </div>
 
-      {/* --- Articles List --- */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-blue-500">
-          Articles
-        </h2>
-
-        <AnimatePresence>
-          {loading ? (
-            <p>Loading...</p>
-          ) : filteredArticles.length === 0 ? (
-            <p>No articles found.</p>
-          ) : (
-            <div className="grid gap-4">
-              {filteredArticles.map((article) => (
+      {/* Articles List with Collapse */}
+      <div className="mt-8 space-y-4">
+        {/* Drafts */}
+        {draftArticles.length > 0 && (
+          <div>
+            <Button
+              className="w-full text-left bg-gray-800 border border-gray-700 mb-2 px-4 py-2 flex justify-between items-center"
+              onClick={() => setDraftsVisible(!draftsVisible)}
+            >
+              <span>Drafts ({draftArticles.length})</span>
+              {draftsVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+            </Button>
+            <AnimatePresence>
+              {draftsVisible && (
                 <motion.div
-                  key={article.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3 }}
+                  className="space-y-2"
                 >
-                  <Card
-                    className={`flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300 ${
-                      !article.is_published ? "opacity-80" : ""
-                    }`}
-                  >
-                    <div>
-                      <h3 className="font-semibold">{article.title}</h3>
-                      {!article.is_published && (
-                        <span className="text-xs text-gray-400 animate-pulse">
-                          Draft
-                        </span>
-                      )}
-                      <div className="text-sm text-gray-400">
-                        {article.category} | {article.tags?.join(", ")}
+                  {draftArticles.map((article) => (
+                    <Card
+                      key={article.id}
+                      className="flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300 opacity-80"
+                    >
+                      <div>
+                        <h3 className="font-semibold">{article.title}</h3>
+                        <span className="text-xs text-gray-400 animate-pulse">Draft</span>
+                        <div className="text-sm text-gray-400">
+                          {article.category} | {article.tags?.join(", ")}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(article)}
-                        className="p-1 rounded hover:bg-gradient-to-r hover:from-red-500 hover:to-blue-500 transition-colors duration-300"
-                      >
-                        <Edit2 size={18} className="text-gray-200 hover:text-white" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(article.id)}
-                        className="p-1 rounded hover:bg-gradient-to-r hover:from-red-500 hover:to-blue-500 transition-colors duration-300"
-                      >
-                        <Trash2 size={18} className="text-gray-200 hover:text-white" />
-                      </button>
-                    </div>
-                  </Card>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(article)}
+                          className="p-1 rounded hover:bg-gradient-to-r hover:from-red-500 hover:to-blue-500 transition-colors duration-300"
+                        >
+                          <Edit2 size={18} className="text-gray-200 hover:text-white" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(article.id)}
+                          className="p-1 rounded hover:bg-gradient-to-r hover:from-red-500 hover:to-blue-500 transition-colors duration-300"
+                        >
+                          <Trash2 size={18} className="text-gray-200 hover:text-white" />
+                        </button>
+                      </div>
+                    </Card>
+                  ))}
                 </motion.div>
-              ))}
-            </div>
-          )}
-        </AnimatePresence>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* Published */}
+        {publishedArticles.length > 0 && (
+          <div>
+            <Button
+              className="w-full text-left bg-gray-800 border border-gray-700 mb-2 px-4 py-2 flex justify-between items-center"
+              onClick={() => setPublishedVisible(!publishedVisible)}
+            >
+              <span>Published ({publishedArticles.length})</span>
+              {publishedVisible ? <Eye size={16} /> : <EyeOff size={16} />}
+            </Button>
+            <AnimatePresence>
+              {publishedVisible && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-2"
+                >
+                  {publishedArticles.map((article) => (
+                    <Card
+                      key={article.id}
+                      className="flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300"
+                    >
+                      <div>
+                        <h3 className="font-semibold">{article.title}</h3>
+                        <span className="text-xs text-green-400 animate-pulse">Published</span>
+                        <div className="text-sm text-gray-400">
+                          {article.category} | {article.tags?.join(", ")}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(article)}
+                          className="p-1 rounded hover:bg-gradient-to-r hover:from-red-500 hover:to-blue-500 transition-colors duration-300"
+                        >
+                          <Edit2 size={18} className="text-gray-200 hover:text-white" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(article.id)}
+                          className="p-1 rounded hover:bg-gradient-to-r hover:from-red-500 hover:to-blue-500 transition-colors duration-300"
+                        >
+                          <Trash2 size={18} className="text-gray-200 hover:text-white" />
+                        </button>
+                      </div>
+                    </Card>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   );
