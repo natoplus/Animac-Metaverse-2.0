@@ -1,12 +1,14 @@
+// src/pages/ArticlePage.js
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import DOMPurify from 'dompurify';
 import { useParams, Link } from 'react-router-dom';
 import SEO from '../components/SEO';
-import LoadingScreen from '../components/LoadingScreen'; // ✅ adjust path if needed
+import LoadingScreen from '../components/LoadingScreen';
 import axios from 'axios';
 import {
-  ArrowLeft, User, Clock, Calendar, Share2, Bookmark, Heart, Loader,
+  ArrowLeft, User, Clock, Calendar, Share2, Bookmark, Heart,
 } from 'lucide-react';
 
 import CommentSection from '../components/CommentSection';
@@ -14,6 +16,7 @@ import { toggleLikeArticle, toggleBookmarkArticle } from '../services/articleSer
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
+// Get or create unique session ID
 const getSessionId = () => {
   let sessionId = localStorage.getItem('session_id');
   if (!sessionId) {
@@ -23,6 +26,7 @@ const getSessionId = () => {
   return sessionId;
 };
 
+// Dynamic category theme
 const getTheme = (category) => {
   const cat = category?.toLowerCase();
   const map = {
@@ -38,9 +42,10 @@ const getTheme = (category) => {
 const ArticlePage = () => {
   const { id } = useParams();
   const [article, setArticle] = useState(null);
-  const [related, setRelated] = useState([]);
+  const [relatedArticles, setRelatedArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -50,23 +55,26 @@ const ArticlePage = () => {
   const [likeProcessing, setLikeProcessing] = useState(false);
   const [bookmarkProcessing, setBookmarkProcessing] = useState(false);
 
+  // Fetch article and related
   const fetchArticle = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API_URL}/api/articles/by-id/${id}`);
       const data = res.data;
       setArticle(data);
+      setLiked(!!data.likedByCurrentUser);
+      setBookmarked(!!data.bookmarkedByCurrentUser);
       setLikeCount(data.likes ?? 0);
       setBookmarkCount(data.bookmarks ?? 0);
       setShareCount(data.shares ?? 0);
-      setLiked(!!data.likedByCurrentUser);
-      setBookmarked(!!data.bookmarkedByCurrentUser);
 
-      const rel = await axios.get(`${API_URL}/api/articles`, {
+      // Fetch related articles
+      const relRes = await axios.get(`${API_URL}/api/articles`, {
         params: { category: data.category, limit: 3, is_published: true },
       });
+      const related = relRes.data.filter(a => a.id !== id);
+      setRelatedArticles(related);
 
-      setRelated(rel.data.filter(a => a.id !== id));
       setError(null);
       window.scrollTo(0, 0);
     } catch (err) {
@@ -81,17 +89,17 @@ const ArticlePage = () => {
     fetchArticle();
   }, [fetchArticle]);
 
+  // Scroll listener for back button
   useEffect(() => {
     const handleScroll = () => {
       const backButton = document.getElementById('back-home-btn');
-      if (backButton) {
-        backButton.classList.toggle('collapsed', window.scrollY > 80);
-      }
+      if (backButton) backButton.classList.toggle('collapsed', window.scrollY > 80);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Copy link handler
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -103,6 +111,7 @@ const ArticlePage = () => {
     }
   };
 
+  // Like handler
   const handleLike = async () => {
     if (!article?.id || likeProcessing) return;
     setLikeProcessing(true);
@@ -113,10 +122,12 @@ const ArticlePage = () => {
       await toggleLikeArticle(article.id, getSessionId());
     } catch (err) {
       console.error(err);
+    } finally {
+      setLikeProcessing(false);
     }
-    setLikeProcessing(false);
   };
 
+  // Bookmark handler
   const handleBookmark = async () => {
     if (!article?.id || bookmarkProcessing) return;
     setBookmarkProcessing(true);
@@ -127,19 +138,19 @@ const ArticlePage = () => {
       await toggleBookmarkArticle(article.id, getSessionId());
     } catch (err) {
       console.error(err);
+    } finally {
+      setBookmarkProcessing(false);
     }
-    setBookmarkProcessing(false);
   };
 
+  // Memoized theme & read time
   const theme = useMemo(() => getTheme(article?.category), [article]);
   const readTime = useMemo(() => {
     if (!article?.content) return 1;
     return Math.ceil(article.content.split(/\s+/).length / 200);
   }, [article]);
 
-  if (loading) {
-    return <LoadingScreen />;
-  }
+  if (loading) return <LoadingScreen />;
 
   if (error || !article) {
     return (
@@ -157,6 +168,7 @@ const ArticlePage = () => {
         url={`https://animac-metaverse.vercel.app/article/${article.slug || article.id}`}
         image={article.featured_image || 'https://animac-metaverse.vercel.app/assets/buzzfeed-purple.jpg'}
       />
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -183,13 +195,12 @@ const ArticlePage = () => {
           </div>
         </div>
 
-
+        {/* Start Divider */}
         <div className="relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
-          <span className="top-6xl font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
+          <span className="font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-purple-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
             START
           </span>
         </div>
-
 
         {/* Content */}
         <div className="bg-gradient-to-b from-black via-black/95 to-netflix-black">
@@ -216,13 +227,13 @@ const ArticlePage = () => {
               </div>
 
               <div className="flex flex-wrap gap-4 mb-10 text-gray-300">
-                <button onClick={handleLike} disabled={likeProcessing} className="flex items-center gap-1 hover:text-pink-500">
+                <button onClick={handleLike} disabled={likeProcessing} aria-label="Like Article" className="flex items-center gap-1 hover:text-pink-500">
                   <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
                 </button>
-                <button onClick={handleBookmark} disabled={bookmarkProcessing} className="flex items-center gap-1 hover:text-yellow-400">
+                <button onClick={handleBookmark} disabled={bookmarkProcessing} aria-label="Bookmark Article" className="flex items-center gap-1 hover:text-yellow-400">
                   <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
                 </button>
-                <button onClick={handleCopyLink} className="flex items-center gap-1 hover:text-blue-400">
+                <button onClick={handleCopyLink} aria-label="Share Article" className="flex items-center gap-1 hover:text-blue-400">
                   <Share2 size={18} /> {copied ? 'Copied' : 'Share'} ({shareCount})
                 </button>
               </div>
@@ -230,25 +241,22 @@ const ArticlePage = () => {
 
             {/* Body */}
             <div className="prose prose-invert max-w-none text-lg space-y-6 font-inter">
-              <ReactMarkdown>{article.content}</ReactMarkdown>
+              <ReactMarkdown>{DOMPurify.sanitize(article.content)}</ReactMarkdown>
             </div>
 
-
-
-            {/* END Divider */}
+            {/* End Divider */}
             <div className="mt-14 mb-10 relative flex-1 mx-4 h-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 animate-pulse shadow-lg rounded-full">
               <span className="font-azonix absolute left-1/2 -translate-x-1/2 -top-6 text-blue-400 font-bold text-sm md:text-base animate-pulse drop-shadow-lg">
                 END
               </span>
             </div>
 
-
             {/* Related Articles */}
-            {related.length > 0 && (
+            {relatedArticles.length > 0 && (
               <div className="mt-16">
                 <h3 className="text-white font-azonix text-2xl mb-4">Related Articles</h3>
                 <div className="grid gap-6 sm:grid-cols-2">
-                  {related.map(rel => (
+                  {relatedArticles.map(rel => (
                     <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border border-white-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
                       {rel.featured_image && (
                         <div className="h-40 bg-cover bg-center rounded-md mb-3" style={{ backgroundImage: `url(${rel.featured_image})` }} />
@@ -280,9 +288,8 @@ const ArticlePage = () => {
           </div>
         </div>
       </motion.div>
-      
     </>
-  );  
+  );
 };
 
 export default ArticlePage;
