@@ -27,7 +27,7 @@ const getInitialForm = () => ({
   tags: "",
   featured_image: "",
   is_featured: true,
-  is_published: false,
+  is_published: false, // default to draft
 });
 
 export default function AdminDashboard() {
@@ -72,6 +72,7 @@ export default function AdminDashboard() {
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
 
+    // Get HTML from editor only when submitting
     const editorHTML = editorRef.current?.getHTML() || "<p></p>";
 
     const tagsArray = formData.tags
@@ -178,13 +179,6 @@ export default function AdminDashboard() {
                   />
 
                   <Input
-                    name="excerpt"
-                    placeholder="Excerpt"
-                    value={formData.excerpt}
-                    onChange={handleChange}
-                  />
-
-                  <Input
                     name="featured_image"
                     placeholder="Cover Image URL (Imgur link)"
                     value={formData.featured_image}
@@ -195,6 +189,13 @@ export default function AdminDashboard() {
                     name="category"
                     placeholder="Category (east/west)"
                     value={formData.category}
+                    onChange={handleChange}
+                  />
+
+                  <Input
+                    name="excerpt"
+                    placeholder="Excerpt"
+                    value={formData.excerpt}
                     onChange={handleChange}
                   />
 
@@ -213,6 +214,7 @@ export default function AdminDashboard() {
                     <TipTapEditor
                       ref={editorRef}
                       initialContent={formData.content}
+                      onChange={(html) => setPreviewContent(html)} // only preview
                     />
                   </div>
 
@@ -294,7 +296,7 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
-        {/* Existing articles + drafts */}
+        {/* Existing articles list */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -303,7 +305,7 @@ export default function AdminDashboard() {
           <Card className="neon-blue bg-black border border-blue-700 shadow-xl">
             <CardContent className="space-y-4 p-5">
               <h2 className="font-japanese text-2xl font-semibold text-white">
-                Existing Articles & Drafts
+                Existing Articles
               </h2>
               {articles.length === 0 ? (
                 <p className="text-gray-400">No articles found.</p>
@@ -315,11 +317,18 @@ export default function AdminDashboard() {
                       className="border-b border-gray-700 pb-2 text-white"
                     >
                       <div className="flex justify-between items-center">
-                        <div>
-                          <strong>{article.title}</strong> — {article.category} —{" "}
-                          {article.is_published ? "✅ Published" : (
-                            <span className="text-red-500 font-bold ml-1">DRAFT</span>
-                          )}
+                        <div className="flex items-center gap-2">
+                          <strong>{article.title}</strong>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full font-semibold ${
+                              article.is_published
+                                ? "bg-green-600 text-white"
+                                : "bg-yellow-500 text-black"
+                            }`}
+                          >
+                            {article.is_published ? "Published" : "Draft"}
+                          </span>
+                          <span className="text-gray-400">({article.category})</span>
                         </div>
                         <div className="space-x-3">
                           <Button
