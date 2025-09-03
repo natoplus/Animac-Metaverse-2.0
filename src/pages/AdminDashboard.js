@@ -39,7 +39,7 @@ export default function AdminDashboard() {
   // Ref for TipTap editor
   const editorRef = useRef(null);
 
-  // Local preview state
+  // Live preview state
   const [previewContent, setPreviewContent] = useState(formData.content);
 
   useEffect(() => {
@@ -72,7 +72,6 @@ export default function AdminDashboard() {
   const handleSubmit = async (e, publish = false) => {
     e.preventDefault();
 
-    // Get HTML from editor only when submitting
     const editorHTML = editorRef.current?.getHTML() || "<p></p>";
 
     const tagsArray = formData.tags
@@ -83,7 +82,7 @@ export default function AdminDashboard() {
 
     const payload = {
       ...formData,
-      content: editorHTML, // only read on submit
+      content: editorHTML,
       tags: tagsArray,
       is_published: publish,
     };
@@ -214,7 +213,7 @@ export default function AdminDashboard() {
                     <TipTapEditor
                       ref={editorRef}
                       initialContent={formData.content}
-                      onChange={(html) => setPreviewContent(html)} // only preview
+                      onChange={(html) => setPreviewContent(html)} // live preview
                     />
                   </div>
 
