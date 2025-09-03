@@ -113,10 +113,13 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>", onUpdate }, ref) 
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
           <button type="button" onClick={addLink} className="p-2 rounded hover:bg-zinc-800"><LinkIcon size={14} /></button>
           <button type="button" onClick={addImage} className="p-2 rounded hover:bg-zinc-800"><ImageIcon size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().setTextAlign("left").run()} title="Align Left" className="p-2 rounded hover:bg-zinc-800"><AlignLeft size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().setTextAlign("center").run()} title="Align Center" className="p-2 rounded hover:bg-zinc-800"><AlignCenter size={14} /></button>
-          <button type="button" onClick={() => editor.chain().focus().setTextAlign("right").run()} title="Align Right" className="p-2 rounded hover:bg-zinc-800"><AlignRight size={14} /></button>
-              </div>
+          <div className="flex space-x-2">
+            <button type="button" onClick={() => editor.isActive("image") ? editor.chain().focus().updateAttributes("image", { alignment: "left" }).run() : editor.chain().focus().setTextAlign("left").run()} title="Align Left" className={`p-2 rounded hover:bg-zinc-800 ${editor.isActive({ textAlign: "left" }) || editor.isActive("image", { alignment: "left" }) ? "bg-blue-500/20 ring-1 ring-blue-400" : ""}`}><AlignLeft size={14} /></button>
+            <button type="button" onClick={() => editor.isActive("image") ? editor.chain().focus().updateAttributes("image", { alignment: "center" }).run() : editor.chain().focus().setTextAlign("center").run()} title="Align Center" className={`p-2 rounded hover:bg-zinc-800 ${editor.isActive({ textAlign: "center" }) || editor.isActive("image", { alignment: "center" }) ? "bg-blue-500/20 ring-1 ring-blue-400" : ""}`}><AlignCenter size={14} /></button>
+            <button type="button" onClick={() => editor.isActive("image") ? editor.chain().focus().updateAttributes("image", { alignment: "right" }).run() : editor.chain().focus().setTextAlign("right").run()} title="Align Right" className={`p-2 rounded hover:bg-zinc-800 ${editor.isActive({ textAlign: "right" }) || editor.isActive("image", { alignment: "right" }) ? "bg-blue-500/20 ring-1 ring-blue-400" : ""}`}><AlignRight size={14} /></button>
+          </div>
+
+        </div>
 
         {/* Image size */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">
