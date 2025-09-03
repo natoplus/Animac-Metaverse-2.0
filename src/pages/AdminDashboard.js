@@ -309,6 +309,7 @@ export default function AdminDashboard() {
               <span>Drafts ({draftArticles.length})</span>
               {draftsVisible ? <Eye size={16} /> : <EyeOff size={16} />}
             </Button>
+
             <AnimatePresence>
               {draftsVisible && (
                 <motion.div
@@ -325,13 +326,31 @@ export default function AdminDashboard() {
                     >
                       <div>
                         <h3 className="font-azonix font-semibold text-white">{article.title}</h3>
-                        <span className="text-xs px-2 py-1 border border-red-500 text-red-500 rounded-[4px] inline-block mt-1">
-                          Draft
-                        </span>
-                        <div className="text-sm text-gray-400">
+
+                        {/* Status / Featured badges */}
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {!article.is_published && (
+                            <span className="text-xs px-2 py-1 border border-red-500 text-red-500 rounded">
+                              Draft
+                            </span>
+                          )}
+                          {article.is_published && (
+                            <span className="text-xs px-2 py-1 border border-green-500 text-green-500 rounded">
+                              Published
+                            </span>
+                          )}
+                          {article.is_featured && (
+                            <span className="text-xs px-2 py-1 border border-yellow-400 text-yellow-400 rounded">
+                              Featured
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-sm text-gray-400 mt-1">
                           {article.category} | {article.tags?.join(", ")}
                         </div>
                       </div>
+
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(article)}
@@ -354,13 +373,6 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {article.is_featured && (
-          <span className="text-xs px-2 py-1 ml-2 border border-yellow-400 text-yellow-400 rounded">
-            Featured
-          </span>
-        )}
-
-
         {publishedArticles.length > 0 && (
           <div>
             <Button
@@ -370,6 +382,7 @@ export default function AdminDashboard() {
               <span>Published ({publishedArticles.length})</span>
               {publishedVisible ? <Eye size={16} /> : <EyeOff size={16} />}
             </Button>
+
             <AnimatePresence>
               {publishedVisible && (
                 <motion.div
@@ -386,13 +399,31 @@ export default function AdminDashboard() {
                     >
                       <div>
                         <h3 className="font-azonix font-semibold text-white">{article.title}</h3>
-                        <span className="text-xs px-2 py-1 mt-3 mb-3 border border-green-500 text-green-500 rounded-[4px] inline-block mt-1">
-                          Published
-                        </span>
-                        <div className="text-sm text-gray-400">
+
+                        {/* Status / Featured badges */}
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {!article.is_published && (
+                            <span className="text-xs px-2 py-1 border border-red-500 text-red-500 rounded">
+                              Draft
+                            </span>
+                          )}
+                          {article.is_published && (
+                            <span className="text-xs px-2 py-1 border border-green-500 text-green-500 rounded">
+                              Published
+                            </span>
+                          )}
+                          {article.is_featured && (
+                            <span className="text-xs px-2 py-1 border border-yellow-400 text-yellow-400 rounded">
+                              Featured
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="text-sm text-gray-400 mt-1">
                           {article.category} | {article.tags?.join(", ")}
                         </div>
                       </div>
+
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(article)}
@@ -414,6 +445,7 @@ export default function AdminDashboard() {
             </AnimatePresence>
           </div>
         )}
+
       </div>
     </div>
   );
