@@ -13,15 +13,20 @@ export const Card = ({
   const baseStyles = 'transition-all';
 
   const variantStyles = {
-    default: `bg-white dark:bg-zinc-900`,
-    glow: `bg-black bg-opacity-30 backdrop-blur-sm border border-white/10 ${
-      glow ? 'shadow-[0_0_10px_rgba(255,255,255,0.1)]' : ''
-    }`,
+    default: `bg-black text-white dark:bg-black dark:text-white`,
+    glow: `bg-black bg-opacity-30 dark:bg-opacity-50 backdrop-blur-sm ${
+      glow ? 'shadow-[0_0_15px_rgba(255,255,255,0.1)] dark:shadow-[0_0_15px_rgba(255,255,255,0.05)]' : ''
+    } text-white`,
   };
 
-  const borderStyles = bordered ? 'border border-gray-200 dark:border-white/10' : 'border-none';
+  const borderStyles = bordered
+    ? 'border border-gray-800 dark:border-white/20'
+    : 'border-none';
   const roundedStyle = `rounded-${rounded}`;
-  const shadowStyle = `shadow-${shadow}`;
+  const shadowStyle =
+    shadow === 'none'
+      ? ''
+      : `shadow-${shadow} dark:shadow-[0_0_10px_rgba(255,255,255,0.05)]`;
 
   return (
     <div
@@ -51,7 +56,9 @@ Card.propTypes = {
 
 export const CardContent = ({ children, className = '', padding = '4' }) => {
   return (
-    <div className={`p-${padding} ${className}`}>
+    <div
+      className={`p-${padding} bg-black dark:bg-black text-white ${className}`}
+    >
       {children}
     </div>
   );
