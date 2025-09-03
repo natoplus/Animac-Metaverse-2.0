@@ -128,6 +128,9 @@ export default function AdminDashboard() {
   const draftArticles = filteredArticles.filter((a) => !a.is_published);
   const publishedArticles = filteredArticles.filter((a) => a.is_published);
 
+  const glowClass =
+    "shadow-[0_0_15px_rgba(255,0,150,0.2),0_0_20px_rgba(0,120,255,0.2)] hover:shadow-[0_0_20px_rgba(255,0,150,0.4),0_0_25px_rgba(0,120,255,0.4)] transition-shadow duration-300";
+
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-6 font-sans">
       <h1 className="text-3xl font-bold mb-6 font-azonix bg-clip-text text-transparent bg-gradient-to-r from-red-500 to-blue-500">
@@ -163,7 +166,7 @@ export default function AdminDashboard() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Editor */}
         <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
-          <Card className="mb-4 bg-gray-850 border border-gray-700 rounded-[6px] shadow-md animate-pulse">
+          <Card className={`mb-4 bg-gray-850 border border-gray-700 rounded-[6px] shadow-md animate-pulse ${glowClass}`}>
             <CardContent>
               <Input
                 placeholder="Article Title"
@@ -252,7 +255,7 @@ export default function AdminDashboard() {
 
         {/* Preview */}
         <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
-          <Card className="bg-gray-850 border border-gray-700 rounded-[6px] shadow-md">
+          <Card className={`bg-gray-850 border border-gray-700 rounded-[6px] shadow-md ${glowClass}`}>
             <CardContent>
               <h2 className="font-azonix text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-400">
                 Live Preview
@@ -289,7 +292,7 @@ export default function AdminDashboard() {
                   {draftArticles.map((article) => (
                     <Card
                       key={article.id}
-                      className="flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-[6px] hover:shadow-lg transition-shadow duration-300 opacity-90"
+                      className={`flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-[6px] hover:shadow-lg transition-shadow duration-300 opacity-90 ${glowClass}`}
                     >
                       <div>
                         <h3 className="font-azonix font-semibold text-white">{article.title}</h3>
@@ -343,11 +346,11 @@ export default function AdminDashboard() {
                   {publishedArticles.map((article) => (
                     <Card
                       key={article.id}
-                      className="flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-[6px] hover:shadow-lg transition-shadow duration-300"
+                      className={`flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-[6px] hover:shadow-lg transition-shadow duration-300 ${glowClass}`}
                     >
                       <div>
                         <h3 className="font-azonix font-semibold text-white">{article.title}</h3>
-                        <span className="text-xs px-2 py-1 border border-green-500 text-green-500 rounded-[4px] inline-block mt-1">
+                        <span className="text-xs px-2 py-1 mt-3 mb-3 border border-green-500 text-green-500 rounded-[4px] inline-block mt-1">
                           Published
                         </span>
                         <div className="text-sm text-gray-400">
