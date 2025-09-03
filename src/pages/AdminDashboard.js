@@ -165,7 +165,7 @@ export default function AdminDashboard() {
       {/* Editor + Preview */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Editor */}
-        <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
+        <motion.div className="flex-1" initial="hidden" variants={cardVariants}>
           <Card className={`mb-4 bg-gray-850 border border-gray-700 rounded-[6px] shadow-md animate-pulse ${glowClass}`}>
             <CardContent>
               <Input
@@ -260,6 +260,17 @@ export default function AdminDashboard() {
               <h2 className="font-azonix text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-400">
                 Live Preview
               </h2>
+
+              {/* Featured Image */}
+              {featuredImage && (
+                <img
+                  src={featuredImage}
+                  alt="Featured"
+                  className="w-full max-h-64 object-cover rounded-[6px] mb-4 shadow-md"
+                />
+              )}
+
+              {/* Article Content */}
               <div
                 className="prose prose-invert max-w-full overflow-auto border rounded-[6px] p-4 bg-gray-800"
                 dangerouslySetInnerHTML={{ __html: previewContent }}

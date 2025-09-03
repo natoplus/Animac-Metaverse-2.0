@@ -14,7 +14,7 @@ export const Input = ({
   };
 
   const variantStyles = {
-    default: 'border border-gray-300 dark:border-white/10 bg-white dark:bg-zinc-900 text-black dark:text-white',
+    default: 'border border-gray-300 dark:border-white/10 bg-gray-300 dark:bg-zinc-900 text-black dark:text-white',
     transparent: 'bg-transparent border border-white/20 text-white placeholder-white/60',
   };
 
