@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // ---------- Base Config ----------
-const API_BASE_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
+const API_BASE_URL =
+  process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -14,17 +15,29 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`[✅ API] ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
+      console.log(
+        `[✅ API] ${response.config.method?.toUpperCase()} ${response.config.url}`,
+        response.data
+      );
     }
     return response;
   },
   (error) => {
-    console.error('[❌ API ERROR]', error?.response?.data || error.message);
+    console.error(
+      '[❌ API ERROR]',
+      error?.response?.data || error.message
+    );
     return Promise.reject(error);
   }
 );
 
 // ---------- Article Endpoints ----------
+
+/**
+ * Fetch articles with optional filters:
+ * @param {object} params - { category, limit, is_published }
+ * @returns {array}
+ */
 export const fetchArticles = async (params = {}) => {
   try {
     const res = await api.get('/api/articles', { params });
@@ -33,6 +46,14 @@ export const fetchArticles = async (params = {}) => {
     console.error('❌ Error fetching articles:', err.message);
     return [];
   }
+};
+
+/**
+ * Fetch all drafts or published articles
+ * @param {boolean} draftsOnly
+ */
+export const fetchDrafts = async (draftsOnly = true) => {
+  return fetchArticles({ is_published: !draftsOnly ? true : false });
 };
 
 export const getArticle = async (id) => {
@@ -118,7 +139,7 @@ export const healthCheck = async () => {
 // ---------- Comment Endpoints ----------
 export const fetchComments = async (articleId) => {
   try {
-    const res = await api.get(`/api/comments`, { params: { article_id: articleId } });
+    const res = await api.get('/api/comments', { params: { article_id: articleId } });
     return res.data || [];
   } catch (err) {
     console.error(`❌ Error fetching comments for article [${articleId}]:`, err.message);
@@ -140,6 +161,7 @@ export const postComment = async ({ article_id, name, message }) => {
 export const apiEndpoints = {
   // Articles
   getArticles: fetchArticles,
+  getDrafts: fetchDrafts,
   getArticle,
   getArticleBySlug,
   createArticle,
@@ -151,7 +173,7 @@ export const apiEndpoints = {
 
   // Comments
   getComments: fetchComments,
-  postComment: postComment,
+  postComment,
 };
 
 export default apiEndpoints;
