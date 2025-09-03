@@ -32,12 +32,6 @@ api.interceptors.response.use(
 );
 
 // ---------- Article Endpoints ----------
-
-/**
- * Fetch articles with optional filters:
- * @param {object} params - { category, limit, is_published }
- * @returns {array}
- */
 export const fetchArticles = async (params = {}) => {
   try {
     const res = await api.get('/api/articles', { params });
@@ -48,12 +42,13 @@ export const fetchArticles = async (params = {}) => {
   }
 };
 
-/**
- * Fetch all drafts or published articles
- * @param {boolean} draftsOnly
- */
 export const fetchDrafts = async (draftsOnly = true) => {
-  return fetchArticles({ is_published: !draftsOnly ? true : false });
+  try {
+    return await fetchArticles({ is_published: draftsOnly ? false : true });
+  } catch (err) {
+    console.error('❌ Error fetching drafts:', err.message);
+    return [];
+  }
 };
 
 export const getArticle = async (id) => {
@@ -79,7 +74,7 @@ export const getArticleBySlug = async (slug) => {
 export const createArticle = async (data) => {
   try {
     const res = await api.post('/api/articles', data);
-    return res.data;
+    return res.data || null;
   } catch (err) {
     console.error('❌ Error creating article:', err.message);
     return null;
@@ -89,7 +84,7 @@ export const createArticle = async (data) => {
 export const updateArticle = async (id, data) => {
   try {
     const res = await api.patch(`/api/articles/${id}`, data);
-    return res.data;
+    return res.data || null;
   } catch (err) {
     console.error(`❌ Error updating article [${id}]:`, err.message);
     return null;
@@ -99,7 +94,7 @@ export const updateArticle = async (id, data) => {
 export const deleteArticle = async (id) => {
   try {
     const res = await api.delete(`/api/articles/${id}`);
-    return res.data;
+    return res.data || null;
   } catch (err) {
     console.error(`❌ Error deleting article [${id}]:`, err.message);
     return null;
@@ -129,7 +124,7 @@ export const fetchFeaturedContent = async () => {
 export const healthCheck = async () => {
   try {
     const res = await api.get('/api/health');
-    return res.data;
+    return res.data || null;
   } catch (err) {
     console.error('❌ Health check failed:', err.message);
     return null;
@@ -150,7 +145,7 @@ export const fetchComments = async (articleId) => {
 export const postComment = async ({ article_id, name, message }) => {
   try {
     const res = await api.post('/api/comments', { article_id, name, message });
-    return res.data;
+    return res.data || null;
   } catch (err) {
     console.error('❌ Error posting comment:', err.message);
     return null;

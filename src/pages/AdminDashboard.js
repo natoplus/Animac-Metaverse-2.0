@@ -43,7 +43,7 @@ export default function AdminDashboard() {
     loadArticles();
   }, [loadArticles]);
 
-  const handleEdit = (article) => {
+   const handleEdit = (article) => {
     setSelectedArticle(article);
     setTitle(article.title);
     setExcerpt(article.excerpt || "");
@@ -51,9 +51,9 @@ export default function AdminDashboard() {
     setTags(article.tags || []);
     setFeaturedImage(article.featured_image || "");
     setIsDraft(!article.is_published);
-    setPreviewContent(article.content);
-    if (editorRef.current) {
-      editorRef.current.setContent && editorRef.current.setContent(article.content);
+    setPreviewContent(article.content || "");
+    if (editorRef.current?.setContent) {
+      editorRef.current.setContent(article.content || "");
     }
   };
 
@@ -95,24 +95,34 @@ export default function AdminDashboard() {
     setTagInput("");
   };
 
+  // ----- Auto-save Draft -----
   useEffect(() => {
-    if (!autoSave) return;
+    if (!autoSave || !selectedArticle) return;
+
     const interval = setInterval(() => {
-      if (!selectedArticle) return;
       handleSave();
     }, 30000);
-    return () => clearInterval(interval);
-  }, [autoSave, selectedArticle, title, excerpt, category, tags, featuredImage, previewContent]);
 
+    return () => clearInterval(interval);
+  }, [autoSave, selectedArticle]);
+
+  // ----- Editor Change Handler -----
   const handleEditorChange = (html) => setPreviewContent(html);
 
-  const wordCount = previewContent?.split(/\s+/).length || 0;
+  // ----- Word count / Read time -----
+  const wordCount = previewContent?.trim().split(/\s+/).length || 0;
   const readTime = Math.ceil(wordCount / 200);
 
-  const filteredArticles = articles
-    .filter((a) => a.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter((a) => (a.is_published ? publishedVisible : draftsVisible));
+  // ----- Filter Articles by search term -----
+  const filteredArticles = articles.filter((a) =>
+    a.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
+  // Separate drafts and published articles
+  const draftArticles = filteredArticles.filter((a) => !a?.is_published);
+  const publishedArticles = filteredArticles.filter((a) => a?.is_published);
+
+  // ----- Add tag via input -----
   const handleTagInputKey = (e) => {
     if (e.key === "Enter" && tagInput.trim()) {
       setTags([...tags, tagInput.trim()]);
@@ -124,10 +134,6 @@ export default function AdminDashboard() {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
-
-  const draftArticles = filteredArticles.filter((a) => !a.is_published);
-  const publishedArticles = filteredArticles.filter((a) => a.is_published);
-
   const glowClass =
     "shadow-[0_0_15px_rgba(255,0,150,0.2),0_0_20px_rgba(0,120,255,0.2)] hover:shadow-[0_0_20px_rgba(255,0,150,0.4),0_0_25px_rgba(0,120,255,0.4)] transition-shadow duration-300";
 
