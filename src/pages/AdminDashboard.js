@@ -149,7 +149,7 @@ export default function AdminDashboard() {
       </h1>
 
       {/* Search & Filters */}
-      <div className="flex flex-wrap gap-4 mb-4 items-center">
+      <div className="flex bg-gray-850 flex-wrap gap-4 mb-4 items-center">
         <Input
           placeholder="Search articles..."
           value={searchTerm}
@@ -177,13 +177,13 @@ export default function AdminDashboard() {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Editor */}
         <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
-          <Card className="mb-4 bg-gray-850 border border-gray-700 hover:border-blue-500 transition-colors duration-300 shadow-md">
+          <Card className="mb-4 !bg-gray-850 border border-gray-700 hover:border-blue-500 transition-colors duration-300 shadow-md">
             <CardContent>
               <Input
                 placeholder="Article Title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="mb-2 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
+                className="mb-2 !bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <Input
                 placeholder="Excerpt"
@@ -267,9 +267,9 @@ export default function AdminDashboard() {
 
         {/* Preview */}
         <motion.div className="flex-1" initial="hidden" animate="visible" variants={cardVariants}>
-          <Card className="bg-gray-850 border border-gray-700 hover:border-red-500 transition-colors duration-300 shadow-md">
+          <Card className="!bg-gray-850 border border-gray-700 hover:border-red-500 transition-colors duration-300 shadow-md">
             <CardContent>
-              <h2 className="text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-400">
+              <h2 className="!bg-gray-850 text-xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-red-400 to-blue-400">
                 Live Preview
               </h2>
               <div
@@ -305,7 +305,7 @@ export default function AdminDashboard() {
                   {draftArticles.map((article) => (
                     <Card
                       key={article.id}
-                      className="flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300 opacity-80"
+                      className="flex justify-between items-center p-4 !bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300 opacity-80"
                     >
                       <div>
                         <h3 className="font-semibold">{article.title}</h3>
@@ -353,12 +353,12 @@ export default function AdminDashboard() {
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="space-y-2"
+                  className="space-y-2 bg-gray-900 border"
                 >
                   {publishedArticles.map((article) => (
                     <Card
                       key={article.id}
-                      className="flex justify-between items-center p-4 bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300"
+                      className="flex justify-between items-center p-4 !bg-gray-850 border border-gray-700 rounded-md hover:shadow-lg transition-shadow duration-300"
                     >
                       <div>
                         <h3 className="font-semibold">{article.title}</h3>
