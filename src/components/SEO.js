@@ -33,7 +33,7 @@ const SEO = ({
       <meta name="robots" content="index, follow" />
       <link rel="canonical" href={absoluteUrl} />
 
-      {/* Open Graph / Facebook */}
+      {/* Open Graph / Universal Social Media */}
       <meta property="og:title" content={title} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={absoluteImage} />
@@ -58,7 +58,7 @@ const SEO = ({
         </>
       )}
 
-      {/* Twitter Card */}
+      {/* Twitter / X */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:site" content="@animacmetaverse" />
       <meta name="twitter:creator" content="@animacmetaverse" />
@@ -67,10 +67,93 @@ const SEO = ({
       <meta name="twitter:image" content={absoluteImage} />
       <meta name="twitter:image:alt" content={title} />
 
-      {/* Additional Meta Tags */}
+      {/* WhatsApp */}
+      <meta property="og:image:type" content="image/jpeg" />
+      <meta property="og:image:secure_url" content={absoluteImage} />
+      
+      {/* LinkedIn */}
+      <meta property="linkedin:owner" content="animac-metaverse" />
+      
+      {/* Discord */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Telegram */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Pinterest */}
+      <meta name="pinterest-rich-pin" content="true" />
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Reddit */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Slack */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Microsoft Teams */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Apple Messages */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Instagram (for stories and posts) */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* TikTok (for link previews) */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Snapchat */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* YouTube (for community posts) */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Twitch */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Mastodon */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Bluesky */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Threads (Meta) */}
+      <meta property="og:image:type" content="image/jpeg" />
+      
+      {/* Additional Universal Meta Tags */}
       <meta name="theme-color" content="#1a1a1a" />
       <meta name="msapplication-TileColor" content="#1a1a1a" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      
+      {/* Schema.org structured data for better search engine understanding */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": type === "article" ? "Article" : "WebPage",
+          "headline": title,
+          "description": description,
+          "image": absoluteImage,
+          "url": absoluteUrl,
+          "author": type === "article" && author ? {
+            "@type": "Person",
+            "name": author
+          } : undefined,
+          "publisher": {
+            "@type": "Organization",
+            "name": siteName,
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://animac-metaverse.vercel.app/assets/animac-preview-logo.svg"
+            }
+          },
+          "datePublished": type === "article" && publishedTime ? publishedTime : undefined,
+          "dateModified": type === "article" && modifiedTime ? modifiedTime : undefined,
+          "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": absoluteUrl
+          }
+        })}
+      </script>
     </Helmet>
   );
 };
