@@ -36,6 +36,7 @@ app.add_middleware(
         "https://animac-metaverse.vercel.app",
         "http://localhost:3000",
     ],
+    allow_origin_regex=r"https://.*vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -558,25 +559,53 @@ if __name__ == "__main__":
 # ---------- Newsletter Subscription ----------
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_SSL_PORT = int(os.getenv("SMTP_SSL_PORT", "465"))
 SMTP_USER = os.getenv("SMTP_USER")  # e.g., your Gmail address
 SMTP_PASS = os.getenv("SMTP_PASS")  # e.g., App Password
+SMTP_FROM = os.getenv("SMTP_FROM")  # optional branded from, must be authorized in provider
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "iconanimac@gmail.com")
 SITE_ORIGIN = os.getenv("SITE_ORIGIN", "https://animac-metaverse.vercel.app")
 
-def send_email(subject: str, to_email: str, html_content: str, text_content: Optional[str] = None, from_email: Optional[str] = None):
+def send_email(subject: str, to_email: str, html_content: str, text_content: Optional[str] = None, from_email: Optional[str] = None, reply_to: Optional[str] = None):
     if not (SMTP_USER and SMTP_PASS):
         logging.warning("SMTP credentials not configured; skipping email send")
-        return
+        return False
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = from_email or SMTP_USER
+    sender = from_email or SMTP_FROM or SMTP_USER
+    # Branded From if provided
+    if "@" in sender and sender != SMTP_USER:
+        # Gmail may reject unauthorized from; fall back to SMTP_USER but set reply-to
+        msg["From"] = f"ANIMAC Metaverse <{SMTP_USER}>"
+        msg["Reply-To"] = sender
+    else:
+        msg["From"] = f"ANIMAC Metaverse <{sender}>"
     msg["To"] = to_email
+    if reply_to:
+        msg["Reply-To"] = reply_to
     msg.set_content(text_content or "")
     msg.add_alternative(html_content, subtype="html")
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
-        server.starttls()
-        server.login(SMTP_USER, SMTP_PASS)
-        server.send_message(msg)
+
+    # Try STARTTLS first
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(SMTP_USER, SMTP_PASS)
+            server.send_message(msg)
+            return True
+    except Exception as e_starttls:
+        logging.error("SMTP STARTTLS send failed", exc_info=True)
+        # Fallback to SSL
+        try:
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_SSL_PORT, timeout=20) as server:
+                server.login(SMTP_USER, SMTP_PASS)
+                server.send_message(msg)
+                return True
+        except Exception as e_ssl:
+            logging.error("SMTP SSL send failed", exc_info=True)
+            return False
 
 def build_user_welcome_email(subscriber_email: str) -> str:
     hero_image = f"{SITE_ORIGIN}/assets/animac-preview-logo.svg"
@@ -624,33 +653,37 @@ def build_admin_notification_email(subscriber_email: str, source: str) -> str:
 async def subscribe_newsletter(payload: NewsletterSubscribeRequest):
     email = payload.email.strip().lower()
     source = (payload.source or "footer").strip().lower()
+    # 1) Save to Supabase (hard requirement)
     try:
-        # Upsert into Supabase table 'newsletter_subscribers'
         data = {
             "email": email,
             "source": source,
             "created_at": datetime.utcnow().isoformat(),
         }
-        # Ensure table exists in Supabase with a unique constraint on email
         supabase.table("newsletter_subscribers").upsert(data, on_conflict="email").execute()
+    except Exception:
+        logging.error("❌ Newsletter upsert failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Subscription failed")
 
-        # Send admin notification
+    # 2) Best-effort emails (do not fail request if email send fails)
+    try:
         send_email(
             subject="ANIMAC: New newsletter subscriber",
             to_email=ADMIN_EMAIL,
             html_content=build_admin_notification_email(email, source),
             text_content=f"New subscriber: {email} (source: {source})",
         )
+    except Exception:
+        logging.warning("⚠️ Admin notification email failed", exc_info=True)
 
-        # Send user welcome email
+    try:
         send_email(
             subject="Welcome to ANIMAC • You’re in!",
             to_email=email,
             html_content=build_user_welcome_email(email),
             text_content="Welcome to ANIMAC! You're officially subscribed.",
         )
+    except Exception:
+        logging.warning("⚠️ Subscriber welcome email failed", exc_info=True)
 
-        return NewsletterSubscribeResponse(status="ok", message="Subscribed successfully")
-    except Exception as e:
-        logging.error("❌ Newsletter subscribe failed", exc_info=True)
-        raise HTTPException(status_code=500, detail="Subscription failed")
+    return NewsletterSubscribeResponse(status="ok", message="Subscribed successfully")
