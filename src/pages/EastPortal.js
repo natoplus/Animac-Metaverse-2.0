@@ -128,7 +128,7 @@ const EastPortal = () => {
                 Featured Story
               </h2>
 
-              <Link to={`/article/${featuredArticle.id}`}>
+              <Link to={`/article/${featuredArticle.slug}`}>
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-east-900/40 to-netflix-dark hover-glow-east transition-all duration-300 hover:scale-[1.02]">
                   <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent z-10" />
                   <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1615592389070-bcc97e05ad01')] bg-cover bg-center opacity-30" />
@@ -202,7 +202,7 @@ const EastPortal = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1, duration: 0.5 }}
                   >
-                    <Link to={`/article/${article.id}`}>
+                    <Link to={`/article/${article.slug}`}>
                       <div className="netflix-card bg-netflix-dark rounded-lg overflow-hidden border border-east-500/20 hover-glow-east hover:border-east-500/60 transition-all duration-300">
                         {/* Article Image */}
                         <div className="relative h-48 bg-gradient-to-br from-east-800/30 to-gray-900 overflow-hidden">

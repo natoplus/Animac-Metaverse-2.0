@@ -127,7 +127,7 @@ const WestPortal = () => {
                 Featured Story
               </h2>
 
-              <Link to={`/article/${featuredArticle.id}`}>
+              <Link to={`/article/${featuredArticle.slug}`}>
                 <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-west-900/40 to-netflix-dark hover-glow-west transition-all duration-300 hover:scale-[1.02]">
                   <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent z-10" />
                   <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1717395948943-f2a38e2e41f4')] bg-cover bg-center opacity-30" />
@@ -201,7 +201,7 @@ const WestPortal = () => {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1, duration: 0.5 }}
                   >
-                    <Link to={`/article/${article.id}`}>
+                    <Link to={`/article/${article.slug}`}>
                       <div className="netflix-card bg-netflix-dark rounded-lg overflow-hidden border border-west-500/20 hover-glow-west hover:border-west-500/60 transition-all duration-300">
                         {/* Article Image */}
                         <div className="relative h-48 bg-gradient-to-br from-west-800/30 to-gray-900 overflow-hidden">

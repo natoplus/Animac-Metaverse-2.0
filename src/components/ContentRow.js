@@ -116,7 +116,7 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
             transition={{ delay: index * 0.1, duration: 0.5 }}
             className="flex-none w-80"
           >
-            <Link to={`/article/${article.id}`}>
+            <Link to={`/article/${article.slug}`}>
               <div
                 className={`netflix-card bg-netflix-dark rounded-lg overflow-hidden border ${theme.card} transition-all duration-300`}
               >

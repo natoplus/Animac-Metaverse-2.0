@@ -39,7 +39,7 @@ const getTheme = (category) => {
 };
 
 const ArticlePage = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const [article, setArticle] = useState(null);
   const [relatedArticles, setRelatedArticles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +58,7 @@ const ArticlePage = () => {
   const fetchArticle = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_URL}/api/articles/by-id/${id}`);
+      const res = await axios.get(`${API_URL}/api/articles/${slug}`);
       const data = res.data;
       setArticle(data);
       setLiked(!!data.likedByCurrentUser);
@@ -71,7 +71,7 @@ const ArticlePage = () => {
       const relRes = await axios.get(`${API_URL}/api/articles`, {
         params: { category: data.category, limit: 3, is_published: true },
       });
-      const related = relRes.data.filter(a => a.id !== id);
+      const related = relRes.data.filter(a => a.slug !== slug);
       setRelatedArticles(related);
 
       setError(null);
@@ -82,7 +82,7 @@ const ArticlePage = () => {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
     fetchArticle();
@@ -164,7 +164,7 @@ const ArticlePage = () => {
       <SEO
         title={article.title}
         description={article.excerpt || 'Read this amazing article on Animac Metaverse.'}
-        url={`https://animac-metaverse.vercel.app/article/${article.slug || article.id}`}
+        url={`https://animac-metaverse.vercel.app/article/${article.slug}`}
         image={article.featured_image || 'https://animac-metaverse.vercel.app/assets/buzzfeed-purple.jpg'}
       />
 
@@ -258,7 +258,7 @@ const ArticlePage = () => {
                 <h3 className="text-white font-azonix text-2xl mb-4">Related Articles</h3>
                 <div className="grid gap-6 sm:grid-cols-2">
                   {relatedArticles.map(rel => (
-                    <Link key={rel.id} to={`/article/${rel.id}`} className="neon-glow border border-white-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
+                    <Link key={rel.id} to={`/article/${rel.slug}`} className="neon-glow border border-white-700 bg-black/20 hover:bg-black/40 p-4 rounded-lg transition relative overflow-hidden">
                       {rel.featured_image && (
                         <div className="h-40 bg-cover bg-center rounded-md mb-3" style={{ backgroundImage: `url(${rel.featured_image})` }} />
                       )}

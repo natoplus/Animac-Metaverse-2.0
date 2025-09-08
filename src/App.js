@@ -68,7 +68,7 @@ const AnimatedRoutes = ({ setIsLoading }) => {
           <Route path="/buzzfeed" element={<PageWrapper><BuzzfeedHub /></PageWrapper>} />
           <Route path="/buzzfeed/east" element={<PageWrapper><EastPortal /></PageWrapper>} />
           <Route path="/buzzfeed/west" element={<PageWrapper><WestPortal /></PageWrapper>} />
-          <Route path="/article/:id" element={<PageWrapper><ArticlePage /></PageWrapper>} />
+          <Route path="/article/:slug" element={<PageWrapper><ArticlePage /></PageWrapper>} />
           <Route path="/watch-tower" element={<PageWrapper><WatchTowerPage /></PageWrapper>} />
           <Route path="/admin/*" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
           <Route path="/about" element={<PageWrapper><AboutUs /></PageWrapper>} />
