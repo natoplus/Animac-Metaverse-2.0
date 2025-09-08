@@ -37,6 +37,7 @@ const EastPortal = () => {
         description={pageDescription}
         url={pageUrl}
         image={previewImage}
+        type="website"
       />
       <motion.div
         initial={{ opacity: 0 }}

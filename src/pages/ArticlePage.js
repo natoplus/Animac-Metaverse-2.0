@@ -164,8 +164,14 @@ const ArticlePage = () => {
       <SEO
         title={article.title}
         description={article.excerpt || 'Read this amazing article on Animac Metaverse.'}
-        url={`https://animac-metaverse.vercel.app/article/${article.slug}`}
-        image={article.featured_image || 'https://animac-metaverse.vercel.app/assets/buzzfeed-purple.jpg'}
+        url={`/article/${article.slug}`}
+        image={article.featured_image || '/assets/buzzfeed-purple.jpg'}
+        type="article"
+        author={article.author}
+        publishedTime={article.created_at}
+        modifiedTime={article.updated_at}
+        section={article.category}
+        tags={article.tags || []}
       />
 
       <motion.div

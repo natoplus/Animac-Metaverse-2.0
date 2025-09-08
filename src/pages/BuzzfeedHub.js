@@ -136,8 +136,9 @@ const BuzzfeedHub = () => {
       <SEO
         title={pageTitle || 'Animac Metaverse - Buzzfeed Hub'}
         description={pageDescription || 'Explore the latest in anime and western entertainment culture on Animac Metaverse.'}
-        url={pageUrl| '/buzzfeed'}
-        image={previewImage || 'https://animac-metaverse.vercel.app/assets/buzzfeed-redblue.jpg'}
+        url={pageUrl || '/buzzfeed'}
+        image={previewImage || '/assets/buzzfeed-redblue.jpg'}
+        type="website"
       />
 
 

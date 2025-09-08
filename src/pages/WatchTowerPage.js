@@ -21,6 +21,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { createPortal } from "react-dom";
 import { useSwipeable } from "react-swipeable";
 import { motion, AnimatePresence } from "framer-motion";
+import SEO from '../components/SEO';
 import {
   Play as PlayIcon,
   X as XIcon,
@@ -1019,8 +1020,16 @@ export default function WatchTowerPage() {
   const fadeKey = `mode-${mode}`;
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <GlobalStyles />
+    <>
+      <SEO
+        title="Watch Tower - Discover Trending Anime & Movies"
+        description="Explore trending anime, upcoming releases, and top-rated movies and TV shows. Discover your next favorite series with our curated recommendations."
+        url="/watch-tower"
+        image="/assets/watch-tower-preview.jpg"
+        type="website"
+      />
+      <div className="min-h-screen bg-black text-white">
+        <GlobalStyles />
       <div className="pointer-events-none fixed inset-0 -z-10">
         <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full blur-3xl opacity-30 bg-indigo-600" />
         <div className="absolute top-1/2 -right-24 h-72 w-72 rounded-full blur-3xl opacity-30 bg-pink-600" />
@@ -1052,7 +1061,8 @@ export default function WatchTowerPage() {
       <FooterBar />
 
       <TrailerModal open={trailer.open} onClose={() => setTrailer({ open: false, item: null })} title={trailer.item?.title} trailerUrl={trailer.item?.trailerUrl} />
-    </div>
+      </div>
+    </>
   );
 }
 

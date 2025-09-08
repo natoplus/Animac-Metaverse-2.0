@@ -134,9 +134,10 @@ const Home = () => {
     <>
       <SEO
         title="ANIMAC METAVERSE - Your Mainstream for Anime & Western Entertainment"
-        description="Dive into curated anime and western entertainment culture on Animac Metaverse."
-        url="https://animac-metaverse.vercel.app/"
-        image="https://animac-metaverse.vercel.app/assets/animac-preview-logo.svg"
+        description="Dive into curated anime and western entertainment culture on Animac Metaverse. Discover the latest in anime, movies, cartoons, and entertainment news."
+        url="/"
+        image="/assets/animac-preview-logo.svg"
+        type="website"
       />
 
       <motion.div
