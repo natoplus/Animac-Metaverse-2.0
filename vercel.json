@@ -1,4 +1,12 @@
 {
+  "rewrites": [
+    { "source": "/preview", "destination": "/api/preview" },
+    {
+      "source": "/(.*)",
+      "has": [ { "type": "header", "key": "user-agent", "value": ".*(facebookexternalhit|Twitterbot|WhatsApp|facebookcatalog|LinkedInBot|TelegramBot|Discordbot|Slackbot|Google-InspectionTool|Pinterest|redditbot|SkypeUriPreview|Nuzzel|VKShare|W3C_Validator).*" } ],
+      "destination": "/api/preview?path=/$1"
+    }
+  ],
   "headers": [
     {
       "source": "/sitemap.xml",
