@@ -1,35 +1,18 @@
 // components/NewsletterModal.js
 import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
-export default function NewsletterModal() {
-  const [isOpen, setIsOpen] = useState(true); // default open
+export default function NewsletterModal({ isOpen = false, onClose }) {
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleClose = () => {
-    setIsOpen(false);
+    onClose?.();
   };
 
-  useEffect(() => {
-    if (isOpen) {
-      // Remove old script if it exists (prevents duplicates)
-      const oldScript = document.querySelector(
-        'script[src="https://animac-metaverse-buzzfeed.kit.com/eb0868ded1/index.js"]'
-      );
-      if (oldScript) oldScript.remove();
-
-      // Create new script tag
-      const script = document.createElement("script");
-      script.src =
-        "https://animac-metaverse-buzzfeed.kit.com/eb0868ded1/index.js";
-      script.async = true;
-      script.dataset.uid = "eb0868ded1";
-
-      // Append to modal container
-      const container = document.getElementById("newsletter-form");
-      if (container) container.innerHTML = ""; // clear previous form
-      container?.appendChild(script);
-    }
-  }, [isOpen]);
+  // Replace external provider with native form
 
   return (
     <AnimatePresence>
@@ -55,8 +38,50 @@ export default function NewsletterModal() {
               ✕
             </button>
 
-            {/* Embed Newsletter Form */}
-            <div id="newsletter-form"></div>
+            {/* Native Newsletter Form */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (submitting) return;
+                setSubmitting(true);
+                try {
+                  const res = await fetch(`${API_URL}/api/newsletter/subscribe`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, source: 'modal' })
+                  });
+                  if (!res.ok) throw new Error('Subscribe failed');
+                  setSubmitted(true);
+                  setEmail('');
+                  setTimeout(() => handleClose(), 1200);
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                aria-label="Enter your email"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-inter placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
+              />
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-inter font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105 disabled:opacity-60"
+              >
+                {submitting ? 'Submitting...' : 'Join Newsletter'}
+              </button>
+              {submitted && (
+                <div className="text-green-400 text-center">Thanks! Check your inbox.</div>
+              )}
+            </form>
           </motion.div>
         </motion.div>
       )}

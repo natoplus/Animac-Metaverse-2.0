@@ -3,10 +3,14 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Facebook, XIcon, Instagram, Mail } from 'lucide-react';
 import NewsletterModal from './NewsletterModal'; // import the modal
+const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
   const [isNewsletterOpen, setIsNewsletterOpen] = useState(false);
+  const [email, setEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const openNewsletter = () => setIsNewsletterOpen(true);
   const closeNewsletter = () => setIsNewsletterOpen(false);
@@ -125,21 +129,49 @@ const Footer = () => {
               Get weekly updates on the latest anime releases, movie reviews, and cartoon spotlights.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (submitting) return;
+                setSubmitting(true);
+                try {
+                  const res = await fetch(`${API_URL}/api/newsletter/subscribe`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, source: 'footer' })
+                  });
+                  if (!res.ok) throw new Error('Subscribe failed');
+                  setSubmitted(true);
+                  setEmail('');
+                  setTimeout(() => setSubmitted(false), 3000);
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+              className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+            >
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email"
                 aria-label="Enter your email"
                 className="flex-1 px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white font-inter placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors"
               />
               <button
-                type="button"
-                onClick={openNewsletter} // <-- open the modal
-                className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-inter font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105"
+                type="submit"
+                disabled={submitting}
+                className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white font-inter font-semibold rounded-lg hover:from-east-600 hover:to-west-600 transition-all duration-300 hover:scale-105 disabled:opacity-60"
               >
-                Subscribe
+                {submitting ? 'Submitting...' : 'Subscribe'}
               </button>
-            </div>
+            </form>
+            {submitted && (
+              <div className="mt-4 text-green-400 font-inter">Thanks! Check your inbox.</div>
+            )}
           </div>
         </motion.div>
 
