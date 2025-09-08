@@ -2,13 +2,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from supabase import create_client, Client
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional
 from datetime import datetime
 import os
 from dotenv import load_dotenv
 import uuid
 import logging
+import smtplib
+from email.message import EmailMessage
 
 # ---------- Load Env ----------
 load_dotenv()
@@ -66,6 +68,15 @@ class CategoryStats(BaseModel):
     category: str
     count: int
     latest_article: Optional[dict] = None
+# Newsletter models
+class NewsletterSubscribeRequest(BaseModel):
+    email: EmailStr
+    source: Optional[str] = "footer"
+
+class NewsletterSubscribeResponse(BaseModel):
+    status: str
+    message: str
+
 
 class CommentBase(BaseModel):
     article_id: str
@@ -542,3 +553,103 @@ async def undislike_comment(comment_id: str, request: Request):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
+
+# ---------- Newsletter Subscription ----------
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+SMTP_USER = os.getenv("SMTP_USER")  # e.g., your Gmail address
+SMTP_PASS = os.getenv("SMTP_PASS")  # e.g., App Password
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "iconanimac@gmail.com")
+SITE_ORIGIN = os.getenv("SITE_ORIGIN", "https://animac-metaverse.vercel.app")
+
+def send_email(subject: str, to_email: str, html_content: str, text_content: Optional[str] = None, from_email: Optional[str] = None):
+    if not (SMTP_USER and SMTP_PASS):
+        logging.warning("SMTP credentials not configured; skipping email send")
+        return
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = from_email or SMTP_USER
+    msg["To"] = to_email
+    msg.set_content(text_content or "")
+    msg.add_alternative(html_content, subtype="html")
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASS)
+        server.send_message(msg)
+
+def build_user_welcome_email(subscriber_email: str) -> str:
+    hero_image = f"{SITE_ORIGIN}/assets/animac-preview-logo.svg"
+    return f"""
+    <div style='background:#0b0b0b;color:#e5e7eb;font-family:Inter,Arial,sans-serif;padding:24px;'>
+      <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:640px;margin:0 auto;background:#111827;border:1px solid #1f2937;border-radius:16px;overflow:hidden;'>
+        <tr>
+          <td style='text-align:center;padding:28px 24px 12px;'>
+            <img src='{hero_image}' alt='ANIMAC' width='72' height='72' style='display:inline-block;border-radius:12px;border:1px solid #374151' />
+            <h1 style='margin:16px 0 0;font-size:24px;letter-spacing:1px;color:#fff;'>Welcome to ANIMAC</h1>
+            <p style='margin:8px 0 0;color:#9ca3af;'>You’re officially on the list.</p>
+          </td>
+        </tr>
+        <tr>
+          <td style='padding:0 24px 24px;'>
+            <div style='background:linear-gradient(135deg,#7c3aed33,#2563eb33);border:1px solid #374151;border-radius:12px;padding:16px;'>
+              <p style='margin:0 0 12px;color:#d1d5db;line-height:1.6;'>Thanks for subscribing, <strong>{subscriber_email}</strong>. Expect curated anime drops, west-side features, and culture deep-dives—right in your inbox.</p>
+              <p style='margin:0;color:#9ca3af;'>First edition lands soon. Meanwhile, explore the latest on our hub.</p>
+            </div>
+            <div style='text-align:center;margin-top:24px;'>
+              <a href='{SITE_ORIGIN}/buzzfeed' style='display:inline-block;background:linear-gradient(90deg,#ec4899,#6366f1);padding:12px 20px;border-radius:999px;color:white;text-decoration:none;font-weight:600;'>Explore Buzzfeed Hub</a>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td style='text-align:center;padding:16px;color:#6b7280;font-size:12px;border-top:1px solid #1f2937;'>
+            You’re receiving this because you subscribed on ANIMAC. <a href='{SITE_ORIGIN}' style='color:#93c5fd;text-decoration:none;'>animac-metaverse</a>
+          </td>
+        </tr>
+      </table>
+    </div>
+    """
+
+def build_admin_notification_email(subscriber_email: str, source: str) -> str:
+    return f"""
+    <div style='font-family:Inter,Arial,sans-serif;color:#111'>
+      <h2 style='margin:0 0 8px;'>New Newsletter Subscriber</h2>
+      <p style='margin:0 0 4px;'>Email: <strong>{subscriber_email}</strong></p>
+      <p style='margin:0 0 4px;'>Source: {source}</p>
+      <p style='margin:0;'>Timestamp: {datetime.utcnow().isoformat()}Z</p>
+    </div>
+    """
+
+@app.post("/api/newsletter/subscribe", response_model=NewsletterSubscribeResponse)
+async def subscribe_newsletter(payload: NewsletterSubscribeRequest):
+    email = payload.email.strip().lower()
+    source = (payload.source or "footer").strip().lower()
+    try:
+        # Upsert into Supabase table 'newsletter_subscribers'
+        data = {
+            "email": email,
+            "source": source,
+            "created_at": datetime.utcnow().isoformat(),
+        }
+        # Ensure table exists in Supabase with a unique constraint on email
+        supabase.table("newsletter_subscribers").upsert(data, on_conflict="email").execute()
+
+        # Send admin notification
+        send_email(
+            subject="ANIMAC: New newsletter subscriber",
+            to_email=ADMIN_EMAIL,
+            html_content=build_admin_notification_email(email, source),
+            text_content=f"New subscriber: {email} (source: {source})",
+        )
+
+        # Send user welcome email
+        send_email(
+            subject="Welcome to ANIMAC • You’re in!",
+            to_email=email,
+            html_content=build_user_welcome_email(email),
+            text_content="Welcome to ANIMAC! You're officially subscribed.",
+        )
+
+        return NewsletterSubscribeResponse(status="ok", message="Subscribed successfully")
+    except Exception as e:
+        logging.error("❌ Newsletter subscribe failed", exc_info=True)
+        raise HTTPException(status_code=500, detail="Subscription failed")
