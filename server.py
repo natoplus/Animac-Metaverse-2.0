@@ -7,10 +7,12 @@ from typing import List, Optional
 from datetime import datetime
 import os
 from dotenv import load_dotenv
+from routes.interactions import router as interactions_router
 import uuid
 import logging
 import smtplib
 from email.message import EmailMessage
+import resend
 
 # ---------- Load Env ----------
 load_dotenv()
@@ -28,6 +30,9 @@ logging.basicConfig(level=logging.INFO)
 
 # ---------- FastAPI App ----------
 app = FastAPI(title="ANIMAC API")
+
+# Mount routers
+app.include_router(interactions_router)
 
 # ---------- CORS ----------
 app.add_middleware(
@@ -560,52 +565,56 @@ if __name__ == "__main__":
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_SSL_PORT = int(os.getenv("SMTP_SSL_PORT", "465"))
-SMTP_USER = os.getenv("SMTP_USER")  # e.g., your Gmail address
-SMTP_PASS = os.getenv("SMTP_PASS")  # e.g., App Password
-SMTP_FROM = os.getenv("SMTP_FROM")  # optional branded from, must be authorized in provider
+SMTP_USER = os.getenv("SMTP_USER")
+SMTP_PASS = os.getenv("SMTP_PASS")
+SMTP_FROM = os.getenv("SMTP_FROM")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "iconanimac@gmail.com")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 SITE_ORIGIN = os.getenv("SITE_ORIGIN", "https://animac-metaverse.vercel.app")
 
 def send_email(subject: str, to_email: str, html_content: str, text_content: Optional[str] = None, from_email: Optional[str] = None, reply_to: Optional[str] = None):
-    if not (SMTP_USER and SMTP_PASS):
-        logging.warning("SMTP credentials not configured; skipping email send")
-        return False
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    sender = from_email or SMTP_FROM or SMTP_USER
-    # Branded From if provided
-    if "@" in sender and sender != SMTP_USER:
-        # Gmail may reject unauthorized from; fall back to SMTP_USER but set reply-to
-        msg["From"] = f"ANIMAC Metaverse <{SMTP_USER}>"
-        msg["Reply-To"] = sender
-    else:
-        msg["From"] = f"ANIMAC Metaverse <{sender}>"
-    msg["To"] = to_email
-    if reply_to:
-        msg["Reply-To"] = reply_to
-    msg.set_content(text_content or "")
-    msg.add_alternative(html_content, subtype="html")
+    # Prefer Resend API if key is provided
+    if RESEND_API_KEY:
+        try:
+            resend.api_key = RESEND_API_KEY
+            sender = from_email or SMTP_FROM or "no-reply@animac-metaverse.vercel.app"
+            params = {
+                "from": f"ANIMAC Metaverse <{sender}>",
+                "to": [to_email],
+                "subject": subject,
+                "html": html_content,
+            }
+            if text_content:
+                params["text"] = text_content
+            if reply_to:
+                params["reply_to"] = [reply_to]
+            resend.Emails.send(params)
+            return True
+        except Exception:
+            logging.error("Resend email send failed", exc_info=True)
+            return False
 
-    # Try STARTTLS first
+    # Fallback to SMTP if no RESEND_API_KEY
+    if not (SMTP_USER and SMTP_PASS):
+        logging.warning("No email provider configured; skipping send")
+        return False
     try:
         with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
-            server.ehlo()
             server.starttls()
-            server.ehlo()
             server.login(SMTP_USER, SMTP_PASS)
+            msg = EmailMessage()
+            msg["Subject"] = subject
+            msg["From"] = from_email or SMTP_FROM or SMTP_USER
+            msg["To"] = to_email
+            if reply_to:
+                msg["Reply-To"] = reply_to
+            msg.set_content(text_content or "")
+            msg.add_alternative(html_content, subtype="html")
             server.send_message(msg)
             return True
-    except Exception as e_starttls:
-        logging.error("SMTP STARTTLS send failed", exc_info=True)
-        # Fallback to SSL
-        try:
-            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_SSL_PORT, timeout=20) as server:
-                server.login(SMTP_USER, SMTP_PASS)
-                server.send_message(msg)
-                return True
-        except Exception as e_ssl:
-            logging.error("SMTP SSL send failed", exc_info=True)
-            return False
+    except Exception:
+        logging.error("SMTP send failed", exc_info=True)
+        return False
 
 def build_user_welcome_email(subscriber_email: str) -> str:
     hero_image = f"{SITE_ORIGIN}/assets/animac-preview-logo.svg"
