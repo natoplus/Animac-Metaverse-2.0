@@ -47,6 +47,7 @@ const ArticlePage = () => {
 
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [shared, setShared] = useState(false);
   const [copied, setCopied] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [bookmarkCount, setBookmarkCount] = useState(0);
@@ -70,8 +71,10 @@ const ArticlePage = () => {
         const status = await getArticleStatus(data.id, getSessionId());
         setLiked(!!status.liked);
         setBookmarked(!!status.bookmarked);
+        setShared(!!status.shared);
       } catch (e) {
         // Non-blocking; proceed without session status
+        console.log('Could not fetch session status:', e.message);
       }
 
       // Fetch related articles
@@ -112,12 +115,14 @@ const ArticlePage = () => {
       setCopied(true);
       // Count share once per session via backend
       try {
-        if (article?.id) {
+        if (article?.id && !shared) {
           await shareArticle(article.id, getSessionId());
           setShareCount(prev => prev + 1);
+          setShared(true);
         }
       } catch (e) {
         // Already shared for this session; ignore
+        console.log('Share already counted for this session');
       }
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -247,14 +252,43 @@ const ArticlePage = () => {
               </div>
 
               <div className="flex flex-wrap gap-4 mb-10 text-gray-300">
-                <button onClick={handleLike} disabled={likeProcessing} aria-label="Like Article" className="flex items-center gap-1 hover:text-pink-500">
-                  <Heart size={18} /> {liked ? 'Liked' : 'Like'} ({likeCount})
+                <button 
+                  onClick={handleLike} 
+                  disabled={likeProcessing} 
+                  aria-label="Like Article" 
+                  className={`flex items-center gap-1 transition-colors duration-200 ${
+                    liked 
+                      ? 'text-pink-500 bg-pink-500/20 border border-pink-500/30 px-3 py-1 rounded-full' 
+                      : 'hover:text-pink-500'
+                  }`}
+                >
+                  <Heart size={18} fill={liked ? 'currentColor' : 'none'} /> 
+                  {liked ? 'Liked' : 'Like'} ({likeCount})
                 </button>
-                <button onClick={handleBookmark} disabled={bookmarkProcessing} aria-label="Bookmark Article" className="flex items-center gap-1 hover:text-yellow-400">
-                  <Bookmark size={18} /> {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
+                <button 
+                  onClick={handleBookmark} 
+                  disabled={bookmarkProcessing} 
+                  aria-label="Bookmark Article" 
+                  className={`flex items-center gap-1 transition-colors duration-200 ${
+                    bookmarked 
+                      ? 'text-yellow-400 bg-yellow-400/20 border border-yellow-400/30 px-3 py-1 rounded-full' 
+                      : 'hover:text-yellow-400'
+                  }`}
+                >
+                  <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} /> 
+                  {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
                 </button>
-                <button onClick={handleCopyLink} aria-label="Share Article" className="flex items-center gap-1 hover:text-blue-400">
-                  <Share2 size={18} /> {copied ? 'Copied' : 'Share'} ({shareCount})
+                <button 
+                  onClick={handleCopyLink} 
+                  aria-label="Share Article" 
+                  className={`flex items-center gap-1 transition-colors duration-200 ${
+                    shared 
+                      ? 'text-blue-400 bg-blue-400/20 border border-blue-400/30 px-3 py-1 rounded-full' 
+                      : 'hover:text-blue-400'
+                  }`}
+                >
+                  <Share2 size={18} fill={shared ? 'currentColor' : 'none'} /> 
+                  {copied ? 'Copied' : shared ? 'Shared' : 'Share'} ({shareCount})
                 </button>
               </div>
             </div>
