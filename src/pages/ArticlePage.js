@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 import CommentSection from '../components/CommentSection';
-import { toggleLikeArticle, toggleBookmarkArticle } from '../services/articleService';
+import { toggleLikeArticle, toggleBookmarkArticle, getArticleStatus, shareArticle } from '../services/articleService';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
@@ -61,11 +61,18 @@ const ArticlePage = () => {
       const res = await axios.get(`${API_URL}/api/articles/${slug}`);
       const data = res.data;
       setArticle(data);
-      setLiked(!!data.likedByCurrentUser);
-      setBookmarked(!!data.bookmarkedByCurrentUser);
       setLikeCount(data.likes ?? 0);
       setBookmarkCount(data.bookmarks ?? 0);
       setShareCount(data.shares ?? 0);
+
+      // Fetch session-specific status
+      try {
+        const status = await getArticleStatus(data.id, getSessionId());
+        setLiked(!!status.liked);
+        setBookmarked(!!status.bookmarked);
+      } catch (e) {
+        // Non-blocking; proceed without session status
+      }
 
       // Fetch related articles
       const relRes = await axios.get(`${API_URL}/api/articles`, {
@@ -103,7 +110,15 @@ const ArticlePage = () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
-      setShareCount(prev => prev + 1);
+      // Count share once per session via backend
+      try {
+        if (article?.id) {
+          await shareArticle(article.id, getSessionId());
+          setShareCount(prev => prev + 1);
+        }
+      } catch (e) {
+        // Already shared for this session; ignore
+      }
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy link:', err);
@@ -118,7 +133,7 @@ const ArticlePage = () => {
     setLiked(newLiked);
     setLikeCount(prev => newLiked ? prev + 1 : Math.max(prev - 1, 0));
     try {
-      await toggleLikeArticle(article.id, getSessionId());
+      await toggleLikeArticle(article.id, getSessionId(), liked);
     } catch (err) {
       console.error(err);
     } finally {
@@ -134,7 +149,7 @@ const ArticlePage = () => {
     setBookmarked(newState);
     setBookmarkCount(prev => newState ? prev + 1 : Math.max(prev - 1, 0));
     try {
-      await toggleBookmarkArticle(article.id, getSessionId());
+      await toggleBookmarkArticle(article.id, getSessionId(), bookmarked);
     } catch (err) {
       console.error(err);
     } finally {
