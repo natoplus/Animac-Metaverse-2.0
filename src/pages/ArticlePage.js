@@ -117,8 +117,12 @@ const ArticlePage = () => {
       try {
         if (article?.id && !shared) {
           await shareArticle(article.id, getSessionId());
-          setShareCount(prev => prev + 1);
           setShared(true);
+          // Refresh the article data to get updated counts from server
+          const res = await axios.get(`${API_URL}/api/articles/${article.slug}`);
+          setLikeCount(res.data.likes ?? 0);
+          setBookmarkCount(res.data.bookmarks ?? 0);
+          setShareCount(res.data.shares ?? 0);
         }
       } catch (e) {
         // Already shared for this session; ignore
@@ -139,8 +143,16 @@ const ArticlePage = () => {
     setLikeCount(prev => newLiked ? prev + 1 : Math.max(prev - 1, 0));
     try {
       await toggleLikeArticle(article.id, getSessionId(), liked);
+      // Refresh the article data to get updated counts from server
+      const res = await axios.get(`${API_URL}/api/articles/${article.slug}`);
+      setLikeCount(res.data.likes ?? 0);
+      setBookmarkCount(res.data.bookmarks ?? 0);
+      setShareCount(res.data.shares ?? 0);
     } catch (err) {
-      console.error(err);
+      console.error('Error toggling like:', err);
+      // Revert optimistic update on error
+      setLiked(!newLiked);
+      setLikeCount(prev => newLiked ? Math.max(prev - 1, 0) : prev + 1);
     } finally {
       setLikeProcessing(false);
     }
@@ -155,8 +167,16 @@ const ArticlePage = () => {
     setBookmarkCount(prev => newState ? prev + 1 : Math.max(prev - 1, 0));
     try {
       await toggleBookmarkArticle(article.id, getSessionId(), bookmarked);
+      // Refresh the article data to get updated counts from server
+      const res = await axios.get(`${API_URL}/api/articles/${article.slug}`);
+      setLikeCount(res.data.likes ?? 0);
+      setBookmarkCount(res.data.bookmarks ?? 0);
+      setShareCount(res.data.shares ?? 0);
     } catch (err) {
-      console.error(err);
+      console.error('Error toggling bookmark:', err);
+      // Revert optimistic update on error
+      setBookmarked(!newState);
+      setBookmarkCount(prev => newState ? Math.max(prev - 1, 0) : prev + 1);
     } finally {
       setBookmarkProcessing(false);
     }
