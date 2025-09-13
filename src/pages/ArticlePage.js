@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 import CommentSection from '../components/CommentSection';
-import { toggleLikeArticle, toggleBookmarkArticle, getArticleStatus, shareArticle } from '../services/articleService';
+import { likeArticle, unlikeArticle, bookmarkArticle, unbookmarkArticle, getArticleStatus, shareArticle } from '../services/articleService';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
@@ -146,7 +146,12 @@ const ArticlePage = () => {
     setLikeProcessing(true);
     
     try {
-      await toggleLikeArticle(article.id, getSessionId(), liked);
+      if (liked) {
+        await unlikeArticle(article.id, getSessionId());
+      } else {
+        await likeArticle(article.id, getSessionId());
+      }
+      
       // Refresh the article data to get updated counts and status from server
       const res = await axios.get(`${API_URL}/api/articles/${article.slug}`);
       const status = await getArticleStatus(article.id, getSessionId());
@@ -170,7 +175,12 @@ const ArticlePage = () => {
     setBookmarkProcessing(true);
     
     try {
-      await toggleBookmarkArticle(article.id, getSessionId(), bookmarked);
+      if (bookmarked) {
+        await unbookmarkArticle(article.id, getSessionId());
+      } else {
+        await bookmarkArticle(article.id, getSessionId());
+      }
+      
       // Refresh the article data to get updated counts and status from server
       const res = await axios.get(`${API_URL}/api/articles/${article.slug}`);
       const status = await getArticleStatus(article.id, getSessionId());
@@ -286,10 +296,10 @@ const ArticlePage = () => {
                     liked 
                       ? 'text-pink-500 bg-pink-500/20 border border-pink-500/30 px-3 py-1 rounded-full' 
                       : 'hover:text-pink-500'
-                  } ${likeProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  }`}
                 >
                   <Heart size={18} fill={liked ? 'currentColor' : 'none'} /> 
-                  {likeProcessing ? 'Processing...' : liked ? 'Liked' : 'Like'} ({likeCount})
+                  {liked ? 'Liked' : 'Like'} ({likeCount})
                 </button>
                 <button 
                   onClick={handleBookmark} 
@@ -299,10 +309,10 @@ const ArticlePage = () => {
                     bookmarked 
                       ? 'text-yellow-400 bg-yellow-400/20 border border-yellow-400/30 px-3 py-1 rounded-full' 
                       : 'hover:text-yellow-400'
-                  } ${bookmarkProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  }`}
                 >
                   <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} /> 
-                  {bookmarkProcessing ? 'Processing...' : bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
+                  {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
                 </button>
                 <button 
                   onClick={handleCopyLink} 
