@@ -113,21 +113,27 @@ const ArticlePage = () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
       setCopied(true);
+      
       // Count share once per session via backend
-      try {
-        if (article?.id && !shared) {
+      if (article?.id && !shared) {
+        try {
           await shareArticle(article.id, getSessionId());
-          setShared(true);
-          // Refresh the article data to get updated counts from server
+          // Refresh the article data to get updated counts and status from server
           const res = await axios.get(`${API_URL}/api/articles/${article.slug}`);
+          const status = await getArticleStatus(article.id, getSessionId());
+          
           setLikeCount(res.data.likes ?? 0);
           setBookmarkCount(res.data.bookmarks ?? 0);
           setShareCount(res.data.shares ?? 0);
+          setLiked(!!status.liked);
+          setBookmarked(!!status.bookmarked);
+          setShared(!!status.shared);
+        } catch (e) {
+          // Already shared for this session; ignore
+          console.log('Share already counted for this session');
         }
-      } catch (e) {
-        // Already shared for this session; ignore
-        console.log('Share already counted for this session');
       }
+      
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy link:', err);
@@ -138,21 +144,21 @@ const ArticlePage = () => {
   const handleLike = async () => {
     if (!article?.id || likeProcessing) return;
     setLikeProcessing(true);
-    const newLiked = !liked;
-    setLiked(newLiked);
-    setLikeCount(prev => newLiked ? prev + 1 : Math.max(prev - 1, 0));
+    
     try {
       await toggleLikeArticle(article.id, getSessionId(), liked);
-      // Refresh the article data to get updated counts from server
+      // Refresh the article data to get updated counts and status from server
       const res = await axios.get(`${API_URL}/api/articles/${article.slug}`);
+      const status = await getArticleStatus(article.id, getSessionId());
+      
       setLikeCount(res.data.likes ?? 0);
       setBookmarkCount(res.data.bookmarks ?? 0);
       setShareCount(res.data.shares ?? 0);
+      setLiked(!!status.liked);
+      setBookmarked(!!status.bookmarked);
+      setShared(!!status.shared);
     } catch (err) {
       console.error('Error toggling like:', err);
-      // Revert optimistic update on error
-      setLiked(!newLiked);
-      setLikeCount(prev => newLiked ? Math.max(prev - 1, 0) : prev + 1);
     } finally {
       setLikeProcessing(false);
     }
@@ -162,21 +168,21 @@ const ArticlePage = () => {
   const handleBookmark = async () => {
     if (!article?.id || bookmarkProcessing) return;
     setBookmarkProcessing(true);
-    const newState = !bookmarked;
-    setBookmarked(newState);
-    setBookmarkCount(prev => newState ? prev + 1 : Math.max(prev - 1, 0));
+    
     try {
       await toggleBookmarkArticle(article.id, getSessionId(), bookmarked);
-      // Refresh the article data to get updated counts from server
+      // Refresh the article data to get updated counts and status from server
       const res = await axios.get(`${API_URL}/api/articles/${article.slug}`);
+      const status = await getArticleStatus(article.id, getSessionId());
+      
       setLikeCount(res.data.likes ?? 0);
       setBookmarkCount(res.data.bookmarks ?? 0);
       setShareCount(res.data.shares ?? 0);
+      setLiked(!!status.liked);
+      setBookmarked(!!status.bookmarked);
+      setShared(!!status.shared);
     } catch (err) {
       console.error('Error toggling bookmark:', err);
-      // Revert optimistic update on error
-      setBookmarked(!newState);
-      setBookmarkCount(prev => newState ? Math.max(prev - 1, 0) : prev + 1);
     } finally {
       setBookmarkProcessing(false);
     }
@@ -280,10 +286,10 @@ const ArticlePage = () => {
                     liked 
                       ? 'text-pink-500 bg-pink-500/20 border border-pink-500/30 px-3 py-1 rounded-full' 
                       : 'hover:text-pink-500'
-                  }`}
+                  } ${likeProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <Heart size={18} fill={liked ? 'currentColor' : 'none'} /> 
-                  {liked ? 'Liked' : 'Like'} ({likeCount})
+                  {likeProcessing ? 'Processing...' : liked ? 'Liked' : 'Like'} ({likeCount})
                 </button>
                 <button 
                   onClick={handleBookmark} 
@@ -293,10 +299,10 @@ const ArticlePage = () => {
                     bookmarked 
                       ? 'text-yellow-400 bg-yellow-400/20 border border-yellow-400/30 px-3 py-1 rounded-full' 
                       : 'hover:text-yellow-400'
-                  }`}
+                  } ${bookmarkProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   <Bookmark size={18} fill={bookmarked ? 'currentColor' : 'none'} /> 
-                  {bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
+                  {bookmarkProcessing ? 'Processing...' : bookmarked ? 'Bookmarked' : 'Bookmark'} ({bookmarkCount})
                 </button>
                 <button 
                   onClick={handleCopyLink} 
