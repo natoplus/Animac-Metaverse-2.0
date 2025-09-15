@@ -65,10 +65,10 @@ const Footer = () => {
               {/* Social Media Links */}
               <div className="flex space-x-4">
                 {[
-                  { icon: XIcon, href: '#', label: 'x' },
-                  { icon: Instagram, href: '#', label: 'Instagram' },
-                  { icon: Facebook, href: '#', label: 'Facebook' },
-                  { icon: Mail, href: '#', label: 'Email' }
+                  { icon: XIcon, href: 'https://x.com/Animac_Official?t=TVShBCQ6mbL-85Q5TFv02A&s=09', label: 'x' },
+                  { icon: Instagram, href: 'https://www.instagram.com/animacbuzzfeed?igsh=b2d6aHdlN2RnMXBw', label: 'Instagram' },
+                  { icon: Facebook, href: 'https://www.facebook.com/share/16J2CHYuEW/', label: 'Facebook' },
+                  { icon: Mail, href: 'iconanimac@gmail.com', label: 'Email' }
                 ].map(({ icon: Icon, href, label }) => (
                   <motion.a
                     key={label}
