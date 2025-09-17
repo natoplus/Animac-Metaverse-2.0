@@ -118,7 +118,7 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
           >
             <Link to={`/article/${article.slug}`}>
               <div
-                className={`netflix-card bg-netflix-dark rounded-lg overflow-hidden border ${theme.card} transition-all duration-300`}
+                className={`netflix-card bg-netflix-dark rounded-lg overflow-hidden border ${theme.card} transition-all duration-300 h-[500px] flex flex-col`}
               >
                 {/* Article Image */}
                 <div className="relative h-48 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
@@ -134,8 +134,8 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
                         {category === 'east'
                           ? 'EAST'
                           : category === 'west'
-                          ? 'WEST'
-                          : 'ANIMAC'}
+                            ? 'WEST'
+                            : 'ANIMAC'}
                       </div>
                     </div>
                   )}
@@ -147,8 +147,8 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
                     {category === 'east'
                       ? 'ANIME'
                       : category === 'west'
-                      ? 'MOVIES & CARTOONS'
-                      : 'FEATURED'}
+                        ? 'MOVIES & CARTOONS'
+                        : 'FEATURED'}
                   </div>
 
                   {/* Gradient Overlay */}
@@ -156,51 +156,56 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
                 </div>
 
                 {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-montserrat font-semibold text-lg mb-2 text-white line-clamp-2 leading-tight">
-                    {article.title}
-                  </h3>
+                <div className="p-4 flex flex-col justify-between flex-1">
+                  <div>
+                    <h3 className="font-montserrat font-semibold text-lg mb-2 text-white line-clamp-2 leading-tight">
+                      {article.title}
+                    </h3>
 
-                  <p className="text-gray-400 text-sm mb-3 line-clamp-3 font-inter leading-relaxed">
-                    {article.excerpt}
-                  </p>
-
-                  {/* Article Meta */}
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center space-x-3">
-                      <span className="flex items-center space-x-1">
-                        <User size={12} />
-                        <span>{article.author}</span>
-                      </span>
-                      <span className="flex items-center space-x-1">
-                        <Clock size={12} />
-                        <span>{article.read_time} min read</span>
-                      </span>
-                    </div>
-
-                    {article.is_featured && (
-                      <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs border border-yellow-500/30">
-                        Featured
-                      </span>
-                    )}
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-3 font-inter leading-relaxed">
+                      {article.excerpt}
+                    </p>
                   </div>
 
-                  {/* Tags */}
-                  {article.tags && article.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-3">
-                      {article.tags.slice(0, 3).map((tag, tagIndex) => (
-                        <span
-                          key={tagIndex}
-                          className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 transition-colors"
-                        >
-                          #{tag}
+                  {/* Article Meta */}
+                  <div className="mt-auto">
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <div className="flex items-center space-x-3">
+                        <span className="flex items-center space-x-1">
+                          <User size={12} />
+                          <span>{article.author}</span>
                         </span>
-                      ))}
+                        <span className="flex items-center space-x-1">
+                          <Clock size={12} />
+                          <span>{article.read_time} min read</span>
+                        </span>
+                      </div>
+
+                      {article.is_featured && (
+                        <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs border border-yellow-500/30">
+                          Featured
+                        </span>
+                      )}
                     </div>
-                  )}
+
+                    {/* Tags */}
+                    {article.tags && article.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {article.tags.slice(0, 3).map((tag, tagIndex) => (
+                          <span
+                            key={tagIndex}
+                            className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 transition-colors"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </Link>
+
           </motion.div>
         ))}
       </div>
