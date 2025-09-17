@@ -118,7 +118,7 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
           >
             <Link to={`/article/${article.slug}`}>
               <div
-                className={`netflix-card bg-netflix-dark rounded-lg overflow-hidden border ${theme.card} transition-all duration-300 h-[500px] flex flex-col`}
+                className={`netflix-card bg-netflix-dark rounded-lg overflow-hidden border ${theme.card} transition-all duration-300 h-[400px] flex flex-col`}
               >
                 {/* Article Image */}
                 <div className="relative h-48 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
