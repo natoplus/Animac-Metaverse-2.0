@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Clock, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import TagsToggle from "./TagsToggle";
+
 
 const ContentRow = ({ title, articles, category = 'neutral' }) => {
   const scrollRef = useRef(null);
@@ -162,9 +164,10 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
                       {article.title}
                     </h3>
 
-                    <p className="text-gray-400 text-sm mb-3 line-clamp-3 font-inter leading-relaxed">
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-4 font-inter leading-relaxed">
                       {article.excerpt}
                     </p>
+
                   </div>
 
                   {/* Article Meta */}
@@ -190,16 +193,7 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
 
                     {/* Tags */}
                     {article.tags && article.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-3">
-                        {article.tags.slice(0, 3).map((tag, tagIndex) => (
-                          <span
-                            key={tagIndex}
-                            className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 transition-colors"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
+                      <TagsToggle tags={article.tags} />
                     )}
                   </div>
                 </div>
