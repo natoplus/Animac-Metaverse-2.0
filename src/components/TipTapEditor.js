@@ -4,6 +4,8 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Highlight from "@tiptap/extension-highlight";
+import TextStyle from '@tiptap/extension-text-style';
+import Color from '@tiptap/extension-color';
 import Underline from "@tiptap/extension-underline";
 import { TextAlign } from '@tiptap/extension-text-align';
 import { CustomImage } from "./CustomImage";
@@ -44,7 +46,9 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>", onUpdate }, ref) 
     extensions: [
       StarterKit,
       Underline,
-      Highlight,
+      Highlight.configure({ multicolor: true }),
+      TextStyle,
+      Color,
       CustomImage,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Link.configure({ openOnClick: true }),
@@ -68,7 +72,7 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>", onUpdate }, ref) 
   }, [initialContent, editor]);
 
   const addImage = useCallback(() => {
-    const url = window.prompt("Paste Imgur Image URL (direct .jpg/.png/.webp):");
+    const url = window.prompt("Paste image or GIF URL (direct .jpg/.png/.webp/.gif):");
     if (!url) return;
     const looksLikeImage = /\.(jpg|jpeg|png|webp|gif|svg)(\?.*)?$/i.test(url);
     if (!looksLikeImage && !window.confirm("This URL does not look like a direct image. Insert anyway?")) return;
@@ -93,7 +97,18 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>", onUpdate }, ref) 
         <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={`p-2 rounded ${editor.isActive("underline") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><UnderlineIcon size={14} /></button>
         <button type="button" onClick={() => editor.chain().focus().toggleStrike().run()} className={`p-2 rounded ${editor.isActive("strike") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><Strikethrough size={14} /></button>
         <button type="button" onClick={() => editor.chain().focus().toggleCode().run()} className={`p-2 rounded ${editor.isActive("code") ? "bg-zinc-700" : "hover:bg-zinc-800"}`}><CodeIcon size={14} /></button>
-        <button type="button" onClick={() => editor.chain().focus().toggleHighlight().run()} className={`p-2 rounded ${editor.isActive("highlight") ? "bg-yellow-600 text-black" : "hover:bg-zinc-800"}`}><Type size={14} /></button>
+        {/* Highlight color variants */}
+        <div className="flex items-center gap-1">
+          <button type="button" onClick={() => editor.chain().focus().toggleHighlight().run()} className={`p-2 rounded ${editor.isActive("highlight") ? "bg-yellow-600 text-black" : "hover:bg-zinc-800"}`} title="Toggle Highlight"><Type size={14} /></button>
+          {['#fde047','#fca5a5','#86efac','#93c5fd','#a78bfa'].map((c) => (
+            <button key={c} type="button" onClick={() => editor.chain().focus().setHighlight({ color: c }).run()} className="w-5 h-5 rounded" style={{ backgroundColor: c }} title="Highlight color" />
+          ))}
+          {/* Text color similar to link-style emphasis */}
+          {['#f59e0b','#ef4444','#10b981','#3b82f6','#8b5cf6'].map((c) => (
+            <button key={`fg-${c}`} type="button" onClick={() => editor.chain().focus().setColor(c).run()} className="w-5 h-5 rounded ring-1 ring-zinc-700" style={{ backgroundColor: c }} title="Text color" />
+          ))}
+          <button type="button" onClick={() => editor.chain().focus().unsetColor().run()} className="px-2 py-1 text-xs rounded hover:bg-zinc-800" title="Clear text color">Clear</button>
+        </div>
 
         {/* Headings */}
         <div className="border-l border-zinc-800 ml-2 pl-2 flex items-center gap-2">

@@ -193,7 +193,13 @@ const ContentRow = ({ title, articles, category = 'neutral' }) => {
 
                     {/* Tags */}
                     {article.tags && article.tags.length > 0 && (
-                      <TagsToggle tags={article.tags} />
+                      <TagsToggle
+                        tags={article.tags}
+                        onTagClick={(tag) => {
+                          // Prevent navigation and just toggle/show tags
+                          // You can also navigate to a tag page here if desired
+                        }}
+                      />
                     )}
                   </div>
                 </div>

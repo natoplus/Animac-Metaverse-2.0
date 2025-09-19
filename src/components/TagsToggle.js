@@ -2,14 +2,14 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Tag } from "lucide-react";
 
-function TagsToggle({ tags }) {
+function TagsToggle({ tags, onTagClick }) {
   const [showTags, setShowTags] = useState(false);
 
   return (
     <div className="mt-3">
       {/* Toggle Button */}
       <button
-        onClick={() => setShowTags(!showTags)}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTags(!showTags); }}
         className="flex items-center text-xs text-gray-400 hover:text-white transition-colors"
       >
         <motion.div
@@ -33,12 +33,13 @@ function TagsToggle({ tags }) {
           >
             <div className="flex flex-wrap gap-1 mt-2">
               {tags.slice(0, 10).map((tag, tagIndex) => (
-                <span
+                <button
                   key={tagIndex}
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTagClick && onTagClick(tag); }}
                   className="text-xs px-2 py-1 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 transition-colors"
                 >
                   #{tag}
-                </span>
+                </button>
               ))}
             </div>
           </motion.div>

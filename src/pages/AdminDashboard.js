@@ -21,6 +21,7 @@ export default function AdminDashboard() {
     title: "",
     excerpt: "",
     category: "",
+    author: "",
     tags: [],
     featured_image: "",
     content: "",
@@ -53,6 +54,7 @@ export default function AdminDashboard() {
       title: "",
       excerpt: "",
       category: "",
+      author: "",
       tags: [],
       featured_image: "",
       content: "",
@@ -69,6 +71,7 @@ export default function AdminDashboard() {
       title: article.title,
       excerpt: article.excerpt || "",
       category: article.category || "",
+      author: article.author || "",
       tags: article.tags || [],
       featured_image: article.featured_image || "",
       content: article.content || "",
@@ -91,6 +94,8 @@ export default function AdminDashboard() {
     const content = editorRef.current?.getHTML() || "";
     const payload = {
       ...articleForm,
+      // Default author if not provided
+      author: (articleForm.author && articleForm.author.trim()) ? articleForm.author.trim() : "ANIMAC",
       content,
     };
     if (selectedArticle) {
@@ -195,6 +200,12 @@ export default function AdminDashboard() {
                 placeholder="Category"
                 value={articleForm.category}
                 onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
+                className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
+              />
+              <Input
+                placeholder="Author (defaults to ANIMAC if empty)"
+                value={articleForm.author}
+                onChange={(e) => setArticleForm({ ...articleForm, author: e.target.value })}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <div className="flex gap-2 mb-3 flex-wrap">
