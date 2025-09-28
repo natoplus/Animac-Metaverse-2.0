@@ -18,6 +18,7 @@
 // -----------------------------------------------------------------------------
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { anilistQuery, jikanRequest, tmdbRequest, traktRequest } from "../utils/apiProxy";
 import { createPortal } from "react-dom";
 import { useSwipeable } from "react-swipeable";
 import { motion, AnimatePresence } from "framer-motion";
@@ -151,17 +152,16 @@ const PLACEHOLDER = {
 // -----------------------------------------------------------------------------
 // REAL API FETCHING
 // -----------------------------------------------------------------------------
-const TMDB_BASE = 'https://api.themoviedb.org/3';
+// Using proxy functions from apiProxy.js instead of direct API calls
 const TMDB_IMG_ORIGIN = 'https://image.tmdb.org/t/p';
 const TMDB_KEY = process.env.REACT_APP_TMDB_API_KEY; // <-- supply via .env
 
-const TRAKT_BASE = 'https://api.trakt.tv';
+// Using proxy functions from apiProxy.js instead of direct API calls
 const TRAKT_KEY = process.env.REACT_APP_TRAKT_KEY; // <-- supply via .env
 
 const GIPHY_KEY = process.env.REACT_APP_GIPHY_KEY; // <-- supply via .env
 
-const ANILIST_GRAPHQL = 'https://graphql.anilist.co';
-const JIKAN_BASE = 'https://api.jikan.moe/v4';
+// Using proxy functions from apiProxy.js instead of direct API calls
 
 if (!TMDB_KEY) console.warn('[WatchTower] Missing REACT_APP_TMDB_KEY');
 if (!TRAKT_KEY) console.warn('[WatchTower] Missing REACT_APP_TRAKT_KEY');
@@ -173,16 +173,7 @@ async function safeFetch(url, options) {
 }
 
 // ---------------- AniList (GraphQL) ----------------
-async function anilistQuery(query, variables) {
-  const res = await fetch(ANILIST_GRAPHQL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ query, variables }),
-  });
-  const json = await res.json();
-  if (json.errors) throw new Error('AniList GraphQL error');
-  return json.data;
-}
+// Using proxy function from apiProxy.js
 
 const GQL_TRENDING = `
 query ($page:Int,$perPage:Int){
@@ -289,15 +280,15 @@ function mapJikanAnime(a) {
 }
 
 async function fetchJikanTrending() {
-  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=20`);
+  const json = await jikanRequest('top/anime?limit=20');
   return (json?.data || []).map(mapJikanAnime);
 }
 async function fetchJikanUpcoming() {
-  const json = await safeFetch(`${JIKAN_BASE}/seasons/upcoming?limit=24`);
+  const json = await jikanRequest('seasons/upcoming?limit=24');
   return (json?.data || []).map(mapJikanAnime);
 }
 async function fetchJikanTop() {
-  const json = await safeFetch(`${JIKAN_BASE}/top/anime?limit=24`);
+  const json = await jikanRequest('top/anime?limit=24');
   return (json?.data || []).map(mapJikanAnime);
 }
 
@@ -324,11 +315,14 @@ function mapTMDBItem(r) {
 }
 
 async function fetchTMDB(endpoint, params = {}) {
-  const url = new URL(`${TMDB_BASE}${endpoint}`);
-  url.searchParams.set('api_key', TMDB_KEY || '');
-  url.searchParams.set('language', 'en-US');
-  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
-  return safeFetch(url.toString());
+  // Build query string for params
+  const queryString = new URLSearchParams({
+    language: 'en-US',
+    ...params
+  }).toString();
+  
+  const fullPath = queryString ? `${endpoint}?${queryString}` : endpoint;
+  return tmdbRequest(fullPath);
 }
 
 async function fetchTMDBTrending() {
@@ -366,18 +360,13 @@ async function fetchTMDBTrailer(tmdbId, type) {
 }
 
 // ---------------- Trakt (REST) ----------------
-const traktHeaders = {
-  'Content-Type': 'application/json',
-  'trakt-api-key': TRAKT_KEY || '',
-  'trakt-api-version': '2',
-};
+// Headers are handled by the proxy server
 
 async function trakt(path, params) {
-  const url = new URL(`${TRAKT_BASE}${path}`);
-  if (params) Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  const res = await fetch(url.toString(), { headers: traktHeaders });
-  if (!res.ok) throw new Error(`Trakt ${res.status}`);
-  return res.json();
+  // Build query string for params
+  const queryString = params ? new URLSearchParams(params).toString() : '';
+  const fullPath = queryString ? `${path}?${queryString}` : path;
+  return traktRequest(fullPath);
 }
 
 function mapTraktMovie(item) {
