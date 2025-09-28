@@ -129,41 +129,19 @@ const WatchTowerPreview = () => {
 
 // Featured Article Card Component
 const FeaturedArticleCard = ({ article, isMain = false }) => {
-  const getThemeClasses = (category) => {
-    switch (category) {
-      case 'east':
-        return {
-          badge: 'bg-east-500/20 text-east-300 border-east-500/30',
-          glow: 'hover-glow-east',
-          border: 'border-east-500/20 hover:border-east-500/60'
-        };
-      case 'west':
-        return {
-          badge: 'bg-west-500/20 text-west-300 border-west-500/30',
-          glow: 'hover-glow-west',
-          border: 'border-west-500/20 hover:border-west-500/60'
-        };
-      default:
-        return {
-          badge: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
-          glow: 'hover:border-gray-500/60',
-          border: 'border-gray-700/20'
-        };
-    }
-  };
-
-  const theme = getThemeClasses(article.category);
-
+  if (!article) return null;
+  
   return (
-    <Link to={`/article/${article.slug}`}>
-      <motion.div
-        whileHover={{ scale: 1.02 }}
-        className={`relative overflow-hidden rounded-lg border ${theme.border} ${theme.glow} transition-all duration-300 ${
-          isMain ? 'h-96' : 'h-64'
-        }`}
-      >
-        {/* Background Image */}
-        <div className="absolute inset-0">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className={`netflix-card bg-netflix-dark rounded-lg overflow-hidden border border-gray-700/20 hover:border-gray-500/60 transition-all duration-300 ${
+        isMain ? 'h-80' : 'h-64'
+      } flex flex-col`}
+    >
+      <Link to={`/article/${article.slug}`}>
+        <div className="relative h-32 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
           {article.featured_image ? (
             <img
               src={article.featured_image}
@@ -171,30 +149,31 @@ const FeaturedArticleCard = ({ article, isMain = false }) => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
-              <div className="text-gray-500 text-2xl font-azonix opacity-30">
-                {article.category === 'east' ? 'EAST' : article.category === 'west' ? 'WEST' : 'ANIMAC'}
-              </div>
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-gray-500 text-lg font-azonix opacity-30">ANIMAC</div>
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          {isMain && (
+            <div className="absolute top-3 left-3">
+              <span className="bg-red-500/20 text-red-400 px-2 py-1 rounded text-xs border border-red-500/30">
+                Featured
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Content */}
-        <div className="relative z-10 p-6 h-full flex flex-col justify-end">
-          <div className={`inline-block px-3 py-1 rounded-full text-xs font-inter font-semibold mb-3 ${theme.badge} border`}>
-            {article.category === 'east' ? 'ANIME' : article.category === 'west' ? 'MOVIES & CARTOONS' : 'FEATURED'}
+        <div className="p-4 flex flex-col justify-between flex-1">
+          <div>
+            <h3 className="font-montserrat font-semibold text-lg mb-2 text-white line-clamp-2">
+              {article.title}
+            </h3>
+            <p className="text-gray-400 text-sm mb-3 line-clamp-2 font-inter">
+              {article.excerpt}
+            </p>
           </div>
-          
-          <h3 className={`font-montserrat font-bold text-white mb-2 ${isMain ? 'text-2xl' : 'text-lg'} line-clamp-2`}>
-            {article.title}
-          </h3>
-          
-          <p className="text-gray-300 text-sm mb-3 line-clamp-3">
-            {article.excerpt}
-          </p>
-          
-          <div className="flex items-center justify-between text-xs text-gray-400">
+
+          <div className="flex items-center justify-between text-xs text-gray-500">
             <div className="flex items-center space-x-3">
               <span className="flex items-center space-x-1">
                 <Users size={12} />
@@ -202,18 +181,51 @@ const FeaturedArticleCard = ({ article, isMain = false }) => {
               </span>
               <span className="flex items-center space-x-1">
                 <Clock size={12} />
-                <span>{article.read_time} min read</span>
+                <span>{article.read_time} min</span>
               </span>
             </div>
-            {article.is_featured && (
-              <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs border border-yellow-500/30">
-                Featured
-              </span>
-            )}
           </div>
         </div>
-      </motion.div>
-    </Link>
+      </Link>
+    </motion.div>
+  );
+};
+
+// Newsletter Signup Component
+const NewsletterSignup = () => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-12"
+    >
+      <div className="max-w-4xl mx-auto bg-gradient-to-br from-east-800 to-west-800 rounded-2xl p-8 text-center">
+        <div className="flex items-center justify-center mb-6">
+          <div className="p-3 rounded-lg bg-black/50 border border-gray-500/30 mr-4">
+            <Mail size={24} className="text-gray-300" />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-azonix font-bold text-white">
+            Join Our Community
+          </h2>
+        </div>
+        
+        <p className="text-gray-300 text-lg mb-6">
+          Stay updated with the latest anime and entertainment news, exclusive content, and community discussions.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            className="flex-1 px-4 py-3 bg-black/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-east-500"
+          />
+          <button className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white rounded-lg font-semibold hover:from-east-600 hover:to-west-600 transition-all duration-300">
+            Subscribe
+          </button>
+        </div>
+      </div>
+    </motion.div>
   );
 };
 
@@ -379,61 +391,6 @@ const ListsRankings = ({ articles }) => {
   );
 };
 
-// Newsletter Component
-const NewsletterSignup = () => {
-  const [email, setEmail] = useState('');
-  const [isSubscribed, setIsSubscribed] = useState(false);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Handle newsletter subscription
-    setIsSubscribed(true);
-    setTimeout(() => setIsSubscribed(false), 3000);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6 }}
-      className="max-w-4xl mx-auto bg-gradient-to-br from-east-800 to-west-800 rounded-2xl p-8 shadow-lg text-center mb-12"
-    >
-      <div className="flex items-center justify-center mb-6">
-        <div className="p-3 rounded-lg bg-white/10 mr-4">
-          <Mail size={24} className="text-white" />
-        </div>
-        <h3 className="text-3xl md:text-4xl font-bold font-azonix text-white">
-          Stay in the Loop
-        </h3>
-      </div>
-      
-      <p className="text-gray-300 text-lg mb-6 max-w-2xl mx-auto">
-        Get the latest anime and entertainment news delivered straight to your inbox. 
-        Join our community of passionate fans and never miss a story.
-      </p>
-
-      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter your email"
-          className="flex-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-east-500"
-          required
-        />
-        <motion.button
-          type="submit"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="px-6 py-3 bg-gradient-to-r from-east-600 to-west-600 text-white font-semibold rounded-lg hover:from-east-700 hover:to-west-700 transition-all duration-300"
-        >
-          {isSubscribed ? 'Subscribed!' : 'Subscribe'}
-        </motion.button>
-      </form>
-    </motion.div>
-  );
-};
-
 // Resource Hub Component
 const ResourceHub = () => {
   const resources = [
@@ -529,24 +486,6 @@ const Home = () => {
     testBackend();
   }, []);
 
-  // Get trending articles (most liked/bookmarked)
-  const trendingArticles = allArticles
-    .sort((a, b) => (b.likes || 0) + (b.bookmarks || 0) - (a.likes || 0) - (a.bookmarks || 0))
-    .slice(0, 8);
-
-  // Get latest articles
-  const latestArticles = allArticles
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .slice(0, 12);
-
-  // Get editorial picks (featured articles)
-  const editorialPicks = allArticles.filter(article => article.is_featured).slice(0, 6);
-
-  // Get list-style articles (articles with "list", "top", "best" in title)
-  const listArticles = allArticles.filter(article => 
-    /list|top|best|ranking|countdown/i.test(article.title)
-  ).slice(0, 4);
-
   return (
     <>
       <SEO
@@ -564,12 +503,114 @@ const Home = () => {
         transition={{ duration: 0.5 }}
         className="min-h-screen bg-black text-white"
       >
+        <HeroSection featuredContent={featuredContent} />
+
+        {/* === Buzzfeed Ticker === */}
+        <div className="bg-gradient-to-r from-east-500 to-west-500 py-2 overflow-hidden mb-8 mt-8">
+          <div className="whitespace-nowrap animate-marquee text-sm md:text-base font-semibold font-mono uppercase">
+            {allArticles.slice(0, 10).map((article, i) => (
+              <span key={i} className="mx-6">📰 {article.title}</span>
+            ))}
+            {allArticles.slice(0, 10).map((article, i) => (
+              <span key={`dup-${i}`} className="mx-6">📰 {article.title}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative z-10 -mt-32 pt-32 bg-gradient-to-t from-netflix-black to-transparent">
+          <div className="container mx-auto space-y-24">
+            <ContentRow
+              title="This Week in Anime"
+              articles={eastArticles}
+              category="east"
+              emptyMessage="No eastern articles found yet."
+            />
+
+            <ContentRow
+              title="Movies & Cartoons Spotlight"
+              articles={westArticles}
+              category="west"
+              emptyMessage="No western articles found yet."
+            />
+
+            <ContentRow
+              title="🔥 Trending Now"
+              articles={allArticles.filter((a) => a.is_featured)}
+              category="neutral"
+              emptyMessage="No featured stories available."
+            />
+
+            <ContentRow
+              title="⭐ Editor's Choice"
+              articles={allArticles.slice(0, 8)}
+              category="neutral"
+              emptyMessage="No editor picks at the moment."
+            />
+
+            <div className="max-w-5xl mx-auto bg-gradient-to-br from-east-800 to-west-800 rounded-2xl p-10 shadow-lg text-center">
+              <h3 className="text-3xl md:text-5xl font-bold font-azonix bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-yellow-500 mb-4">
+                🌟 Spotlight Creator
+              </h3>
+              <p className="text-gray-300 text-lg mb-6">
+                Meet <span className="font-bold">Amari Tenshi</span>, creator of <i>"Sky Reapers."</i>
+              </p>
+              <motion.a
+                href="/creator/amari-tenshi"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-block px-8 py-3 bg-gradient-to-r from-pink-600 to-yellow-500 text-white rounded-lg font-semibold"
+              >
+                Read the Interview →
+              </motion.a>
+            </div>
+
+            {/* WatchTower Preview with Live Data */}
+            <WatchTowerPreview />
+
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.6 }}
+              className="py-16 px-4"
+            >
+              <div className="max-w-4xl mx-auto text-center">
+                <h2 className="font-azonix text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent">
+                  Dive Deeper into BUZZFEED
+                </h2>
+                <p className="text-xl text-gray-300 font-inter mb-8 leading-relaxed">
+                  Explore our dedicated portals for anime culture and western entertainment. Choose your journey and discover stories that resonate with your passion.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                  <motion.a
+                    href="/buzzfeed/east"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-east-600 to-east-500 text-white font-montserrat font-semibold rounded-lg hover:from-east-700 hover:to-east-600 transition-all duration-300 hover-glow-east"
+                  >
+                    Explore EAST Portal <span className="ml-2 text-lg">→</span>
+                  </motion.a>
+
+                  <motion.a
+                    href="/buzzfeed/west"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-west-600 to-west-500 text-white font-montserrat font-semibold rounded-lg hover:from-west-700 hover:to-west-600 transition-all duration-300 hover-glow-west"
+                  >
+                    Explore WEST Portal <span className="ml-2 text-lg">→</span>
+                  </motion.a>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* === NEW MAGAZINE-STYLE SECTIONS === */}
+        
         {/* 1. Hero Section - Featured Spotlight */}
         <section className="relative">
-          <HeroSection featuredContent={featuredContent} />
-          
           {/* Featured Articles Grid Below Hero */}
-          <div className="relative z-10 -mt-32 pt-32 bg-gradient-to-t from-netflix-black to-transparent">
+          <div className="relative z-10 bg-gradient-to-t from-netflix-black to-transparent">
             <div className="container mx-auto px-4 mb-16">
               <motion.div
                 initial={{ opacity: 0, y: 50 }}
@@ -605,17 +646,12 @@ const Home = () => {
             <div className="text-center py-12">
               <div className="text-red-400">Error loading articles: {allError}</div>
             </div>
-          ) : trendingArticles.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">No articles found in the database.</div>
-              <div className="text-sm text-gray-500">
-                Articles will appear here once they are published.
-              </div>
-            </div>
           ) : (
             <ContentRow
               title="🔥 Trending Now"
-              articles={trendingArticles}
+              articles={allArticles
+                .sort((a, b) => (b.likes || 0) + (b.bookmarks || 0) - (a.likes || 0) - (a.bookmarks || 0))
+                .slice(0, 8)}
               category="neutral"
               emptyMessage="No trending articles yet."
             />
@@ -640,7 +676,10 @@ const Home = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {latestArticles.slice(0, 9).map((article, index) => (
+              {allArticles
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+                .slice(0, 9)
+                .map((article, index) => (
                 <motion.div
                   key={article.id || index}
                   initial={{ opacity: 0, y: 20 }}
@@ -750,7 +789,7 @@ const Home = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {editorialPicks.map((article, index) => (
+              {allArticles.filter(article => article.is_featured).slice(0, 6).map((article, index) => (
                 <motion.div
                   key={article.id || index}
                   initial={{ opacity: 0, y: 20 }}
@@ -814,7 +853,9 @@ const Home = () => {
 
         {/* 6. Lists & Rankings */}
         <section className="container mx-auto px-4 mb-16">
-          <ListsRankings articles={listArticles} />
+          <ListsRankings articles={allArticles.filter(article => 
+            /list|top|best|ranking|countdown/i.test(article.title)
+          ).slice(0, 4)} />
         </section>
 
         {/* 7. Resource Hub */}
@@ -825,50 +866,6 @@ const Home = () => {
         {/* 8. Newsletter / Community Join */}
         <section className="container mx-auto px-4 mb-16">
           <NewsletterSignup />
-        </section>
-
-        {/* 9. WatchTower Preview */}
-        <section className="container mx-auto px-4 mb-16">
-          <WatchTowerPreview />
-        </section>
-
-        {/* 10. Portal Links */}
-        <section className="container mx-auto px-4 mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-            className="py-16 px-4"
-          >
-            <div className="max-w-4xl mx-auto text-center">
-              <h2 className="font-azonix text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent">
-                Dive Deeper into BUZZFEED
-              </h2>
-              <p className="text-xl text-gray-300 font-inter mb-8 leading-relaxed">
-                Explore our dedicated portals for anime culture and western entertainment. Choose your journey and discover stories that resonate with your passion.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                <motion.a
-                  href="/buzzfeed/east"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-east-600 to-east-500 text-white font-montserrat font-semibold rounded-lg hover:from-east-700 hover:to-east-600 transition-all duration-300 hover-glow-east"
-                >
-                  Explore EAST Portal <span className="ml-2 text-lg">→</span>
-                </motion.a>
-
-                <motion.a
-                  href="/buzzfeed/west"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-west-600 to-west-500 text-white font-montserrat font-semibold rounded-lg hover:from-west-700 hover:to-west-600 transition-all duration-300 hover-glow-west"
-                >
-                  Explore WEST Portal <span className="ml-2 text-lg">→</span>
-                </motion.a>
-              </div>
-            </div>
-          </motion.div>
         </section>
       </motion.div>
     </>
