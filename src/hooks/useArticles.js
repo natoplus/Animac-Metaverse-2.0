@@ -53,9 +53,7 @@ export const useArticles = (
  * Hook to fetch featured articles and categorize them
  */
 export const useFeaturedContent = () => {
-  const [eastArticles, setEastArticles] = useState([]);
-  const [westArticles, setWestArticles] = useState([]);
-  const [allArticles, setAllArticles] = useState([]);
+  const [featuredContent, setFeaturedContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -71,23 +69,34 @@ export const useFeaturedContent = () => {
           return;
         }
 
-        const validArticles = Array.isArray(response)
-          ? response.filter((a) => a && typeof a === "object")
-          : [];
+        // The backend returns { hero: { east, west }, recent_content: { east: [], west: [] } }
+        // We need to create a flat array of featured articles for the hero section
+        const featuredArticles = [];
+        
+        if (response?.hero?.east) {
+          featuredArticles.push({ ...response.hero.east, category: 'east' });
+        }
+        if (response?.hero?.west) {
+          featuredArticles.push({ ...response.hero.west, category: 'west' });
+        }
+        
+        // Add some recent content as fallback if no hero articles
+        if (featuredArticles.length === 0) {
+          const recentEast = response?.recent_content?.east || [];
+          const recentWest = response?.recent_content?.west || [];
+          
+          if (recentEast.length > 0) {
+            featuredArticles.push({ ...recentEast[0], category: 'east' });
+          }
+          if (recentWest.length > 0) {
+            featuredArticles.push({ ...recentWest[0], category: 'west' });
+          }
+        }
 
-        const east = validArticles.filter(
-          (article) => article?.region?.toLowerCase() === "east"
-        );
-        const west = validArticles.filter(
-          (article) => article?.region?.toLowerCase() === "west"
-        );
-
-        setEastArticles(east);
-        setWestArticles(west);
-        setAllArticles(validArticles);
+        setFeaturedContent(featuredArticles);
         setError(null);
 
-        console.log("🌟 Featured content received:", validArticles);
+        console.log("🌟 Featured content received:", featuredArticles);
       } catch (err) {
         console.error("🚨 Error loading featured content:", err.message);
         setError("Failed to fetch featured content.");
@@ -100,9 +109,7 @@ export const useFeaturedContent = () => {
   }, []);
 
   return {
-    eastArticles,
-    westArticles,
-    allArticles,
+    featuredContent,
     loading,
     error,
   };

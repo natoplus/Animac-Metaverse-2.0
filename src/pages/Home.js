@@ -492,9 +492,42 @@ const ResourceHub = () => {
 // === Main Home Page ===
 const Home = () => {
   const { featuredContent } = useFeaturedContent();
-  const { articles: eastArticles } = useArticles('east');
-  const { articles: westArticles } = useArticles('west');
-  const { articles: allArticles } = useArticles();
+  const { articles: eastArticles, loading: eastLoading, error: eastError } = useArticles('east');
+  const { articles: westArticles, loading: westLoading, error: westError } = useArticles('west');
+  const { articles: allArticles, loading: allLoading, error: allError } = useArticles();
+
+  // Debug logging
+  console.log('🏠 Home component data:', {
+    featuredContent,
+    eastArticles: eastArticles?.length || 0,
+    westArticles: westArticles?.length || 0,
+    allArticles: allArticles?.length || 0,
+    eastLoading,
+    westLoading,
+    allLoading,
+    eastError,
+    westError,
+    allError
+  });
+
+  // If no articles are loaded, show a message
+  if (!allLoading && allArticles.length === 0 && !allError) {
+    console.log('⚠️ No articles found in database');
+  }
+
+  // Test backend connectivity
+  useEffect(() => {
+    const testBackend = async () => {
+      try {
+        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com'}/api/health`);
+        const data = await response.json();
+        console.log('🔗 Backend health check:', data);
+      } catch (err) {
+        console.error('❌ Backend connection failed:', err);
+      }
+    };
+    testBackend();
+  }, []);
 
   // Get trending articles (most liked/bookmarked)
   const trendingArticles = allArticles
@@ -564,12 +597,29 @@ const Home = () => {
 
         {/* 2. Trending / Popular Now */}
         <section className="container mx-auto px-4 mb-16">
-          <ContentRow
-            title="🔥 Trending Now"
-            articles={trendingArticles}
-            category="neutral"
-            emptyMessage="No trending articles yet."
-          />
+          {allLoading ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400">Loading trending articles...</div>
+            </div>
+          ) : allError ? (
+            <div className="text-center py-12">
+              <div className="text-red-400">Error loading articles: {allError}</div>
+            </div>
+          ) : trendingArticles.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">No articles found in the database.</div>
+              <div className="text-sm text-gray-500">
+                Articles will appear here once they are published.
+              </div>
+            </div>
+          ) : (
+            <ContentRow
+              title="🔥 Trending Now"
+              articles={trendingArticles}
+              category="neutral"
+              emptyMessage="No trending articles yet."
+            />
+          )}
         </section>
 
         {/* 3. Latest News / Updates */}
@@ -652,19 +702,34 @@ const Home = () => {
 
         {/* 4. Categories Showcase */}
         <section className="container mx-auto px-4 mb-16">
-          <CategoryShowcase
-            title="Anime & Manga"
-            articles={eastArticles}
-            category="east"
-            icon={BookOpen}
-          />
-          
-          <CategoryShowcase
-            title="Movies & TV"
-            articles={westArticles}
-            category="west"
-            icon={Star}
-          />
+          {eastLoading || westLoading ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400">Loading categories...</div>
+            </div>
+          ) : (eastArticles.length === 0 && westArticles.length === 0) ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">No articles found in any category.</div>
+              <div className="text-sm text-gray-500">
+                Create some articles in the admin dashboard to see them here.
+              </div>
+            </div>
+          ) : (
+            <>
+              <CategoryShowcase
+                title="Anime & Manga"
+                articles={eastArticles}
+                category="east"
+                icon={BookOpen}
+              />
+              
+              <CategoryShowcase
+                title="Movies & TV"
+                articles={westArticles}
+                category="west"
+                icon={Star}
+              />
+            </>
+          )}
         </section>
 
         {/* 5. Editorial Picks / Opinion Pieces */}
