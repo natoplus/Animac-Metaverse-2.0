@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Facebook, XIcon, Instagram, Mail } from 'lucide-react';
+import { Facebook, XIcon, Instagram, Mail, Hash, TrendingUp, Users, BookOpen } from 'lucide-react';
 import NewsletterModal from './NewsletterModal'; // import the modal
 const API_URL = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
 
@@ -18,29 +18,46 @@ const Footer = () => {
   const footerLinks = {
     Company: [
       { label: 'About ANIMAC', path: '/about' },
-      { label: 'Terms & Agreement', path: 'https://www.termsfeed.com/live/078404e4-889d-453b-ac6c-fc3458d9394c' },
-      { label: 'Careers', path: '#' },
-      { label: 'Press Kit', path: '/press-kit' }
+      { label: 'Contact', path: 'https://forms.gle/FHkorLKUmybNVu5j8' },
+      { label: 'Careers', path: '/careers' },
+      { label: 'Press Kit', path: '/press-kit' },
+      { label: 'Advertise', path: '#' }
     ],
     Content: [
       { label: 'BUZZFEED Hub', path: '/buzzfeed' },
       { label: 'EAST Portal', path: '/buzzfeed/east' },
       { label: 'WEST Portal', path: '/buzzfeed/west' },
+      { label: 'WatchTower', path: '/watch-tower' },
       { label: 'Submit Article', path: 'https://forms.gle/yLHrENNdyCDpVtkdA' }
     ],
     Community: [
       { label: 'Linktree', path: '#' },
       { label: 'Reddit', path: '#' },
       { label: 'Newsletter', path: 'https://animac-metaverse-buzzfeed.kit.com/621519eebb' },
-      { label: 'Contact Us', path: 'https://forms.gle/FHkorLKUmybNVu5j8' }
+      { label: 'Discord', path: '#' },
+      { label: 'Support', path: '#' }
+    ],
+    Policies: [
+      { label: 'Privacy Policy', path: '#' },
+      { label: 'Terms of Service', path: 'https://www.termsfeed.com/live/078404e4-889d-453b-ac6c-fc3458d9394c' },
+      { label: 'Cookie Policy', path: '#' },
+      { label: 'Content Guidelines', path: '#' },
+      { label: 'DMCA', path: '#' }
     ]
   };
+
+  // Popular tags for tag cloud
+  const popularTags = [
+    'Anime', 'Manga', 'Movies', 'TV Shows', 'Cartoons', 'Reviews', 'News', 
+    'Analysis', 'Opinion', 'Lists', 'Rankings', 'Spotlight', 'Trending', 
+    'Entertainment', 'Culture', 'Streaming', 'Netflix', 'Disney', 'Studio Ghibli'
+  ];
 
   return (
     <footer className="bg-gradient-to-t from-black to-netflix-dark mt-20 relative">
       <div className="container mx-auto px-4 py-16">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <motion.div
@@ -114,6 +131,38 @@ const Footer = () => {
           ))}
         </div>
 
+        {/* Tag Cloud Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="border-t border-gray-800 pt-8 mb-8"
+        >
+          <div className="flex items-center mb-6">
+            <div className="p-2 rounded-lg bg-gradient-to-r from-east-500 to-west-500 mr-3">
+              <Hash size={20} className="text-white" />
+            </div>
+            <h3 className="font-azonix text-xl text-white">
+              Most Discussed Topics
+            </h3>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            {popularTags.map((tag, index) => (
+              <motion.span
+                key={tag}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+                whileHover={{ scale: 1.05 }}
+                className="px-3 py-1 bg-gray-800 text-gray-300 rounded-full text-sm font-inter hover:bg-gray-700 hover:text-white transition-all duration-300 cursor-pointer"
+              >
+                #{tag}
+              </motion.span>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Newsletter Signup */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -183,25 +232,16 @@ const Footer = () => {
           className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0"
         >
           <div className="text-gray-400 font-inter text-sm">
-            © {currentYear} ANIMAC. All rights reserved.
+            © {currentYear} ANIMAC. All rights reserved. | Streaming Culture. Streaming Stories.
           </div>
 
-          <div className="flex space-x-6 text-sm">
-            {[
-              'Privacy Policy',
-              'Terms of Service',
-              'Cookie Policy',
-              'Content Guidelines'
-            ].map((item, index) => (
-              <Link
-                key={index}
-                to="#"
-                aria-label={item}
-                className="text-gray-400 hover:text-white font-inter transition-colors duration-300"
-              >
-                {item}
-              </Link>
-            ))}
+          <div className="flex items-center space-x-4 text-sm text-gray-400">
+            <span className="flex items-center space-x-1">
+              <TrendingUp size={16} />
+              <span>Powered by passion</span>
+            </span>
+            <span>•</span>
+            <span>Made with ❤️ for the community</span>
           </div>
         </motion.div>
       </div>

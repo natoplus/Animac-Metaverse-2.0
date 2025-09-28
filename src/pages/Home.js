@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
+import { TrendingUp, Clock, Star, Users, BookOpen, List, ExternalLink, Mail, Hash } from 'lucide-react';
 import SEO from "../components/SEO";
 import HeroSection from '../components/HeroSection';
 import ContentRow from '../components/ContentRow';
@@ -123,12 +125,394 @@ const WatchTowerPreview = () => {
   );
 };
 
+// === Magazine-Style Components ===
+
+// Featured Article Card Component
+const FeaturedArticleCard = ({ article, isMain = false }) => {
+  const getThemeClasses = (category) => {
+    switch (category) {
+      case 'east':
+        return {
+          badge: 'bg-east-500/20 text-east-300 border-east-500/30',
+          glow: 'hover-glow-east',
+          border: 'border-east-500/20 hover:border-east-500/60'
+        };
+      case 'west':
+        return {
+          badge: 'bg-west-500/20 text-west-300 border-west-500/30',
+          glow: 'hover-glow-west',
+          border: 'border-west-500/20 hover:border-west-500/60'
+        };
+      default:
+        return {
+          badge: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
+          glow: 'hover:border-gray-500/60',
+          border: 'border-gray-700/20'
+        };
+    }
+  };
+
+  const theme = getThemeClasses(article.category);
+
+  return (
+    <Link to={`/article/${article.slug}`}>
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        className={`relative overflow-hidden rounded-lg border ${theme.border} ${theme.glow} transition-all duration-300 ${
+          isMain ? 'h-96' : 'h-64'
+        }`}
+      >
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          {article.featured_image ? (
+            <img
+              src={article.featured_image}
+              alt={article.title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+              <div className="text-gray-500 text-2xl font-azonix opacity-30">
+                {article.category === 'east' ? 'EAST' : article.category === 'west' ? 'WEST' : 'ANIMAC'}
+              </div>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 p-6 h-full flex flex-col justify-end">
+          <div className={`inline-block px-3 py-1 rounded-full text-xs font-inter font-semibold mb-3 ${theme.badge} border`}>
+            {article.category === 'east' ? 'ANIME' : article.category === 'west' ? 'MOVIES & CARTOONS' : 'FEATURED'}
+          </div>
+          
+          <h3 className={`font-montserrat font-bold text-white mb-2 ${isMain ? 'text-2xl' : 'text-lg'} line-clamp-2`}>
+            {article.title}
+          </h3>
+          
+          <p className="text-gray-300 text-sm mb-3 line-clamp-3">
+            {article.excerpt}
+          </p>
+          
+          <div className="flex items-center justify-between text-xs text-gray-400">
+            <div className="flex items-center space-x-3">
+              <span className="flex items-center space-x-1">
+                <Users size={12} />
+                <span>{article.author}</span>
+              </span>
+              <span className="flex items-center space-x-1">
+                <Clock size={12} />
+                <span>{article.read_time} min read</span>
+              </span>
+            </div>
+            {article.is_featured && (
+              <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs border border-yellow-500/30">
+                Featured
+              </span>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </Link>
+  );
+};
+
+// Category Showcase Component
+const CategoryShowcase = ({ title, articles, category, icon: Icon }) => {
+  const getThemeClasses = () => {
+    switch (category) {
+      case 'east':
+        return {
+          title: 'text-east-400',
+          border: 'border-east-500/30',
+          card: 'hover-glow-east border-east-500/20 hover:border-east-500/60'
+        };
+      case 'west':
+        return {
+          title: 'text-west-400',
+          border: 'border-west-500/30',
+          card: 'hover-glow-west border-west-500/20 hover:border-west-500/60'
+        };
+      default:
+        return {
+          title: 'text-gray-300',
+          border: 'border-gray-500/30',
+          card: 'hover:border-gray-500/60 border-gray-700/20'
+        };
+    }
+  };
+
+  const theme = getThemeClasses();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-12"
+    >
+      <div className="flex items-center mb-6">
+        <div className={`p-3 rounded-lg bg-black/50 border ${theme.border} mr-4`}>
+          <Icon size={24} className={theme.title} />
+        </div>
+        <h2 className={`text-2xl md:text-3xl font-azonix font-bold ${theme.title}`}>
+          {title}
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {articles.slice(0, 6).map((article, index) => (
+          <motion.div
+            key={article.id || index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+          >
+            <Link to={`/article/${article.slug}`}>
+              <div className={`netflix-card bg-netflix-dark rounded-lg overflow-hidden border ${theme.card} transition-all duration-300 h-64 flex flex-col`}>
+                <div className="relative h-32 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+                  {article.featured_image ? (
+                    <img
+                      src={article.featured_image}
+                      alt={article.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-gray-500 text-lg font-azonix opacity-30">
+                        {category === 'east' ? 'EAST' : category === 'west' ? 'WEST' : 'ANIMAC'}
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                </div>
+
+                <div className="p-4 flex flex-col justify-between flex-1">
+                  <div>
+                    <h3 className="font-montserrat font-semibold text-lg mb-2 text-white line-clamp-2">
+                      {article.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-2 font-inter">
+                      {article.excerpt}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center space-x-3">
+                      <span className="flex items-center space-x-1">
+                        <Users size={12} />
+                        <span>{article.author}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <Clock size={12} />
+                        <span>{article.read_time} min</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Lists & Rankings Component
+const ListsRankings = ({ articles }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-12"
+    >
+      <div className="flex items-center mb-6">
+        <div className="p-3 rounded-lg bg-black/50 border border-gray-500/30 mr-4">
+          <List size={24} className="text-gray-300" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-azonix font-bold text-gray-300">
+          Lists & Rankings
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {articles.slice(0, 4).map((article, index) => (
+          <motion.div
+            key={article.id || index}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+          >
+            <Link to={`/article/${article.slug}`}>
+              <div className="netflix-card bg-netflix-dark rounded-lg overflow-hidden border border-gray-700/20 hover:border-gray-500/60 transition-all duration-300 p-6 flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-gradient-to-br from-east-500 to-west-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    {index + 1}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-montserrat font-semibold text-lg text-white mb-1 line-clamp-2">
+                    {article.title}
+                  </h3>
+                  <p className="text-gray-400 text-sm line-clamp-2">
+                    {article.excerpt}
+                  </p>
+                  <div className="flex items-center mt-2 text-xs text-gray-500">
+                    <span className="flex items-center space-x-1 mr-4">
+                      <Users size={12} />
+                      <span>{article.author}</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <Clock size={12} />
+                      <span>{article.read_time} min read</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Newsletter Component
+const NewsletterSignup = () => {
+  const [email, setEmail] = useState('');
+  const [isSubscribed, setIsSubscribed] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Handle newsletter subscription
+    setIsSubscribed(true);
+    setTimeout(() => setIsSubscribed(false), 3000);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="max-w-4xl mx-auto bg-gradient-to-br from-east-800 to-west-800 rounded-2xl p-8 shadow-lg text-center mb-12"
+    >
+      <div className="flex items-center justify-center mb-6">
+        <div className="p-3 rounded-lg bg-white/10 mr-4">
+          <Mail size={24} className="text-white" />
+        </div>
+        <h3 className="text-3xl md:text-4xl font-bold font-azonix text-white">
+          Stay in the Loop
+        </h3>
+      </div>
+      
+      <p className="text-gray-300 text-lg mb-6 max-w-2xl mx-auto">
+        Get the latest anime and entertainment news delivered straight to your inbox. 
+        Join our community of passionate fans and never miss a story.
+      </p>
+
+      <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Enter your email"
+          className="flex-1 px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-east-500"
+          required
+        />
+        <motion.button
+          type="submit"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="px-6 py-3 bg-gradient-to-r from-east-600 to-west-600 text-white font-semibold rounded-lg hover:from-east-700 hover:to-west-700 transition-all duration-300"
+        >
+          {isSubscribed ? 'Subscribed!' : 'Subscribe'}
+        </motion.button>
+      </form>
+    </motion.div>
+  );
+};
+
+// Resource Hub Component
+const ResourceHub = () => {
+  const resources = [
+    { name: 'Commission Site', url: '#', description: 'Get custom artwork' },
+    { name: 'Main Site', url: '#', description: 'Official website' },
+    { name: 'Documentation', url: '#', description: 'GitBook guides' },
+    { name: 'Community', url: '#', description: 'Join Soic community' },
+    { name: 'Support', url: '#', description: 'Get help & support' }
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-12"
+    >
+      <div className="flex items-center mb-6">
+        <div className="p-3 rounded-lg bg-black/50 border border-gray-500/30 mr-4">
+          <ExternalLink size={24} className="text-gray-300" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-azonix font-bold text-gray-300">
+          Resource Hub
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {resources.map((resource, index) => (
+          <motion.a
+            key={index}
+            href={resource.url}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+            whileHover={{ scale: 1.02 }}
+            className="netflix-card bg-netflix-dark rounded-lg p-6 border border-gray-700/20 hover:border-gray-500/60 transition-all duration-300 flex items-center space-x-4"
+          >
+            <div className="p-2 rounded-lg bg-gradient-to-br from-east-500 to-west-500">
+              <ExternalLink size={20} className="text-white" />
+            </div>
+            <div>
+              <h3 className="font-montserrat font-semibold text-white mb-1">
+                {resource.name}
+              </h3>
+              <p className="text-gray-400 text-sm">
+                {resource.description}
+              </p>
+            </div>
+          </motion.a>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
 // === Main Home Page ===
 const Home = () => {
   const { featuredContent } = useFeaturedContent();
   const { articles: eastArticles } = useArticles('east');
   const { articles: westArticles } = useArticles('west');
   const { articles: allArticles } = useArticles();
+
+  // Get trending articles (most liked/bookmarked)
+  const trendingArticles = allArticles
+    .sort((a, b) => (b.likes || 0) + (b.bookmarks || 0) - (a.likes || 0) - (a.bookmarks || 0))
+    .slice(0, 8);
+
+  // Get latest articles
+  const latestArticles = allArticles
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 12);
+
+  // Get editorial picks (featured articles)
+  const editorialPicks = allArticles.filter(article => article.is_featured).slice(0, 6);
+
+  // Get list-style articles (articles with "list", "top", "best" in title)
+  const listArticles = allArticles.filter(article => 
+    /list|top|best|ranking|countdown/i.test(article.title)
+  ).slice(0, 4);
 
   return (
     <>
@@ -147,107 +531,280 @@ const Home = () => {
         transition={{ duration: 0.5 }}
         className="min-h-screen bg-black text-white"
       >
-        <HeroSection featuredContent={featuredContent} />
-
-        {/* === Buzzfeed Ticker === */}
-        <div className="bg-gradient-to-r from-east-500 to-west-500 py-2 overflow-hidden mb-8 mt-8">
-          <div className="whitespace-nowrap animate-marquee text-sm md:text-base font-semibold font-mono uppercase">
-            {allArticles.slice(0, 10).map((article, i) => (
-              <span key={i} className="mx-6">📰 {article.title}</span>
-            ))}
-            {allArticles.slice(0, 10).map((article, i) => (
-              <span key={`dup-${i}`} className="mx-6">📰 {article.title}</span>
-            ))}
-          </div>
-        </div>
-
-        <div className="relative z-10 -mt-32 pt-32 bg-gradient-to-t from-netflix-black to-transparent">
-          <div className="container mx-auto space-y-24">
-            <ContentRow
-              title="This Week in Anime"
-              articles={eastArticles}
-              category="east"
-              emptyMessage="No eastern articles found yet."
-            />
-
-            <ContentRow
-              title="Movies & Cartoons Spotlight"
-              articles={westArticles}
-              category="west"
-              emptyMessage="No western articles found yet."
-            />
-
-            <ContentRow
-              title="🔥 Trending Now"
-              articles={allArticles.filter((a) => a.is_featured)}
-              category="neutral"
-              emptyMessage="No featured stories available."
-            />
-
-            <ContentRow
-              title="⭐ Editor's Choice"
-              articles={allArticles.slice(0, 8)}
-              category="neutral"
-              emptyMessage="No editor picks at the moment."
-            />
-
-            <div className="max-w-5xl mx-auto bg-gradient-to-br from-east-800 to-west-800 rounded-2xl p-10 shadow-lg text-center">
-              <h3 className="text-3xl md:text-5xl font-bold font-azonix bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-yellow-500 mb-4">
-                🌟 Spotlight Creator
-              </h3>
-              <p className="text-gray-300 text-lg mb-6">
-                Meet <span className="font-bold">Amari Tenshi</span>, creator of <i>"Sky Reapers."</i>
-              </p>
-              <motion.a
-                href="/creator/amari-tenshi"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="inline-block px-8 py-3 bg-gradient-to-r from-pink-600 to-yellow-500 text-white rounded-lg font-semibold"
+        {/* 1. Hero Section - Featured Spotlight */}
+        <section className="relative">
+          <HeroSection featuredContent={featuredContent} />
+          
+          {/* Featured Articles Grid Below Hero */}
+          <div className="relative z-10 -mt-32 pt-32 bg-gradient-to-t from-netflix-black to-transparent">
+            <div className="container mx-auto px-4 mb-16">
+              <motion.div
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
               >
-                Read the Interview →
-              </motion.a>
+                {/* Main Featured Article */}
+                {featuredContent && featuredContent[0] && (
+                  <div className="lg:col-span-2">
+                    <FeaturedArticleCard article={featuredContent[0]} isMain={true} />
+                  </div>
+                )}
+                
+                {/* Smaller Featured Articles */}
+                <div className="space-y-6">
+                  {featuredContent && featuredContent.slice(1, 3).map((article, index) => (
+                    <FeaturedArticleCard key={article.id || index} article={article} />
+                  ))}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
+        {/* 2. Trending / Popular Now */}
+        <section className="container mx-auto px-4 mb-16">
+          <ContentRow
+            title="🔥 Trending Now"
+            articles={trendingArticles}
+            category="neutral"
+            emptyMessage="No trending articles yet."
+          />
+        </section>
+
+        {/* 3. Latest News / Updates */}
+        <section className="container mx-auto px-4 mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-12"
+          >
+            <div className="flex items-center mb-6">
+              <div className="p-3 rounded-lg bg-black/50 border border-gray-500/30 mr-4">
+                <Clock size={24} className="text-gray-300" />
+              </div>
+              <h2 className="text-2xl md:text-3xl font-azonix font-bold text-gray-300">
+                Latest News & Updates
+              </h2>
             </div>
 
-            {/* WatchTower Preview with Live Data */}
-            <WatchTowerPreview />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {latestArticles.slice(0, 9).map((article, index) => (
+                <motion.div
+                  key={article.id || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                >
+                  <Link to={`/article/${article.slug}`}>
+                    <div className="netflix-card bg-netflix-dark rounded-lg overflow-hidden border border-gray-700/20 hover:border-gray-500/60 transition-all duration-300 h-64 flex flex-col">
+                      <div className="relative h-32 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+                        {article.featured_image ? (
+                          <img
+                            src={article.featured_image}
+                            alt={article.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-gray-500 text-lg font-azonix opacity-30">ANIMAC</div>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <div className="absolute top-3 left-3">
+                          <span className="bg-gray-500/20 text-gray-300 px-2 py-1 rounded text-xs border border-gray-500/30">
+                            {new Date(article.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8, duration: 0.6 }}
-              className="py-16 px-4"
-            >
-              <div className="max-w-4xl mx-auto text-center">
-                <h2 className="font-azonix text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent">
-                  Dive Deeper into BUZZFEED
-                </h2>
-                <p className="text-xl text-gray-300 font-inter mb-8 leading-relaxed">
-                  Explore our dedicated portals for anime culture and western entertainment. Choose your journey and discover stories that resonate with your passion.
-                </p>
+                      <div className="p-4 flex flex-col justify-between flex-1">
+                        <div>
+                          <h3 className="font-montserrat font-semibold text-lg mb-2 text-white line-clamp-2">
+                            {article.title}
+                          </h3>
+                          <p className="text-gray-400 text-sm mb-3 line-clamp-2 font-inter">
+                            {article.excerpt}
+                          </p>
+                        </div>
 
-                <div className="flex flex-col sm:flex-row gap-6 justify-center">
-                  <motion.a
-                    href="/buzzfeed/east"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-east-600 to-east-500 text-white font-montserrat font-semibold rounded-lg hover:from-east-700 hover:to-east-600 transition-all duration-300 hover-glow-east"
-                  >
-                    Explore EAST Portal <span className="ml-2 text-lg">→</span>
-                  </motion.a>
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <div className="flex items-center space-x-3">
+                            <span className="flex items-center space-x-1">
+                              <Users size={12} />
+                              <span>{article.author}</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <Clock size={12} />
+                              <span>{article.read_time} min</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </section>
 
-                  <motion.a
-                    href="/buzzfeed/west"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-west-600 to-west-500 text-white font-montserrat font-semibold rounded-lg hover:from-west-700 hover:to-west-600 transition-all duration-300 hover-glow-west"
-                  >
-                    Explore WEST Portal <span className="ml-2 text-lg">→</span>
-                  </motion.a>
-                </div>
+        {/* 4. Categories Showcase */}
+        <section className="container mx-auto px-4 mb-16">
+          <CategoryShowcase
+            title="Anime & Manga"
+            articles={eastArticles}
+            category="east"
+            icon={BookOpen}
+          />
+          
+          <CategoryShowcase
+            title="Movies & TV"
+            articles={westArticles}
+            category="west"
+            icon={Star}
+          />
+        </section>
+
+        {/* 5. Editorial Picks / Opinion Pieces */}
+        <section className="container mx-auto px-4 mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-12"
+          >
+            <div className="flex items-center mb-6">
+              <div className="p-3 rounded-lg bg-black/50 border border-yellow-500/30 mr-4">
+                <Star size={24} className="text-yellow-400" />
               </div>
-            </motion.div>
-          </div>
-        </div>
+              <h2 className="text-2xl md:text-3xl font-azonix font-bold text-yellow-400">
+                Editorial Picks
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {editorialPicks.map((article, index) => (
+                <motion.div
+                  key={article.id || index}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.5 }}
+                >
+                  <Link to={`/article/${article.slug}`}>
+                    <div className="netflix-card bg-netflix-dark rounded-lg overflow-hidden border border-yellow-500/20 hover:border-yellow-500/60 transition-all duration-300 h-80 flex flex-col relative">
+                      {/* Special Editorial Badge */}
+                      <div className="absolute top-3 right-3 z-10">
+                        <span className="bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded text-xs border border-yellow-500/30">
+                          Editor's Choice
+                        </span>
+                      </div>
+
+                      <div className="relative h-40 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+                        {article.featured_image ? (
+                          <img
+                            src={article.featured_image}
+                            alt={article.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-gray-500 text-lg font-azonix opacity-30">EDITORIAL</div>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      </div>
+
+                      <div className="p-4 flex flex-col justify-between flex-1">
+                        <div>
+                          <h3 className="font-montserrat font-semibold text-lg mb-2 text-white line-clamp-2">
+                            {article.title}
+                          </h3>
+                          <p className="text-gray-400 text-sm mb-3 line-clamp-3 font-inter">
+                            {article.excerpt}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <div className="flex items-center space-x-3">
+                            <span className="flex items-center space-x-1">
+                              <Users size={12} />
+                              <span>{article.author}</span>
+                            </span>
+                            <span className="flex items-center space-x-1">
+                              <Clock size={12} />
+                              <span>{article.read_time} min</span>
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </section>
+
+        {/* 6. Lists & Rankings */}
+        <section className="container mx-auto px-4 mb-16">
+          <ListsRankings articles={listArticles} />
+        </section>
+
+        {/* 7. Resource Hub */}
+        <section className="container mx-auto px-4 mb-16">
+          <ResourceHub />
+        </section>
+
+        {/* 8. Newsletter / Community Join */}
+        <section className="container mx-auto px-4 mb-16">
+          <NewsletterSignup />
+        </section>
+
+        {/* 9. WatchTower Preview */}
+        <section className="container mx-auto px-4 mb-16">
+          <WatchTowerPreview />
+        </section>
+
+        {/* 10. Portal Links */}
+        <section className="container mx-auto px-4 mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+            className="py-16 px-4"
+          >
+            <div className="max-w-4xl mx-auto text-center">
+              <h2 className="font-azonix text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent">
+                Dive Deeper into BUZZFEED
+              </h2>
+              <p className="text-xl text-gray-300 font-inter mb-8 leading-relaxed">
+                Explore our dedicated portals for anime culture and western entertainment. Choose your journey and discover stories that resonate with your passion.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-6 justify-center">
+                <motion.a
+                  href="/buzzfeed/east"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-east-600 to-east-500 text-white font-montserrat font-semibold rounded-lg hover:from-east-700 hover:to-east-600 transition-all duration-300 hover-glow-east"
+                >
+                  Explore EAST Portal <span className="ml-2 text-lg">→</span>
+                </motion.a>
+
+                <motion.a
+                  href="/buzzfeed/west"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-west-600 to-west-500 text-white font-montserrat font-semibold rounded-lg hover:from-west-700 hover:to-west-600 transition-all duration-300 hover-glow-west"
+                >
+                  Explore WEST Portal <span className="ml-2 text-lg">→</span>
+                </motion.a>
+              </div>
+            </div>
+          </motion.div>
+        </section>
       </motion.div>
     </>
   );
