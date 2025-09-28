@@ -34,10 +34,13 @@ api.interceptors.response.use(
 // ---------- Article Endpoints ----------
 export const fetchArticles = async (params = {}) => {
   try {
+    console.log('🔍 Fetching articles with params:', params);
     const res = await api.get('/api/articles', { params });
+    console.log('✅ Articles response:', res.data);
     return res.data || [];
   } catch (err) {
-    console.error('❌ Error fetching articles:', err.message);
+    console.error('❌ Error fetching articles:', err.response?.data || err.message);
+    console.error('❌ Full error:', err);
     return [];
   }
 };
@@ -115,10 +118,13 @@ export const fetchCategoryStats = async () => {
 
 export const fetchFeaturedContent = async () => {
   try {
+    console.log('🔍 Fetching featured content...');
     const res = await api.get('/api/featured-content');
+    console.log('✅ Featured content response:', res.data);
     return res.data || null;
   } catch (err) {
-    console.error('❌ Error fetching featured content:', err.message);
+    console.error('❌ Error fetching featured content:', err.response?.data || err.message);
+    console.error('❌ Full error:', err);
     return null;
   }
 };

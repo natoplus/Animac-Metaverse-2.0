@@ -19,12 +19,15 @@ export const useArticles = (
   useEffect(() => {
     const loadArticles = async () => {
       setLoading(true);
+      setError(null);
+      
       try {
         const params = { limit, skip };
         if (category) params.category = category;
         if (featured !== null) params.featured = featured;
         if (is_published !== null) params.is_published = is_published;
 
+        console.log(`🔍 Loading articles for category: ${category || 'all'}`);
         const result = await fetchArticles(params);
 
         if (result?.error) {
@@ -33,6 +36,7 @@ export const useArticles = (
         } else {
           setArticles(result || []);
           setError(null);
+          console.log(`✅ Loaded ${result?.length || 0} articles for category: ${category || 'all'}`);
         }
       } catch (err) {
         console.error("❌ Failed to fetch articles:", err);
@@ -43,7 +47,18 @@ export const useArticles = (
       }
     };
 
+    // Add timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn("⏰ Articles loading timeout - setting error");
+        setError("Request timeout - please check your connection");
+        setLoading(false);
+      }
+    }, 10000); // 10 second timeout
+
     loadArticles();
+
+    return () => clearTimeout(timeoutId);
   }, [category, featured, limit, skip, is_published]);
 
   return { articles, loading, error };
