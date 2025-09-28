@@ -6,13 +6,19 @@ export default async function handler(req, res) {
   try {
     const { query, variables } = req.body;
 
-    const response = await fetch("https://graphql.anilist.co", {
-      method: "POST",
+    // Forward to backend proxy
+    const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
+    const params = new URLSearchParams({
+      query: query,
+      variables: JSON.stringify(variables || {})
+    });
+
+    const response = await fetch(`${backendUrl}/api/proxy/anilist?${params}`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
-      body: JSON.stringify({ query, variables }),
     });
 
     const data = await response.json();

@@ -57,38 +57,47 @@ async function proxyFetch(path, { method = "GET", headers = {}, body, query } = 
 
 // ---------------- TMDB via Proxy ----------------
 export function fetchTMDB(endpoint, query = {}) {
-  return proxyFetch(`/tmdb${endpoint}`, {
-    query: { api_key: TMDB_KEY, language: "en-US", ...query },
-  });
+  const queryString = new URLSearchParams({
+    language: "en-US",
+    ...query
+  }).toString();
+  
+  const fullPath = queryString ? `${endpoint}?${queryString}` : endpoint;
+  return proxyFetch(`/api/proxy/tmdb/${fullPath}`, {});
 }
 
 // ---------------- Trakt via Proxy ----------------
 export function fetchTrakt(endpoint, query = {}) {
-  return proxyFetch(`/trakt${endpoint}`, {
-    headers: {
-      "Content-Type": "application/json",
-      "trakt-api-key": TRAKT_KEY,
-      "trakt-api-version": "2",
-    },
-    query,
-  });
+  const queryString = Object.entries(query)
+    .filter(([k, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&');
+  
+  const fullPath = queryString ? `${endpoint}?${queryString}` : endpoint;
+  return proxyFetch(`/api/proxy/trakt/${fullPath}`, {});
 }
 
-// ---------------- AniList (Direct API) ----------------
+// ---------------- AniList (Via Proxy) ----------------
 export async function fetchAniList(query, variables = {}) {
-  return fetchWithRetry("https://graphql.anilist.co", {
-    method: "POST",
+  const params = new URLSearchParams({
+    query: query,
+    variables: JSON.stringify(variables)
+  });
+  
+  return fetchWithRetry(`/api/proxy/anilist?${params}`, {
+    method: "GET",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ query, variables }),
   });
 }
 
-// ---------------- Jikan (Direct API) ----------------
+// ---------------- Jikan (Via Proxy) ----------------
 export async function fetchJikan(endpoint, query = {}) {
-  const url = new URL(`https://api.jikan.moe/v4${endpoint}`);
-  Object.entries(query).forEach(([k, v]) => {
-    if (v !== undefined && v !== null) url.searchParams.set(k, v);
-  });
-
-  return fetchWithRetry(url.toString(), { method: "GET" });
+  const queryString = Object.entries(query)
+    .filter(([k, v]) => v !== undefined && v !== null)
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&');
+  
+  const fullPath = queryString ? `${endpoint}?${queryString}` : endpoint;
+  
+  return fetchWithRetry(`/api/proxy/jikan/${fullPath}`, { method: "GET" });
 }
