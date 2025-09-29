@@ -5,8 +5,28 @@ import { Link } from 'react-router-dom';
 
 const HeroSection = ({ featuredContent }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showMoreInfo, setShowMoreInfo] = useState(false);
 
-  const heroSlides = featuredContent?.length > 0 ? featuredContent : [
+  // Transform featured articles to hero slides format
+  const transformToHeroSlides = (articles) => {
+    if (!articles || articles.length === 0) return [];
+    
+    return articles.map(article => ({
+      id: article.id,
+      title: article.title,
+      subtitle: article.author ? `By ${article.author}` : 'Featured Article',
+      description: article.excerpt || 'Discover the latest insights and stories from the world of anime and entertainment.',
+      category: article.category || 'neutral',
+      image: article.featured_image || 'https://via.placeholder.com/1920x1080/1a1a1a/ffffff?text=ANIMAC',
+      imageMobile: article.featured_image || 'https://via.placeholder.com/768x1024/1a1a1a/ffffff?text=ANIMAC',
+      link: `/article/${article.slug}`,
+      readTime: article.read_time || 5,
+      createdAt: article.created_at,
+      fullContent: article.content // Store full content for "More Info"
+    }));
+  };
+
+  const heroSlides = featuredContent?.length > 0 ? transformToHeroSlides(featuredContent) : [
     {
       id: 1,
       title: 'Attack on Titan Final Season',
@@ -17,8 +37,9 @@ const HeroSection = ({ featuredContent }) => {
       image:
         'https://occ-0-8407-2218.1.nflxso.net/dnm/api/v6/Z-WHgqd_TeJxSuha8aZ5WpyLcX8/AAAABfrlSgfIEw-hX0imXlnY3qlZQoHl7Sx1z4CVxkWNdRMltLiGO6lkciwA1XsDjZto2aQJP9X7ulUOHfspuCwAdhfCngH7SZzsPZZn.jpg?r=551',
       imageMobile:
-        'https://i.pinimg.com/736x/0f/06/2e/0f062e74d730cdc4b27922f6eefb9bed.jpg', // replace with portrait/mobile version
+        'https://i.pinimg.com/736x/0f/06/2e/0f062e74d730cdc4b27922f6eefb9bed.jpg',
       link: '/article/attack-on-titan',
+      readTime: 8,
     },
     {
       id: 2,
@@ -32,6 +53,7 @@ const HeroSection = ({ featuredContent }) => {
       imageMobile:
         'https://platform.theverge.com/wp-content/uploads/sites/2/chorus/uploads/chorus_asset/file/13572496/SpiderVerse_cropped.jpg?quality=90&strip=all&crop=0,0,100,100',
       link: '/article/spider-verse',
+      readTime: 6,
     },
     {
       id: 3,
@@ -45,6 +67,7 @@ const HeroSection = ({ featuredContent }) => {
       imageMobile:
         'https://preview.redd.it/would-spider-man-be-a-good-mentor-teacher-for-deku-v0-pvckixzd370f1.jpeg?auto=webp&s=7233d8e3bffb3fce84d7eb54196f68bf4bf1ba18',
       link: '/buzzfeed',
+      readTime: 10,
     },
   ];
 
@@ -179,6 +202,7 @@ const HeroSection = ({ featuredContent }) => {
               </Link>
 
               <button
+                onClick={() => setShowMoreInfo(true)}
                 className={`inline-flex items-center px-8 py-3 border-2 bg-transparent font-inter font-semibold rounded transition-all duration-300 ${getButtonClasses(
                   current.category
                 )}`}
@@ -232,6 +256,103 @@ const HeroSection = ({ featuredContent }) => {
       >
         Scroll for more
       </motion.div>
+
+      {/* More Info Modal */}
+      <AnimatePresence>
+        {showMoreInfo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowMoreInfo(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-netflix-dark rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden border border-gray-700/50"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="relative">
+                <img
+                  src={current.image}
+                  alt={current.title}
+                  className="w-full h-48 object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-netflix-black via-transparent to-transparent" />
+                <button
+                  onClick={() => setShowMoreInfo(false)}
+                  className="absolute top-4 right-4 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-all duration-300"
+                >
+                  ✕
+                </button>
+                <div className="absolute bottom-4 left-4">
+                  <h2 className="text-2xl md:text-3xl font-azonix font-bold text-white mb-2">
+                    {current.title}
+                  </h2>
+                  <div className="flex items-center space-x-4 text-sm text-gray-300">
+                    <span>{current.subtitle}</span>
+                    <span>•</span>
+                    <span>{current.readTime} min read</span>
+                    {current.createdAt && (
+                      <>
+                        <span>•</span>
+                        <span>{new Date(current.createdAt).toLocaleDateString()}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="p-6 overflow-y-auto max-h-96">
+                <div className="mb-4">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-inter font-semibold ${
+                    current.category === 'east'
+                      ? 'bg-east-500/20 text-east-300 border border-east-500/30'
+                      : current.category === 'west'
+                      ? 'bg-west-500/20 text-west-300 border border-west-500/30'
+                      : 'bg-gray-500/20 text-gray-300 border border-gray-500/30'
+                  }`}>
+                    {current.category === 'east'
+                      ? 'EAST • ANIME'
+                      : current.category === 'west'
+                      ? 'WEST • MOVIES & CARTOONS'
+                      : 'FEATURED'}
+                  </span>
+                </div>
+                
+                <p className="text-gray-200 text-lg leading-relaxed mb-6">
+                  {current.description}
+                </p>
+
+                {current.fullContent && (
+                  <div className="text-gray-300 leading-relaxed">
+                    <p className="text-sm opacity-75">
+                      {current.fullContent.length > 500 
+                        ? `${current.fullContent.substring(0, 500)}...` 
+                        : current.fullContent}
+                    </p>
+                  </div>
+                )}
+
+                <div className="mt-6 flex gap-4">
+                  <Link
+                    to={current.link}
+                    className="inline-flex items-center px-6 py-3 bg-white text-black font-inter font-semibold rounded transition-all duration-300 hover:bg-gray-200 hover:scale-105"
+                    onClick={() => setShowMoreInfo(false)}
+                  >
+                    <Play size={18} className="mr-2" fill="currentColor" />
+                    Read Full Story
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
