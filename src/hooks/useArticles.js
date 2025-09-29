@@ -73,18 +73,11 @@ export const useFeaturedContent = () => {
           return;
         }
 
-        // The backend returns { hero: { east, west }, recent_content: { east: [], west: [] } }
-        // We need to create a flat array of featured articles for the hero section
-        const featuredArticles = [];
+        // The backend now returns { featured: [], recent_content: { east: [], west: [] } }
+        // Use the featured array directly
+        let featuredArticles = response?.featured || [];
         
-        if (response?.hero?.east) {
-          featuredArticles.push({ ...response.hero.east, category: 'east' });
-        }
-        if (response?.hero?.west) {
-          featuredArticles.push({ ...response.hero.west, category: 'west' });
-        }
-        
-        // Add some recent content as fallback if no hero articles
+        // Add some recent content as fallback if no featured articles
         if (featuredArticles.length === 0) {
           const recentEast = response?.recent_content?.east || [];
           const recentWest = response?.recent_content?.west || [];

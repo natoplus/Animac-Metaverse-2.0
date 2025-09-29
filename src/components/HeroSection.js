@@ -26,7 +26,18 @@ const HeroSection = ({ featuredContent }) => {
     }));
   };
 
-  const heroSlides = featuredContent?.length > 0 ? transformToHeroSlides(featuredContent) : [
+  // Shuffle array function
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Default slides (always available)
+  const defaultSlides = [
     {
       id: 1,
       title: 'Attack on Titan Final Season',
@@ -71,12 +82,24 @@ const HeroSection = ({ featuredContent }) => {
     },
   ];
 
+  // Combine featured articles with default slides and shuffle randomly
+  const getHeroSlides = () => {
+    const featuredSlides = featuredContent?.length > 0 ? transformToHeroSlides(featuredContent) : [];
+    const allSlides = [...featuredSlides, ...defaultSlides];
+    return shuffleArray(allSlides);
+  };
+
+  const heroSlides = getHeroSlides();
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [heroSlides.length]);
+    // Only start the timer if the modal is not open
+    if (!showMoreInfo) {
+      const timer = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
+      }, 6000);
+      return () => clearInterval(timer);
+    }
+  }, [heroSlides.length, showMoreInfo]);
 
   const nextSlide = () =>
     setCurrentSlide((prev) => (prev + 1) % heroSlides.length);
