@@ -127,6 +127,260 @@ const WatchTowerPreview = () => {
 
 // === Magazine-Style Components ===
 
+// Category Showcase Component
+const CategoryShowcase = ({ title, articles, category, icon: Icon }) => {
+  const getThemeClasses = () => {
+    switch (category) {
+      case 'east':
+        return {
+          title: 'text-east-400',
+          border: 'border-east-500/30',
+          card: 'hover-glow-east border-east-500/20 hover:border-east-500/60'
+        };
+      case 'west':
+        return {
+          title: 'text-west-400',
+          border: 'border-west-500/30',
+          card: 'hover-glow-west border-west-500/20 hover:border-west-500/60'
+        };
+      default:
+        return {
+          title: 'text-gray-300',
+          border: 'border-gray-500/30',
+          card: 'hover:border-gray-500/60 border-gray-700/20'
+        };
+    }
+  };
+
+  const theme = getThemeClasses();
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-12"
+    >
+      <div className="flex items-center mb-6">
+        <div className={`p-3 rounded-lg bg-black/50 border ${theme.border} mr-4`}>
+          <Icon size={24} className={theme.title} />
+        </div>
+        <h2 className={`text-2xl md:text-3xl font-azonix font-bold ${theme.title}`}>
+          {title}
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {articles.slice(0, 6).map((article, index) => (
+          <motion.div
+            key={article.id || index}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+          >
+            <Link to={`/article/${article.slug}`}>
+              <div className={`netflix-card bg-netflix-dark rounded-lg overflow-hidden border ${theme.card} transition-all duration-300 h-64 flex flex-col`}>
+                <div className="relative h-32 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+                  {article.featured_image ? (
+                    <img
+                      src={article.featured_image}
+                      alt={article.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-gray-500 text-lg font-azonix opacity-30">
+                        {category === 'east' ? 'EAST' : category === 'west' ? 'WEST' : 'ANIMAC'}
+                      </div>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                </div>
+
+                <div className="p-4 flex flex-col justify-between flex-1">
+                  <div>
+                    <h3 className="font-montserrat font-semibold text-lg mb-2 text-white line-clamp-2">
+                      {article.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-3 line-clamp-2 font-inter">
+                      {article.excerpt}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <div className="flex items-center space-x-3">
+                      <span className="flex items-center space-x-1">
+                        <Users size={12} />
+                        <span>{article.author}</span>
+                      </span>
+                      <span className="flex items-center space-x-1">
+                        <Clock size={12} />
+                        <span>{article.read_time} min</span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Lists & Rankings Component
+const ListsRankings = ({ articles }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-12"
+    >
+      <div className="flex items-center mb-6">
+        <div className="p-3 rounded-lg bg-black/50 border border-gray-500/30 mr-4">
+          <List size={24} className="text-gray-300" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-azonix font-bold text-gray-300">
+          Lists & Rankings
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {articles.slice(0, 4).map((article, index) => (
+          <motion.div
+            key={article.id || index}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+          >
+            <Link to={`/article/${article.slug}`}>
+              <div className="netflix-card bg-netflix-dark rounded-lg overflow-hidden border border-gray-700/20 hover:border-gray-500/60 transition-all duration-300 p-6 flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-gradient-to-br from-east-500 to-west-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    {index + 1}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-montserrat font-semibold text-lg text-white mb-1 line-clamp-2">
+                    {article.title}
+                  </h3>
+                  <p className="text-gray-400 text-sm line-clamp-2">
+                    {article.excerpt}
+                  </p>
+                  <div className="flex items-center mt-2 text-xs text-gray-500">
+                    <span className="flex items-center space-x-1 mr-4">
+                      <Users size={12} />
+                      <span>{article.author}</span>
+                    </span>
+                    <span className="flex items-center space-x-1">
+                      <Clock size={12} />
+                      <span>{article.read_time} min read</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Resource Hub Component
+const ResourceHub = () => {
+  const resources = [
+    { name: 'Commission Site', url: '#', description: 'Get custom artwork' },
+    { name: 'Main Site', url: '#', description: 'Official website' },
+    { name: 'Documentation', url: '#', description: 'GitBook guides' },
+    { name: 'Community', url: '#', description: 'Join Soic community' },
+    { name: 'Support', url: '#', description: 'Get help & support' }
+  ];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-12"
+    >
+      <div className="flex items-center mb-6">
+        <div className="p-3 rounded-lg bg-black/50 border border-gray-500/30 mr-4">
+          <ExternalLink size={24} className="text-gray-300" />
+        </div>
+        <h2 className="text-2xl md:text-3xl font-azonix font-bold text-gray-300">
+          Resource Hub
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {resources.map((resource, index) => (
+          <motion.a
+            key={index}
+            href={resource.url}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1, duration: 0.5 }}
+            whileHover={{ scale: 1.02 }}
+            className="netflix-card bg-netflix-dark rounded-lg p-6 border border-gray-700/20 hover:border-gray-500/60 transition-all duration-300 flex items-center space-x-4"
+          >
+            <div className="p-2 rounded-lg bg-gradient-to-br from-east-500 to-west-500">
+              <ExternalLink size={20} className="text-white" />
+            </div>
+            <div>
+              <h3 className="font-montserrat font-semibold text-white mb-1">
+                {resource.name}
+              </h3>
+              <p className="text-gray-400 text-sm">
+                {resource.description}
+              </p>
+            </div>
+          </motion.a>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// Newsletter Signup Component
+const NewsletterSignup = () => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="mb-12"
+    >
+      <div className="max-w-4xl mx-auto bg-gradient-to-br from-east-800 to-west-800 rounded-2xl p-8 text-center">
+        <div className="flex items-center justify-center mb-6">
+          <div className="p-3 rounded-lg bg-black/50 border border-gray-500/30 mr-4">
+            <Mail size={24} className="text-gray-300" />
+          </div>
+          <h2 className="text-2xl md:text-3xl font-azonix font-bold text-white">
+            Join Our Community
+          </h2>
+        </div>
+        
+        <p className="text-gray-300 text-lg mb-6">
+          Stay updated with the latest anime and entertainment news, exclusive content, and community discussions.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            className="flex-1 px-4 py-3 bg-black/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-east-500"
+          />
+          <button className="px-6 py-3 bg-gradient-to-r from-east-500 to-west-500 text-white rounded-lg font-semibold hover:from-east-600 hover:to-west-600 transition-all duration-300">
+            Subscribe
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
 
 // === Main Home Page ===
 const Home = () => {
