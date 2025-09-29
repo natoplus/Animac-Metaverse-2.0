@@ -47,18 +47,7 @@ export const useArticles = (
       }
     };
 
-    // Add timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.warn("⏰ Articles loading timeout - setting error");
-        setError("Request timeout - backend may be down or CORS issue");
-        setLoading(false);
-      }
-    }, 15000); // 15 second timeout
-
     loadArticles();
-
-    return () => clearTimeout(timeoutId);
   }, [category, featured, limit, skip, is_published]);
 
   return { articles, loading, error };
