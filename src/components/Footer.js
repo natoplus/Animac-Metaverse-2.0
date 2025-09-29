@@ -238,7 +238,7 @@ const Footer = () => {
           <div className="flex items-center space-x-4 text-sm text-gray-400">
             <span className="flex items-center space-x-1">
               <TrendingUp size={16} />
-              <span>Powered by passion</span>
+              <span>Powered by NATOPLUS</span>
             </span>
             <span>•</span>
             <span>Made with ❤️ for the community</span>
