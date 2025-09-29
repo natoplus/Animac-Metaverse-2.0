@@ -75,9 +75,17 @@ export default function AdminDashboard() {
     setTagInput("");
   };
 
+  // Don't reset form when updating, only when creating new article
+  const resetFormForNewArticle = () => {
+    if (!selectedArticle) {
+      resetForm();
+    }
+  };
+
   const handleEdit = (article) => {
+    console.log("📝 Editing article:", article);
     setSelectedArticle(article);
-    setArticleForm({
+    const formData = {
       title: article.title,
       excerpt: article.excerpt || "",
       category: article.category || "",
@@ -87,7 +95,9 @@ export default function AdminDashboard() {
       content: article.content || "",
       is_featured: article.is_featured || false,
       is_published: article.is_published,
-    });
+    };
+    console.log("📝 Setting form data:", formData);
+    setArticleForm(formData);
     setPreviewContent(article.content || "");
     if (editorRef.current?.setContent) {
       editorRef.current.setContent(article.content || "");
@@ -165,9 +175,25 @@ export default function AdminDashboard() {
 
       if (result) {
         console.log("✅ Article saved successfully:", result);
-        resetForm();
+        
+        // Only reset form if creating new article, not when updating
+        if (selectedArticle) {
+          // Update the form with the saved data to reflect any changes from backend
+          setArticleForm({
+            ...payload,
+            content: result.content || payload.content,
+          });
+          if (editorRef.current?.setContent) {
+            editorRef.current.setContent(result.content || payload.content);
+          }
+          setPreviewContent(result.content || payload.content);
+          alert("Article updated successfully!");
+        } else {
+          resetForm();
+          alert("Article created successfully!");
+        }
+        
         loadArticles();
-        alert("Article saved successfully!");
       } else {
         console.error("❌ Failed to save article - no result returned");
         alert("Failed to save article. Please check the console for details.");
@@ -257,6 +283,11 @@ export default function AdminDashboard() {
         <motion.div className="flex-1" initial="hidden" variants={cardVariants}>
           <Card className={`mb-4 bg-gray-850 border border-gray-700 rounded-[6px] shadow-md animate-pulse ${glowClass}`}>
             <CardContent>
+              {selectedArticle && (
+                <div className="mb-3 p-2 bg-blue-900/20 border border-blue-500/30 rounded text-sm text-blue-300">
+                  📝 Editing: <span className="font-semibold">{selectedArticle.title}</span>
+                </div>
+              )}
               <Input
                 placeholder="Article Title"
                 value={articleForm.title}
@@ -358,13 +389,21 @@ export default function AdminDashboard() {
                 onUpdate={handleEditorChange}
               />
 
-              <Button
-                className="mt-4 bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white flex items-center gap-2 transition-all duration-300 rounded-[6px] disabled:opacity-50 disabled:cursor-not-allowed"
-                onClick={handleSave}
-                disabled={saving}
-              >
-                <Save size={16} /> {saving ? "Saving..." : "Save Article"}
-              </Button>
+              <div className="flex mt-4 gap-3">
+                <Button
+                  className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white flex items-center gap-2 transition-all duration-300 rounded-[6px]"
+                  onClick={resetForm}
+                >
+                  ✨ New Article
+                </Button>
+                <Button
+                  className="bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white flex items-center gap-2 transition-all duration-300 rounded-[6px] disabled:opacity-50 disabled:cursor-not-allowed px-6"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  <Save size={16} /> {saving ? "Saving..." : (selectedArticle ? "Update Article" : "Save Article")}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </motion.div>

@@ -88,11 +88,23 @@ export const createArticle = async (data) => {
 
 export const updateArticle = async (id, data) => {
   try {
-    const res = await api.patch(`/api/articles/${id}`, data);
+
+    console.log(`🔄 Using PUT method for article update [${id}]`);
+    const res = await api.put(`/api/articles/${id}`, data);
     return res.data || null;
   } catch (err) {
     console.error(`❌ Error updating article [${id}]:`, err.message);
-    return null;
+    console.error(`❌ Full PUT error:`, err?.response?.data || err);
+    
+    // Fallback to PATCH if PUT fails
+    console.log(`🔄 Falling back to PATCH method for article update [${id}]`);
+    try {
+      const patchRes = await api.patch(`/api/articles/${id}`, data);
+      return patchRes.data || null;
+    } catch (patchErr) {
+      console.error(`❌ PATCH fallback also failed [${id}]:`, patchErr.message);
+      return null;
+    }
   }
 };
 
