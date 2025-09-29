@@ -51,10 +51,10 @@ export const useArticles = (
     const timeoutId = setTimeout(() => {
       if (loading) {
         console.warn("⏰ Articles loading timeout - setting error");
-        setError("Request timeout - please check your connection");
+        setError("Request timeout - backend may be down or CORS issue");
         setLoading(false);
       }
-    }, 10000); // 10 second timeout
+    }, 15000); // 15 second timeout
 
     loadArticles();
 

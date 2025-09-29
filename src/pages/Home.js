@@ -476,11 +476,26 @@ const Home = () => {
   useEffect(() => {
     const testBackend = async () => {
       try {
-        const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com'}/api/health`);
-        const data = await response.json();
-        console.log('🔗 Backend health check:', data);
+        console.log('🔍 Testing backend connectivity...');
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://animac-metaverse.onrender.com';
+        console.log('🔍 Backend URL:', backendUrl);
+        
+        const response = await fetch(`${backendUrl}/api/health`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Backend health check successful:', data);
+        } else {
+          console.error('❌ Backend health check failed:', response.status, response.statusText);
+        }
       } catch (err) {
         console.error('❌ Backend connection failed:', err);
+        console.error('❌ Error details:', err.message);
       }
     };
     testBackend();
@@ -607,34 +622,6 @@ const Home = () => {
 
         {/* === NEW MAGAZINE-STYLE SECTIONS === */}
         
-        {/* 1. Hero Section - Featured Spotlight */}
-        <section className="relative">
-          {/* Featured Articles Grid Below Hero */}
-          <div className="relative z-10 bg-gradient-to-t from-netflix-black to-transparent">
-            <div className="container mx-auto px-4 mb-16">
-              <motion.div
-                initial={{ opacity: 0, y: 50 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3, duration: 0.6 }}
-                className="grid grid-cols-1 lg:grid-cols-3 gap-6"
-              >
-                {/* Main Featured Article */}
-                {featuredContent && featuredContent[0] && (
-                  <div className="lg:col-span-2">
-                    <FeaturedArticleCard article={featuredContent[0]} isMain={true} />
-                  </div>
-                )}
-                
-                {/* Smaller Featured Articles */}
-                <div className="space-y-6">
-                  {featuredContent && featuredContent.slice(1, 3).map((article, index) => (
-                    <FeaturedArticleCard key={article.id || index} article={article} />
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </div>
-        </section>
 
         {/* 2. Trending / Popular Now */}
         <section className="container mx-auto px-4 mb-16">
