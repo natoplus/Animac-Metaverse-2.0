@@ -62,6 +62,11 @@ const TipTapEditor = forwardRef(({ initialContent = "<p></p>", onUpdate }, ref) 
 
   useImperativeHandle(ref, () => ({
     getHTML: () => editor?.getHTML() || "",
+    setContent: (content) => {
+      if (editor && typeof content === "string") {
+        editor.commands.setContent(content, false);
+      }
+    },
   }));
 
   useEffect(() => {

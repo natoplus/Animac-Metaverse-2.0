@@ -35,13 +35,23 @@ export default function AdminDashboard() {
   const [draftsVisible, setDraftsVisible] = useState(true);
   const [publishedVisible, setPublishedVisible] = useState(true);
   const [tagInput, setTagInput] = useState("");
+  const [saving, setSaving] = useState(false);
   const editorRef = useRef(null);
 
   const loadArticles = useCallback(async () => {
-    setLoading(true);
-    const allArticles = await fetchArticles();
-    setArticles(allArticles);
-    setLoading(false);
+    try {
+      setLoading(true);
+      console.log("📚 Loading articles...");
+      const allArticles = await fetchArticles();
+      console.log("✅ Articles loaded:", allArticles.length, "articles");
+      setArticles(allArticles || []);
+    } catch (error) {
+      console.error("❌ Error loading articles:", error);
+      alert(`Error loading articles: ${error.message}`);
+      setArticles([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -86,25 +96,88 @@ export default function AdminDashboard() {
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this article?")) return;
-    await deleteArticle(id);
-    loadArticles();
+    
+    try {
+      console.log("🗑️ Deleting article:", id);
+      const result = await deleteArticle(id);
+      
+      if (result) {
+        console.log("✅ Article deleted successfully");
+        alert("Article deleted successfully!");
+        loadArticles();
+      } else {
+        console.error("❌ Failed to delete article - no result returned");
+        alert("Failed to delete article. Please check the console for details.");
+      }
+    } catch (error) {
+      console.error("❌ Error deleting article:", error);
+      alert(`Error deleting article: ${error.message}`);
+    }
   };
 
   const handleSave = async () => {
-    const content = editorRef.current?.getHTML() || "";
-    const payload = {
-      ...articleForm,
-      // Default author if not provided
-      author: (articleForm.author && articleForm.author.trim()) ? articleForm.author.trim() : "ANIMAC",
-      content,
-    };
-    if (selectedArticle) {
-      await updateArticle(selectedArticle.id, payload);
-    } else {
-      await createArticle(payload);
+    if (saving) return; // Prevent multiple submissions
+
+    try {
+      setSaving(true);
+      // Validate required fields
+      if (!articleForm.title?.trim()) {
+        alert("Please enter a title for the article.");
+        return;
+      }
+
+      if (!articleForm.excerpt?.trim()) {
+        alert("Please enter an excerpt for the article.");
+        return;
+      }
+
+      if (!articleForm.category?.trim()) {
+        alert("Please select a category for the article.");
+        return;
+      }
+
+      const content = editorRef.current?.getHTML() || "";
+      if (!content.trim() || content === "<p></p>") {
+        alert("Please add some content to the article.");
+        return;
+      }
+
+      const payload = {
+        ...articleForm,
+        // Default author if not provided
+        author: (articleForm.author && articleForm.author.trim()) ? articleForm.author.trim() : "ANIMAC",
+        content,
+        // Ensure boolean fields are properly set
+        is_featured: !!articleForm.is_featured,
+        is_published: !!articleForm.is_published,
+      };
+
+      console.log("💾 Saving article with payload:", payload);
+
+      let result;
+      if (selectedArticle) {
+        console.log("📝 Updating article:", selectedArticle.id);
+        result = await updateArticle(selectedArticle.id, payload);
+      } else {
+        console.log("➕ Creating new article");
+        result = await createArticle(payload);
+      }
+
+      if (result) {
+        console.log("✅ Article saved successfully:", result);
+        resetForm();
+        loadArticles();
+        alert("Article saved successfully!");
+      } else {
+        console.error("❌ Failed to save article - no result returned");
+        alert("Failed to save article. Please check the console for details.");
+      }
+    } catch (error) {
+      console.error("❌ Error saving article:", error);
+      alert(`Error saving article: ${error.message}`);
+    } finally {
+      setSaving(false);
     }
-    resetForm();
-    loadArticles();
   };
 
   // Auto-save draft
@@ -196,12 +269,21 @@ export default function AdminDashboard() {
                 onChange={(e) => setArticleForm({ ...articleForm, excerpt: e.target.value })}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
-              <Input
-                placeholder="Category"
+              <select
                 value={articleForm.category}
                 onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
-                className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
-              />
+                className="mb-3 bg-gray-800 text-gray-100 border border-gray-700 focus:border-blue-400 px-3 py-2 rounded focus:outline-none w-full"
+              >
+                <option value="">Select Category</option>
+                <option value="east">East (Anime/Manga)</option>
+                <option value="west">West (Movies/TV)</option>
+                <option value="gaming">Gaming</option>
+                <option value="tech">Technology</option>
+                <option value="news">News</option>
+                <option value="reviews">Reviews</option>
+                <option value="editorial">Editorial</option>
+                <option value="culture">Culture</option>
+              </select>
               <Input
                 placeholder="Author (defaults to ANIMAC if empty)"
                 value={articleForm.author}
@@ -277,10 +359,11 @@ export default function AdminDashboard() {
               />
 
               <Button
-                className="mt-4 bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white flex items-center gap-2 transition-all duration-300 rounded-[6px]"
+                className="mt-4 bg-gradient-to-r from-red-500 to-blue-500 hover:from-blue-500 hover:to-red-500 text-white flex items-center gap-2 transition-all duration-300 rounded-[6px] disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleSave}
+                disabled={saving}
               >
-                <Save size={16} /> Save Article
+                <Save size={16} /> {saving ? "Saving..." : "Save Article"}
               </Button>
             </CardContent>
           </Card>
