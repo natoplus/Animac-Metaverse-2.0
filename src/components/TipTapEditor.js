@@ -7,7 +7,7 @@ import Highlight from "@tiptap/extension-highlight";
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Underline from "@tiptap/extension-underline";
-import { TextAlign } from '@tiptap/extension-text-align';
+import TextAlign from '@tiptap/extension-text-align';
 import { CustomImage } from "./CustomImage";
 
 import {
