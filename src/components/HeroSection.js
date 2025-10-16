@@ -252,24 +252,7 @@ const HeroSection = ({ featuredContent }) => {
         <ChevronRight size={24} />
       </button>
 
-      {/* Slide Indicators */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex space-x-3">
-        {heroSlides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`w-3 h-3 rounded-full transition-all duration-300 ${
-              index === currentSlide
-                ? current.category === 'east'
-                  ? 'bg-east-500 shadow-lg shadow-east-500/50'
-                  : current.category === 'west'
-                  ? 'bg-west-500 shadow-lg shadow-west-500/50'
-                  : 'bg-white shadow-lg'
-                : 'bg-gray-500 hover:bg-gray-300'
-            }`}
-          />
-        ))}
-      </div>
+      
 
       {/* Scroll Indicator */}
       <motion.div
