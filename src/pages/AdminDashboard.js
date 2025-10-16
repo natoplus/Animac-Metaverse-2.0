@@ -42,10 +42,20 @@ export default function AdminDashboard() {
   const loadArticles = useCallback(async () => {
     try {
       setLoading(true);
-      console.log("📚 Loading articles...");
-      const allArticles = await fetchArticles();
-      console.log("✅ Articles loaded:", allArticles.length, "articles");
-      setArticles(allArticles || []);
+      console.log("📚 Loading articles (published + drafts)...");
+      const [published, drafts] = await Promise.all([
+        fetchArticles({ is_published: true }),
+        fetchArticles({ is_published: false }),
+      ]);
+      const combined = [...(published || []), ...(drafts || [])];
+      console.log(
+        "✅ Articles loaded:",
+        combined.length,
+        "(published:", (published || []).length,
+        "drafts:", (drafts || []).length,
+        ")"
+      );
+      setArticles(combined);
     } catch (error) {
       console.error("❌ Error loading articles:", error);
       alert(`Error loading articles: ${error.message}`);
