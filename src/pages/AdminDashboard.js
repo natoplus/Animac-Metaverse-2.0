@@ -36,6 +36,7 @@ export default function AdminDashboard() {
   const [publishedVisible, setPublishedVisible] = useState(true);
   const [tagInput, setTagInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const editorRef = useRef(null);
 
   const loadArticles = useCallback(async () => {
@@ -73,6 +74,7 @@ export default function AdminDashboard() {
     });
     setPreviewContent("");
     setTagInput("");
+    setIsDirty(false);
   };
 
   // Don't reset form when updating, only when creating new article
@@ -83,6 +85,10 @@ export default function AdminDashboard() {
   };
 
   const handleEdit = (article) => {
+    if (isDirty && selectedArticle) {
+      const proceed = window.confirm("You have unsaved changes. Discard and load the selected article?");
+      if (!proceed) return;
+    }
     console.log("📝 Editing article:", article);
     setSelectedArticle(article);
     const formData = {
@@ -101,6 +107,18 @@ export default function AdminDashboard() {
     setPreviewContent(article.content || "");
     if (editorRef.current?.setContent) {
       editorRef.current.setContent(article.content || "");
+    }
+    setIsDirty(false);
+  };
+
+  const handleNewArticle = () => {
+    if (isDirty) {
+      const proceed = window.confirm("You have unsaved changes. Start a new article and discard them?");
+      if (!proceed) return;
+    }
+    resetForm();
+    if (editorRef.current?.setContent) {
+      editorRef.current.setContent("");
     }
   };
 
@@ -194,6 +212,7 @@ export default function AdminDashboard() {
         }
         
         loadArticles();
+        setIsDirty(false);
       } else {
         console.error("❌ Failed to save article - no result returned");
         alert("Failed to save article. Please check the console for details.");
@@ -220,6 +239,7 @@ export default function AdminDashboard() {
   const handleEditorChange = (html) => {
     setPreviewContent(html);
     setArticleForm({ ...articleForm, content: html });
+    setIsDirty(true);
   };
 
   const wordCount = previewContent?.trim().split(/\s+/).length || 0;
@@ -291,18 +311,18 @@ export default function AdminDashboard() {
               <Input
                 placeholder="Article Title"
                 value={articleForm.title}
-                onChange={(e) => setArticleForm({ ...articleForm, title: e.target.value })}
+                onChange={(e) => { setArticleForm({ ...articleForm, title: e.target.value }); setIsDirty(true); }}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <Input
                 placeholder="Excerpt"
                 value={articleForm.excerpt}
-                onChange={(e) => setArticleForm({ ...articleForm, excerpt: e.target.value })}
+                onChange={(e) => { setArticleForm({ ...articleForm, excerpt: e.target.value }); setIsDirty(true); }}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <select
                 value={articleForm.category}
-                onChange={(e) => setArticleForm({ ...articleForm, category: e.target.value })}
+                onChange={(e) => { setArticleForm({ ...articleForm, category: e.target.value }); setIsDirty(true); }}
                 className="mb-3 bg-gray-800 text-gray-100 border border-gray-700 focus:border-blue-400 px-3 py-2 rounded focus:outline-none w-full"
               >
                 <option value="">Select Category</option>
@@ -318,7 +338,7 @@ export default function AdminDashboard() {
               <Input
                 placeholder="Author (defaults to ANIMAC if empty)"
                 value={articleForm.author}
-                onChange={(e) => setArticleForm({ ...articleForm, author: e.target.value })}
+                onChange={(e) => { setArticleForm({ ...articleForm, author: e.target.value }); setIsDirty(true); }}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
               <div className="flex gap-2 mb-3 flex-wrap">
@@ -326,7 +346,7 @@ export default function AdminDashboard() {
                   <span
                     key={i}
                     className="bg-gradient-to-r from-red-500 to-blue-500 px-2 py-1 rounded text-xs cursor-pointer hover:opacity-80 transition-opacity"
-                    onClick={() => setArticleForm({ ...articleForm, tags: articleForm.tags.filter((tag) => tag !== t) })}
+                    onClick={() => { setArticleForm({ ...articleForm, tags: articleForm.tags.filter((tag) => tag !== t) }); setIsDirty(true); }}
                   >
                     {t} &times;
                   </span>
@@ -336,7 +356,7 @@ export default function AdminDashboard() {
                   placeholder="Add tag..."
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={handleTagInputKey}
+                  onKeyDown={(e) => { handleTagInputKey(e); if (e.key === 'Enter' && tagInput.trim()) setIsDirty(true); }}
                   className="bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400 px-2 py-1 rounded text-sm"
                 />
               </div>
@@ -344,7 +364,7 @@ export default function AdminDashboard() {
               <Input
                 placeholder="Featured Image URL"
                 value={articleForm.featured_image}
-                onChange={(e) => setArticleForm({ ...articleForm, featured_image: e.target.value })}
+                onChange={(e) => { setArticleForm({ ...articleForm, featured_image: e.target.value }); setIsDirty(true); }}
                 className="mb-3 bg-gray-800 text-gray-100 placeholder-gray-400 border border-gray-700 focus:border-blue-400"
               />
 
@@ -353,7 +373,7 @@ export default function AdminDashboard() {
                   <input
                     type="checkbox"
                     checked={!articleForm.is_published}
-                    onChange={(e) => setArticleForm({ ...articleForm, is_published: !e.target.checked })}
+                    onChange={(e) => { setArticleForm({ ...articleForm, is_published: !e.target.checked }); setIsDirty(true); }}
                     className="accent-blue-500"
                   />
                   Save as Draft
@@ -371,9 +391,7 @@ export default function AdminDashboard() {
                   <input
                     type="checkbox"
                     checked={articleForm.is_featured}
-                    onChange={(e) =>
-                      setArticleForm({ ...articleForm, is_featured: e.target.checked })
-                    }
+                    onChange={(e) => { setArticleForm({ ...articleForm, is_featured: e.target.checked }); setIsDirty(true); }}
                     className="accent-red-500"
                   />
                   <span>Featured</span>
@@ -392,7 +410,7 @@ export default function AdminDashboard() {
               <div className="flex mt-4 gap-3">
                 <Button
                   className="flex-1 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 text-white flex items-center gap-2 transition-all duration-300 rounded-[6px]"
-                  onClick={resetForm}
+                  onClick={handleNewArticle}
                 >
                   ✨ New Article
                 </Button>
