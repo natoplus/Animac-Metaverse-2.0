@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Globe, Brush, Rocket, Quote } from "lucide-react";
+import SEO from '../components/SEO';
 
 export default function AboutUs() {
     const values = [
@@ -92,7 +93,16 @@ export default function AboutUs() {
 
 
     return (
-        <motion.div className="min-h-screen bg-black text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+        <>
+            <SEO
+                title="About ANIMAC - Shaping the Metaverse Through Animation & Culture"
+                description="Learn about ANIMAC's mission to merge cultural worlds through animation. From Lagos to Tokyo, we're building a global community of creators and innovators."
+                url="/about"
+                image="/assets/animac-preview-logo.svg"
+                type="website"
+            />
+
+            <motion.div className="min-h-screen bg-black text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
 
             {/* HERO SECTION */}
             <section className="relative h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-black to-blue-900">
@@ -230,5 +240,6 @@ export default function AboutUs() {
                 <p className="bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent" style={{ fontFamily: "Azonix, sans-serif" }}>— ANIMAC Philosophy</p>
             </motion.section>
         </motion.div>
+        </>
     );
 }

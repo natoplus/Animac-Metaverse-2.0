@@ -228,6 +228,7 @@ const ArticlePage = () => {
         modifiedTime={article.updated_at}
         section={article.category}
         tags={article.tags || []}
+        content={article.content}
       />
 
       <motion.div

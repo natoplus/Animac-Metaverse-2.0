@@ -2,6 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { Globe, Rocket, Brush } from "lucide-react";
+import SEO from '../components/SEO';
 
 export default function Careers() {
   const jobs = [
@@ -20,7 +21,16 @@ export default function Careers() {
   ];
 
   return (
-    <motion.div className="min-h-screen bg-black text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
+    <>
+      <SEO
+        title="Careers at ANIMAC - Join Our Creative Team"
+        description="Join ANIMAC's global team of creatives shaping the future of animation in the metaverse. Explore career opportunities in development, design, and animation."
+        url="/careers"
+        image="/assets/animac-preview-logo.svg"
+        type="website"
+      />
+
+      <motion.div className="min-h-screen bg-black text-white" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
       
       {/* HERO SECTION */}
       <section className="relative h-[60vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-black to-blue-900">
@@ -109,5 +119,6 @@ export default function Careers() {
       </motion.section>
 
     </motion.div>
+    </>
   );
 }
