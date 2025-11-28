@@ -456,47 +456,139 @@ const Home = () => {
       >
         <HeroSection featuredContent={featuredContent} />
 
-        {/* === Buzzfeed Ticker === */}
-        <div className="bg-gradient-to-r from-east-500 to-west-500 py-2 overflow-hidden mb-8 mt-8">
-          <div className="whitespace-nowrap animate-marquee text-sm md:text-base font-semibold font-mono uppercase">
-            {allArticles.slice(0, 10).map((article, i) => (
-              <span key={i} className="mx-6">📰 {article.title}</span>
-            ))}
-            {allArticles.slice(0, 10).map((article, i) => (
-              <span key={`dup-${i}`} className="mx-6">📰 {article.title}</span>
-            ))}
+        {/* === Content-Rich Hero Section === */}
+        <div className="bg-gradient-to-r from-east-500 to-west-500 py-4 overflow-hidden mb-8 mt-8">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl md:text-3xl font-azonix font-bold text-white mb-2">
+                📰 Latest Entertainment News
+              </h2>
+              <p className="text-white/80 text-sm md:text-base">
+                Stay updated with breaking anime news, Hollywood releases, and entertainment trends
+              </p>
+            </div>
+            {allArticles.length > 0 ? (
+              <div className="whitespace-nowrap animate-marquee text-sm md:text-base font-semibold font-mono">
+                {allArticles.slice(0, 8).map((article, i) => (
+                  <span key={i} className="mx-8 text-white hover:text-yellow-300 transition-colors">
+                    📰 {article.title}
+                  </span>
+                ))}
+                {allArticles.slice(0, 8).map((article, i) => (
+                  <span key={`dup-${i}`} className="mx-8 text-white hover:text-yellow-300 transition-colors">
+                    📰 {article.title}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center text-white/60 py-4">
+                <p>🎬 Loading latest entertainment news...</p>
+                <p className="text-sm mt-2">Anime releases • Movie trailers • Entertainment updates</p>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="relative z-10 -mt-32 pt-32 bg-gradient-to-t from-netflix-black to-transparent">
+          {/* Featured Content Section with Real Text Content */}
+          <section className="container mx-auto px-4 py-16">
+            <div className="max-w-4xl mx-auto text-center mb-16">
+              <h1 className="text-4xl md:text-6xl font-azonix font-bold mb-6 bg-gradient-to-r from-east-500 to-west-500 bg-clip-text text-transparent">
+                Welcome to ANIMAC
+              </h1>
+              <p className="text-xl md:text-2xl text-gray-300 font-inter leading-relaxed mb-8">
+                Your ultimate destination for anime, movies, cartoons, and entertainment culture.
+                Discover the latest news, reviews, and insights from the world of entertainment.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+                <div className="bg-gradient-to-br from-east-800/50 to-east-900/50 p-6 rounded-xl border border-east-500/20">
+                  <div className="text-3xl mb-3">🎌</div>
+                  <h3 className="text-xl font-azonix font-bold text-east-300 mb-2">Anime & Manga</h3>
+                  <p className="text-gray-400 text-sm">Latest anime releases, manga reviews, studio news, and Japanese pop culture insights.</p>
+                </div>
+                <div className="bg-gradient-to-br from-west-800/50 to-west-900/50 p-6 rounded-xl border border-west-500/20">
+                  <div className="text-3xl mb-3">🎬</div>
+                  <h3 className="text-xl font-azonix font-bold text-west-300 mb-2">Movies & TV</h3>
+                  <p className="text-gray-400 text-sm">Hollywood blockbusters, streaming series, cartoon reviews, and entertainment industry news.</p>
+                </div>
+                <div className="bg-gradient-to-br from-purple-800/50 to-pink-900/50 p-6 rounded-xl border border-purple-500/20">
+                  <div className="text-3xl mb-3">🌟</div>
+                  <h3 className="text-xl font-azonix font-bold text-purple-300 mb-2">Entertainment Hub</h3>
+                  <p className="text-gray-400 text-sm">Curated recommendations, trending topics, and community-driven content from around the world.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <div className="container mx-auto space-y-24">
             <ContentRow
               title="This Week in Anime"
               articles={eastArticles}
               category="east"
-              emptyMessage="No eastern articles found yet."
+              emptyMessage="Discover the latest anime releases, manga chapters, and Japanese entertainment news. Our East Portal covers everything from seasonal anime reviews to studio announcements and cultural insights."
             />
 
             <ContentRow
               title="Movies & Cartoons Spotlight"
               articles={westArticles}
               category="west"
-              emptyMessage="No western articles found yet."
+              emptyMessage="Explore Hollywood blockbusters, Disney animations, Netflix originals, and cartoon series reviews. Our West Portal brings you the latest entertainment news from the western world of cinema and television."
             />
 
             <ContentRow
               title="🔥 Trending Now"
               articles={allArticles.filter((a) => a.is_featured)}
               category="neutral"
-              emptyMessage="No featured stories available."
+              emptyMessage="Discover trending entertainment topics, viral content, and what's capturing audiences worldwide. From anime memes to movie discussions, stay updated with what's hot in entertainment culture."
             />
 
             <ContentRow
               title="⭐ Editor's Choice"
               articles={allArticles.slice(0, 8)}
               category="neutral"
-              emptyMessage="No editor picks at the moment."
+              emptyMessage="Our editorial team curates the best content from anime reviews to movie analysis. These carefully selected pieces offer deep insights and unique perspectives on entertainment."
             />
+
+            {/* About ANIMAC Section */}
+            <div className="max-w-5xl mx-auto bg-gradient-to-br from-gray-800/50 to-gray-900/50 rounded-2xl p-10 shadow-lg mb-16">
+              <div className="text-center mb-8">
+                <h3 className="text-3xl md:text-5xl font-bold font-azonix bg-clip-text text-transparent bg-gradient-to-r from-east-500 to-west-500 mb-4">
+                  About ANIMAC Metaverse
+                </h3>
+                <p className="text-gray-300 text-lg leading-relaxed max-w-3xl mx-auto">
+                  ANIMAC is more than just an entertainment website – we're a cultural bridge connecting anime enthusiasts,
+                  movie lovers, and entertainment fans worldwide. Our mission is to create a comprehensive entertainment
+                  ecosystem that celebrates both Eastern and Western storytelling traditions.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <div className="text-center">
+                  <h4 className="text-xl font-azonix font-bold text-east-400 mb-3">🎌 East Portal</h4>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Dive deep into Japanese animation culture with seasonal anime reviews, manga recommendations,
+                    studio spotlights, and insights into the rich tradition of anime storytelling that has captivated
+                    millions worldwide.
+                  </p>
+                </div>
+                <div className="text-center">
+                  <h4 className="text-xl font-azonix font-bold text-west-400 mb-3">🎬 West Portal</h4>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Explore Hollywood blockbusters, indie films, streaming series, and cartoon classics.
+                    From Pixar animations to Netflix originals, discover the stories that shape Western entertainment culture.
+                  </p>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <p className="text-gray-300 text-base leading-relaxed max-w-4xl mx-auto">
+                  Whether you're a longtime anime fan, a movie buff, or just love great storytelling,
+                  ANIMAC provides curated content, expert reviews, and community-driven insights to enhance
+                  your entertainment experience. Join our growing community of entertainment enthusiasts
+                  and discover your next favorite story.
+                </p>
+              </div>
+            </div>
 
             <div className="max-w-5xl mx-auto bg-gradient-to-br from-east-800 to-west-800 rounded-2xl p-10 shadow-lg text-center">
               <h3 className="text-3xl md:text-5xl font-bold font-azonix bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-yellow-500 mb-4">
@@ -534,7 +626,7 @@ const Home = () => {
 
                 <div className="flex flex-col sm:flex-row gap-6 justify-center">
                   <motion.a
-                    href="/buzzfeed/east"
+                    href="/east-portal"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-east-600 to-east-500 text-white font-montserrat font-semibold rounded-lg hover:from-east-700 hover:to-east-600 transition-all duration-300 hover-glow-east"
@@ -543,13 +635,23 @@ const Home = () => {
                   </motion.a>
 
                   <motion.a
-                    href="/buzzfeed/west"
+                    href="/west-portal"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-west-600 to-west-500 text-white font-montserrat font-semibold rounded-lg hover:from-west-700 hover:to-west-600 transition-all duration-300 hover-glow-west"
                   >
                     Explore WEST Portal <span className="ml-2 text-lg">→</span>
                   </motion.a>
+                </div>
+
+                <div className="mt-8 flex flex-wrap gap-4 justify-center text-sm text-gray-400">
+                  <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+                  <span>•</span>
+                  <Link to="/careers" className="hover:text-white transition-colors">Careers</Link>
+                  <span>•</span>
+                  <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
+                  <span>•</span>
+                  <Link to="/buzzfeed-hub" className="hover:text-white transition-colors">Buzzfeed Hub</Link>
                 </div>
               </div>
             </motion.div>
