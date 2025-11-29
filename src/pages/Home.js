@@ -9,6 +9,45 @@ import HeroSection from '../components/HeroSection';
 import ContentRow from '../components/ContentRow';
 import { useFeaturedContent, useArticles } from '../hooks/useArticles';
 
+// HTML Sitemap Component
+const HTMLSitemap = ({ allArticles }) => {
+  const staticPages = [
+    { url: '/', title: 'Home - ANIMAC Entertainment Hub' },
+    { url: '/about', title: 'About Us - ANIMAC Mission & Team' },
+    { url: '/careers', title: 'Careers - Join ANIMAC Team' },
+    { url: '/contact', title: 'Contact - Get in Touch' },
+    { url: '/press-kit', title: 'Press Kit - Media Resources' },
+    { url: '/buzzfeed', title: 'Buzzfeed Hub - Entertainment News' },
+    { url: '/buzzfeed/east', title: 'East Portal - Anime & Manga' },
+    { url: '/buzzfeed/west', title: 'West Portal - Movies & TV' },
+    { url: '/watch-tower', title: 'Watch Tower - Entertainment Guides' }
+  ];
+
+  return (
+    <div className="sr-only" aria-hidden="true">
+      <h2>ANIMAC Website Sitemap</h2>
+
+      <h3>Main Pages</h3>
+      <ul>
+        {staticPages.map(page => (
+          <li key={page.url}>
+            <a href={page.url}>{page.title}</a>
+          </li>
+        ))}
+      </ul>
+
+      <h3>Articles</h3>
+      <ul>
+        {allArticles.map(article => (
+          <li key={article.id}>
+            <a href={`/article/${article.slug}`}>{article.title}</a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 // === WatchTower Preview Slideshow Component ===
 const WatchTowerPreview = () => {
   const [trailers, setTrailers] = useState([]);
@@ -644,14 +683,29 @@ const Home = () => {
                   </motion.a>
                 </div>
 
-                <div className="mt-8 flex flex-wrap gap-4 justify-center text-sm text-gray-400">
-                  <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
-                  <span>•</span>
-                  <Link to="/careers" className="hover:text-white transition-colors">Careers</Link>
-                  <span>•</span>
-                  <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
-                  <span>•</span>
-                  <Link to="/buzzfeed-hub" className="hover:text-white transition-colors">Buzzfeed Hub</Link>
+                <div className="mt-8">
+                  <div className="flex flex-wrap gap-4 justify-center text-sm text-gray-400 mb-4">
+                    <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+                    <span>•</span>
+                    <Link to="/careers" className="hover:text-white transition-colors">Careers</Link>
+                    <span>•</span>
+                    <Link to="/contact" className="hover:text-white transition-colors">Contact</Link>
+                    <span>•</span>
+                    <Link to="/buzzfeed" className="hover:text-white transition-colors">Buzzfeed Hub</Link>
+                  </div>
+
+                  {/* Hidden SEO Links for Crawlers */}
+                  <div className="sr-only" aria-hidden="true">
+                    <a href="/buzzfeed/east">East Portal - Anime Content</a>
+                    <a href="/buzzfeed/west">West Portal - Movies & TV</a>
+                    <a href="/watch-tower">Watch Tower - Entertainment Guides</a>
+                    <a href="/press-kit">Press Kit - Media Resources</a>
+                    {allArticles.slice(0, 10).map(article => (
+                      <a key={article.id} href={`/article/${article.slug}`}>
+                        {article.title}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -892,6 +946,9 @@ const Home = () => {
         <section className="container mx-auto px-4 mb-16">
           <NewsletterSignup />
         </section>
+
+        {/* HTML Sitemap for SEO */}
+        <HTMLSitemap allArticles={allArticles} />
       </motion.div>
     </>
   );

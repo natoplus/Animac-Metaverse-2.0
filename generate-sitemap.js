@@ -7,20 +7,19 @@ const axios = require('axios');
 async function generateSitemap() {
   const sitemap = new SitemapStream({ hostname: 'https://animac-metaverse.vercel.app' });
 
-  // Static pages
+  // Static pages - must match actual routes in App.js
   const staticPages = [
     { url: '/', changefreq: 'daily', priority: 1.0 },
     { url: '/about', changefreq: 'monthly', priority: 0.6 },
     { url: '/careers', changefreq: 'monthly', priority: 0.5 },
     { url: '/contact', changefreq: 'monthly', priority: 0.6 },
     { url: '/press-kit', changefreq: 'monthly', priority: 0.5 },
-    { url: '/login', changefreq: 'yearly', priority: 0.3 },
-    { url: '/sitemap', changefreq: 'monthly', priority: 0.4 },
-    { url: '/buzzfeed-hub', changefreq: 'weekly', priority: 0.8 },
-    { url: '/east-portal', changefreq: 'weekly', priority: 0.8 },
-    { url: '/west-portal', changefreq: 'weekly', priority: 0.8 },
-    { url: '/watchtower', changefreq: 'weekly', priority: 0.7 },
-    { url: '/admin', changefreq: 'monthly', priority: 0.5 }
+    { url: '/buzzfeed', changefreq: 'weekly', priority: 0.8 },
+    { url: '/buzzfeed/east', changefreq: 'weekly', priority: 0.8 },
+    { url: '/buzzfeed/west', changefreq: 'weekly', priority: 0.8 },
+    { url: '/watch-tower', changefreq: 'weekly', priority: 0.7 }
+    // Note: /admin routes are excluded as they require authentication
+    // Note: /login not included as it's not a content page
   ];
 
   // Add static pages
